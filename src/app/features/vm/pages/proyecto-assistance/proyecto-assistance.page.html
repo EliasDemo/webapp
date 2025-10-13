@@ -1,0 +1,197 @@
+<div class="p-4 lg:p-6">
+  <div class="flex items-center gap-3 mb-5">
+    <h1 class="text-xl font-semibold">Llamado manual</h1>
+
+    <span class="text-xs text-slate-500 ml-auto">
+      Ahora: {{ now() | date:'shortTime' }}
+    </span>
+
+    <ng-container *ngIf="lastSync() as ls">
+      <span class="text-xs text-slate-400">• Últ. act: {{ ls | date:'shortTime' }}</span>
+    </ng-container>
+  </div>
+
+  <ng-container *ngIf="error()">
+    <div class="p-3 rounded bg-rose-50 text-rose-700 border border-rose-200 mb-4">
+      {{ error() }}
+    </div>
+  </ng-container>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Izquierda: Caja de registro -->
+    <section class="rounded-xl border bg-white shadow-sm p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-sm text-slate-700">
+          <b>Sesión #{{ sesionId() }}</b>
+        </div>
+        <div class="text-xs text-slate-500">
+          <ng-container *ngIf="ventana()?.expires_at as fin">
+            Vence en <b>{{ minutosRestantes() }}</b> min
+          </ng-container>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <label class="block text-sm text-slate-700">Código del estudiante</label>
+        <input
+          [formControl]="codigo"
+          (keyup.enter)="doCheckIn()"
+          class="w-full border rounded-lg px-3 py-2"
+          placeholder="Ej: 202012345"
+        />
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            class="px-3 py-1.5 rounded border border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+            (click)="doCheckIn()"
+          >
+            Registrar
+          </button>
+
+          <button class="px-3 py-1.5 rounded border" (click)="activarManual()">
+            Renovar ventana (±1h por horario)
+          </button>
+
+          <button class="px-3 py-1.5 rounded border" (click)="refreshAsistencias(true)">
+            Actualizar asistencias
+          </button>
+
+          <button class="px-3 py-1.5 rounded border" (click)="loadParticipantes()">
+            Actualizar participantes
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-500">
+          Consejo: puedes usar un lector de códigos de barras o ingresar manualmente y presionar Enter.
+        </p>
+      </div>
+    </section>
+
+    <!-- Derecha: Asistencias registradas -->
+    <section class="rounded-xl border bg-white shadow-sm p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-slate-700">Registrados</h2>
+        <div class="flex gap-2">
+          <button class="px-3 py-1.5 rounded border" (click)="refreshAsistencias(true)">
+            Actualizar
+          </button>
+          <button
+            class="px-3 py-1.5 rounded border border-emerald-300 bg-emerald-50 hover:bg-emerald-100"
+            (click)="validarTodo()"
+          >
+            Validar todos
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="asistencias().length; else emptyAsistencias">
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm table-fixed">
+            <thead class="text-xs text-slate-500">
+              <tr>
+                <th class="text-left px-2 py-1 w-20">Hora</th>
+                <th class="text-left px-2 py-1 w-28">Código</th>
+                <th class="text-left px-2 py-1 w-28">DNI</th>
+                <th class="text-left px-2 py-1">Nombres</th>
+                <th class="text-left px-2 py-1">Apellidos</th>
+                <th class="text-left px-2 py-1 w-24">Método</th>
+                <th class="text-left px-2 py-1 w-28">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of asistencias(); trackBy: trackByAsistencia" class="border-t">
+                <td class="px-2 py-1 whitespace-nowrap">
+                  {{ r.check_in_at | date:'shortTime' }}
+                </td>
+                <td class="px-2 py-1 whitespace-nowrap">{{ r.codigo || '—' }}</td>
+                <td class="px-2 py-1 whitespace-nowrap">{{ r.dni || '—' }}</td>
+                <td class="px-2 py-1 whitespace-nowrap">{{ r.nombres || '—' }}</td>
+                <td class="px-2 py-1 whitespace-nowrap">{{ r.apellidos || '—' }}</td>
+                <td class="px-2 py-1 whitespace-nowrap">{{ r.metodo }}</td>
+                <td class="px-2 py-1 whitespace-nowrap">{{ r.estado }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <ng-template #emptyAsistencias>
+        <div class="text-xs text-slate-500">Aún sin registros.</div>
+      </ng-template>
+    </section>
+  </div>
+
+  <!-- Participantes (debajo en pantallas grandes) -->
+  <section class="rounded-xl border bg-white shadow-sm p-4 mt-6">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold text-slate-700">Participantes (estado calculado)</h2>
+      <div class="flex gap-2">
+        <button class="px-3 py-1.5 rounded border" (click)="loadParticipantes()">
+          Actualizar
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="participantes().length; else emptyParticipantes">
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm table-fixed">
+          <thead class="text-xs text-slate-500">
+            <tr>
+              <th class="text-left px-2 py-1 w-28">Código</th>
+              <th class="text-left px-2 py-1 w-28">DNI</th>
+              <th class="text-left px-2 py-1">Nombres</th>
+              <th class="text-left px-2 py-1">Apellidos</th>
+              <th class="text-left px-2 py-1 w-28">Estado</th>
+              <th class="text-left px-2 py-1 w-40">Asistencia</th>
+              <th class="text-left px-2 py-1 w-48">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of participantes(); trackBy: trackByParticipante" class="border-t">
+              <td class="px-2 py-1 whitespace-nowrap">{{ p.codigo || '—' }}</td>
+              <td class="px-2 py-1 whitespace-nowrap">{{ p.dni || '—' }}</td>
+              <td class="px-2 py-1 whitespace-nowrap">{{ p.nombres || '—' }}</td>
+              <td class="px-2 py-1 whitespace-nowrap">{{ p.apellidos || '—' }}</td>
+              <td class="px-2 py-1 whitespace-nowrap">
+                <ng-container [ngSwitch]="p.estado_calculado">
+                  <span *ngSwitchCase="'PRESENTE'" class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-xs">PRESENTE</span>
+                  <span *ngSwitchCase="'FALTA'" class="text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded text-xs">FALTA</span>
+                  <span *ngSwitchDefault class="text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-xs">—</span>
+                </ng-container>
+              </td>
+              <td class="px-2 py-1 whitespace-nowrap">
+                <ng-container *ngIf="p.asistencia as a; else sinAsistencia">
+                  {{ a.metodo }} • {{ a.check_in_at | date:'shortTime' }}
+                </ng-container>
+                <ng-template #sinAsistencia>—</ng-template>
+              </td>
+              <td class="px-2 py-1 whitespace-nowrap">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    class="px-3 py-1.5 rounded border disabled:opacity-50"
+                    [disabled]="!p.codigo || p.estado_calculado === 'PRESENTE'"
+                    (click)="doRegisterFromRow(p)"
+                  >
+                    Registrar
+                  </button>
+
+                  <button
+                    class="px-3 py-1.5 rounded border border-amber-300 bg-amber-50 hover:bg-amber-100 disabled:opacity-50"
+                    [disabled]="!p.codigo || p.estado_calculado !== 'FALTA'"
+                    (click)="justificarFueraDeHora(p)"
+                  >
+                    Justificar fuera de hora
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <ng-template #emptyParticipantes>
+      <div class="text-xs text-slate-500">No hay participantes inscritos/confirmados.</div>
+    </ng-template>
+  </section>
+</div>

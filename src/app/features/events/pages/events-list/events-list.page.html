@@ -1,0 +1,41 @@
+<section class="p-6 md:p-10 space-y-6 mt-24">
+  <!-- Filtros -->
+  <ev-event-filters
+    [search]="search"
+    [periodoId]="periodoId"
+    (searchChange)="onSearchChange($event)"
+    (periodoChange)="onPeriodoChange($event)"
+    (crear)="crearEvento()"
+  ></ev-event-filters>
+
+  <!-- Estado de carga -->
+  <div *ngIf="cargando" class="text-center opacity-80">Cargando eventos...</div>
+
+  <!-- Lista de cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <ev-event-card
+      *ngFor="let ev of eventos"
+      [evento]="ev"
+      (ver)="verEvento($event)"
+    ></ev-event-card>
+  </div>
+
+  <!-- Paginación mínima (opcional) -->
+  <div class="flex items-center justify-center gap-4" *ngIf="total > pageSize">
+    <button
+      class="bg-white text-black px-4 py-2 font-bold brutal-shadow btn disabled:opacity-50"
+      [disabled]="page <= 1"
+      (click)="page = page - 1; load()"
+    >
+      ◀ Anterior
+    </button>
+    <div>Página <span class="font-bold">{{ page }}</span></div>
+    <button
+      class="bg-white text-black px-4 py-2 font-bold brutal-shadow btn disabled:opacity-50"
+      [disabled]="page * pageSize >= total"
+      (click)="page = page + 1; load()"
+    >
+      Siguiente ▶
+    </button>
+  </div>
+</section>

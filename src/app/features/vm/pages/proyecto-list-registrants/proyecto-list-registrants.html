@@ -1,0 +1,306 @@
+<div class="min-h-screen bg-slate-50 py-8">
+  <div class="mx-auto max-w-7xl px-4">
+    <!-- Header -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div class="space-y-3">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-white rounded-xl shadow-sm border border-gray-100">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <h1 class="text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent">
+            Proyecto · Inscritos y Candidatos
+          </h1>
+        </div>
+        <p class="text-gray-600 text-base font-medium flex items-center gap-2">
+          <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+          Gestión de participantes del proyecto
+        </p>
+      </div>
+
+      <a [routerLink]="['/vm/proyectos', proyectoId()]"
+         class="whitespace-nowrap bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-300 font-semibold border-0 px-6 py-3.5 rounded-xl">
+        <span class="flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round"
+            stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Volver al proyecto
+        </span>
+      </a>
+    </div>
+
+    <!-- Tabs -->
+    <div class="bg-white rounded-xl border shadow-sm p-2 mb-6">
+      <div class="flex gap-2">
+        <button (click)="changeView('INSCRITOS')"
+                class="w-full sm:w-auto px-4 py-2 rounded-lg font-semibold transition-colors"
+                [class.bg-blue-600]="view()==='INSCRITOS'"
+                [class.text-white]="view()==='INSCRITOS'"
+                [class.bg-slate-100]="view()!=='INSCRITOS'">Inscritos</button>
+
+        <button (click)="changeView('CANDIDATOS')"
+                class="w-full sm:w-auto px-4 py-2 rounded-lg font-semibold transition-colors"
+                [class.bg-blue-600]="view()==='CANDIDATOS'"
+                [class.text-white]="view()==='CANDIDATOS'"
+                [class.bg-slate-100]="view()!=='CANDIDATOS'">Candidatos</button>
+
+        <div class="flex-1"></div>
+
+        <div *ngIf="proyectoResumen() as pr" class="hidden md:flex items-center gap-3 text-sm">
+          <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+            {{ pr.tipo }} <span *ngIf="pr.nivel">· Nivel {{ pr.nivel }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-xl border p-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="col-span-2">
+          <input class="border rounded-lg px-3 py-2 w-full"
+                 placeholder="Buscar por código, nombre, email o celular…"
+                 [ngModel]="q()" (ngModelChange)="q.set($event)" />
+        </div>
+
+        <!-- Filtros de inscritos -->
+        <ng-container *ngIf="view()==='INSCRITOS'">
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600">Estado</label>
+            <select class="border rounded-lg px-3 py-2 w-full"
+                    [ngModel]="estado" (ngModelChange)="estado.set($event)">
+              <option value="TODOS">Todos</option>
+              <option value="ACTIVOS">Activos</option>
+              <option value="FINALIZADOS">Finalizados</option>
+            </select>
+          </div>
+          <div>
+            <div class="text-sm text-gray-600 mb-1">Roles</div>
+            <div class="flex items-center gap-3">
+              <label class="inline-flex items-center gap-2">
+                <input type="checkbox" [checked]="roles().includes('ALUMNO')" (change)="toggleRole('ALUMNO')" />
+                <span class="text-sm">Alumno</span>
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input type="checkbox" [checked]="roles().includes('DOCENTE')" (change)="toggleRole('DOCENTE')" />
+                <span class="text-sm">Docente</span>
+              </label>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Filtros de candidatos -->
+        <ng-container *ngIf="view()==='CANDIDATOS'">
+          <div class="flex items-center gap-3">
+            <label class="inline-flex items-center gap-2">
+              <input type="checkbox" [ngModel]="soloElegibles()" (ngModelChange)="soloElegibles.set($event)" />
+              <span class="text-sm">Solo elegibles</span>
+            </label>
+          </div>
+          <div></div>
+        </ng-container>
+      </div>
+
+      <div class="mt-4 flex items-center justify-end gap-3">
+        <button (click)="onApplyFilters()" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
+          Aplicar filtros
+        </button>
+      </div>
+    </div>
+
+    <!-- Contenido -->
+    <ng-container *ngIf="!loading(); else loadingTpl">
+
+      <!-- INSCRITOS -->
+      <ng-container *ngIf="view()==='INSCRITOS'">
+        <ng-container *ngIf="!loadingInscritos(); else loadingInsTpl">
+          <ng-container *ngIf="inscritosFiltrados().length; else emptyInsTpl">
+            <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <table class="w-full table-auto text-sm text-gray-800 border-separate border-spacing-0">
+                <thead class="bg-blue-50 text-gray-700">
+                  <tr>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Código</th>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Estudiante</th>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Rol</th>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Estado</th>
+                    <th class="py-3 px-4 text-center font-semibold border-b border-blue-100">Requerido</th>
+                    <th class="py-3 px-4 text-center font-semibold border-b border-blue-100">Acumulado</th>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Progreso</th>
+                    <th class="py-3 px-4 text-center font-semibold border-b border-blue-100">OK</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let i of inscritosFiltrados(); trackBy: trackByInscrito"
+                      class="odd:bg-white even:bg-slate-50 hover:bg-blue-50/50 transition-colors">
+                    <td class="py-3 px-4 border-b">{{ i.expediente.codigo || '—' }}</td>
+                    <td class="py-3 px-4 border-b">
+                      <div class="font-medium">
+                        <ng-container *ngIf="i.expediente.usuario?.full_name; else insNameFnLn">
+                          {{ i.expediente.usuario?.full_name }}
+                        </ng-container>
+                        <ng-template #insNameFnLn>
+                          {{ i.expediente.usuario?.first_name }} {{ i.expediente.usuario?.last_name }}
+                        </ng-template>
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        {{ i.expediente.usuario?.email }}
+                        <ng-container *ngIf="i.expediente.usuario?.celular"> · {{ i.expediente.usuario?.celular }}</ng-container>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4 border-b"><span class="text-gray-700">{{ i.rol }}</span></td>
+                    <td class="py-3 px-4 border-b">
+                      <span class="{{ badgeEstado(i.estado) }}">{{ i.estado }}</span>
+                    </td>
+                    <td class="py-3 px-4 border-b text-center whitespace-nowrap">{{ mmToHHmm(i.requerido_min) }}</td>
+                    <td class="py-3 px-4 border-b text-center whitespace-nowrap">{{ mmToHHmm(i.acumulado_min) }}</td>
+                    <td class="py-3 px-4 border-b">
+                      <div class="w-full h-2.5 bg-gray-200 rounded-full">
+                        <div class="h-2.5 rounded-full"
+                             [style.width.%]="percent(i.porcentaje)"
+                             [ngClass]="pctColor(i.porcentaje)"></div>
+                      </div>
+                      <div class="text-xs text-gray-500 mt-1">{{ (i.porcentaje ?? 0) }}%</div>
+                    </td>
+                    <td class="py-3 px-4 border-b text-center">
+                      <span *ngIf="i.finalizado; else nok" class="text-emerald-600">✅</span>
+                      <ng-template #nok><span class="text-rose-500">❌</span></ng-template>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+        </ng-container>
+      </ng-container>
+
+      <!-- CANDIDATOS -->
+      <ng-container *ngIf="view()==='CANDIDATOS'">
+        <ng-container *ngIf="!loadingCandidatos(); else loadingCandTpl">
+          <ng-container *ngIf="candidatosFiltrados().candidatos.length || (!soloElegibles() && candidatosFiltrados().no_elegibles.length); else emptyCandTpl">
+
+            <!-- Elegibles -->
+            <div class="bg-white rounded-xl shadow-sm border overflow-hidden mb-8">
+              <div class="px-4 py-3 border-b bg-blue-50 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-800">Candidatos elegibles</h3>
+                <div class="text-sm text-gray-600">
+                  Total: <span class="font-semibold text-blue-700">{{ candidatos()?.candidatos_total || 0 }}</span>
+                </div>
+              </div>
+              <table class="w-full table-auto text-sm text-gray-800 border-separate border-spacing-0">
+                <thead class="bg-blue-50 text-gray-700">
+                  <tr>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Código</th>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Estudiante</th>
+                    <th class="py-3 px-4 text-center font-semibold border-b border-blue-100">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let c of candidatosFiltrados().candidatos; trackBy: trackByCandidato"
+                      class="odd:bg-white even:bg-slate-50 hover:bg-blue-50/50 transition-colors">
+                    <td class="py-3 px-4 border-b">{{ c.codigo || '—' }}</td>
+                    <td class="py-3 px-4 border-b">
+                      <div class="font-medium">
+                        <ng-container *ngIf="c.usuario?.full_name; else candNameFnLn">
+                          {{ c.usuario?.full_name }}
+                        </ng-container>
+                        <ng-template #candNameFnLn>
+                          {{ c.usuario?.first_name }} {{ c.usuario?.last_name }}
+                        </ng-template>
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        {{ c.usuario?.email }}
+                        <ng-container *ngIf="c.usuario?.celular"> · {{ c.usuario?.celular }}</ng-container>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4 border-b text-center">
+                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold border"
+                            [ngClass]="c.motivo === 'ELEGIBLE_VINCULADO'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : 'bg-blue-50 text-blue-700 border-blue-200'">
+                        {{ c.motivo }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- No elegibles -->
+            <div *ngIf="!soloElegibles()" class="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div class="px-4 py-3 border-b bg-blue-50 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-800">No elegibles (motivo)</h3>
+                <div class="text-sm text-gray-600">
+                  Total: <span class="font-semibold text-blue-700">{{ candidatos()?.descartados_total || 0 }}</span>
+                </div>
+              </div>
+              <table class="w-full table-auto text-sm text-gray-800 border-separate border-spacing-0">
+                <thead class="bg-blue-50 text-gray-700">
+                  <tr>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Código</th>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Razón</th>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Meta (si aplica)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let n of candidatosFiltrados().no_elegibles; trackBy: trackByNoElegible"
+                      class="odd:bg-white even:bg-slate-50 hover:bg-blue-50/50 transition-colors">
+                    <td class="py-3 px-4 border-b">{{ n.codigo || '—' }}</td>
+                    <td class="py-3 px-4 border-b">
+                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                        {{ n.razon }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 border-b">
+                      <pre class="text-xs text-gray-600 whitespace-pre-wrap" *ngIf="n.meta as m">{{ m | json }}</pre>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </ng-container>
+        </ng-container>
+      </ng-container>
+    </ng-container>
+
+    <!-- Loading -->
+    <ng-template #loadingTpl>
+      <div class="flex justify-center items-center py-24">
+        <div class="animate-spin rounded-full h-14 w-14 border-b-2 border-blue-600"></div>
+      </div>
+    </ng-template>
+
+    <ng-template #loadingInsTpl>
+      <div class="bg-white rounded-xl border p-10 text-center text-gray-600">Cargando inscritos…</div>
+    </ng-template>
+
+    <ng-template #loadingCandTpl>
+      <div class="bg-white rounded-xl border p-10 text-center text-gray-600">Cargando candidatos…</div>
+    </ng-template>
+
+    <!-- Empty -->
+    <ng-template #emptyInsTpl>
+      <div class="text-center py-20 bg-white rounded-2xl shadow-sm border">
+        <h3 class="text-lg font-semibold mb-2">No hay inscritos</h3>
+        <p class="text-gray-600">Cuando haya estudiantes inscritos aparecerán aquí.</p>
+      </div>
+    </ng-template>
+
+    <ng-template #emptyCandTpl>
+      <div class="text-center py-20 bg-white rounded-2xl shadow-sm border">
+        <h3 class="text-lg font-semibold mb-2">Sin candidatos</h3>
+        <p class="text-gray-600">Cambia los filtros o revisa el estado del proyecto.</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Footer estilo "brand" -->
+  <div class="mx-auto max-w-7xl px-4">
+    <div class="flex items-center justify-center mt-8">
+      <img src="https://i.ibb.co/h2kNRRL/file.png" alt="Logo" class="w-12 h-12">
+      <div class="ml-3 text-xl font-semibold text-blue-600">VM · Participantes</div>
+    </div>
+    <footer class="text-center mt-6 text-sm text-gray-500">&copy; 2024 · Gestión de Proyectos</footer>
+  </div>
+</div>

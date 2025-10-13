@@ -1,0 +1,32 @@
+<svg viewBox="0 0 512 512" width="512" height="512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Modalidad por defecto — icono genérico (UPeU)</title>
+  <desc id="desc">Escudo genérico con manos y corazón (proyección social), uso como fallback cuando no hay modalidad específica.</desc>
+  
+<style>
+  .bg { fill: #F8FAFC; }
+  .primary { fill: #1E3A8A; } /* deep indigo (academia) */
+  .accent { fill: #F59E0B; }  /* amber (service/social impact) */
+  .secondary { fill: #10B981; } /* teal/green (growth/community) */
+  .muted { fill: #E5E7EB; }
+  .line { stroke: #0F172A; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .soft { opacity: .08; }
+  .shadow { filter: drop-shadow(0 2px 2px rgba(0,0,0,.15)); }
+  text { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+</style>
+
+  <rect class="bg" x="0" y="0" width="512" height="512" rx="32" ry="32"/>
+  
+  <!-- crest -->
+  <path d="M128 120 h256 v136 c0 64 -128 136 -128 136s-128 -72 -128 -136z" class="primary" opacity=".10"/>
+  <path d="M160 148 h192 v108 c0 44 -96 98 -96 98s-96 -54 -96 -98z" class="primary" opacity=".15"/>
+  <!-- book motif -->
+  <path d="M196 204 q40 -14 64 8 q24 -22 64 -8 v64 q-40 -14 -64 8 q-24 -22 -64 -8z" class="muted"/>
+  <!-- hands + heart -->
+  <path d="M112 364 q40 20 80 0 12 -6 24 4 8 6 8 18 v10 h-168 v-8 q0 -18 20 -28 14 -6 36 4z" class="secondary" opacity=".6"/>
+  <path d="M320 364 q40 20 80 0 12 -6 24 4 8 6 8 18 v10 h-168 v-8 q0 -18 20 -28 14 -6 36 4z" class="secondary" opacity=".6"/>
+  <path d="M256 340 c-18 -20 -50 -9 -50 16 0 27 50 52 50 52s50 -25 50 -52c0 -25 -32 -36 -50 -16z" class="accent" opacity=".7"/>
+
+  <!-- subtle U shape -->
+  <path d="M156 120 v88 a100 100 0 0 0 200 0 v-88" class="line" opacity=".25"/>
+
+</svg>

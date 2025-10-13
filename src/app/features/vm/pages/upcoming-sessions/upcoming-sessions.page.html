@@ -1,0 +1,166 @@
+<!-- src/app/features/vm/pages/upcoming-sessions/upcoming-sessions.page.html -->
+<div class="p-4 lg:p-6">
+
+  <!-- Título + filtro de período + actualizar -->
+  <div class="flex items-center gap-3 mb-5">
+    <h1 class="text-xl font-semibold">Sesiones</h1>
+
+    <!-- Filtro de período -->
+    <div class="flex items-center gap-2">
+      <label class="text-xs text-slate-600">Período</label>
+      <select
+        class="px-2 py-1.5 rounded border text-sm"
+        [ngModel]="selectedPeriodoId()"
+        (ngModelChange)="onPeriodoChange($event)"
+      >
+        <option *ngFor="let p of periodos()" [ngValue]="p.id">
+          {{ p.anio }}-{{ p.ciclo }} {{ (p.estado || '') | uppercase }}
+        </option>
+      </select>
+    </div>
+
+    <button class="px-3 py-1.5 text-sm rounded border" (click)="fetch()" [disabled]="loading()">
+      {{ loading() ? 'Actualizando…' : 'Actualizar' }}
+    </button>
+
+    <span class="text-xs text-slate-500 ml-auto">Ahora: {{ now() | date:'shortTime' }}</span>
+  </div>
+
+  <!-- Error -->
+  <ng-container *ngIf="error()">
+    <div class="p-3 rounded bg-rose-50 text-rose-700 border border-rose-200">{{ error() }}</div>
+  </ng-container>
+
+  <!-- Contenido -->
+  <ng-container *ngIf="!error()">
+
+    <!-- HERO: Sesión en curso o siguiente -->
+    <div class="mb-6" *ngIf="heroCard() as hero">
+      <div class="rounded-2xl border bg-white shadow-md overflow-hidden">
+        <div class="px-4 py-3 bg-gradient-to-r from-sky-50 to-indigo-50 border-b">
+          <div class="flex items-center gap-3">
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-200 text-blue-700 bg-blue-50"
+                  *ngIf="relLabel(hero)==='EN CURSO'">Sesión en curso</span>
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold border border-amber-200 text-amber-700 bg-amber-50"
+                  *ngIf="relLabel(hero)!=='EN CURSO'">Siguiente sesión</span>
+            <span class="text-xs text-slate-500 ml-auto">
+              {{ hero.sesion.fecha | date:'mediumDate' }} · {{ horaRange(hero.sesion) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-[15px] font-semibold text-slate-800 truncate">
+                {{ hero.proyecto.titulo }} <span class="text-slate-400">·</span> {{ hero.proceso.nombre }}
+              </div>
+              <div class="mt-1 text-sm">
+                <span class="{{ estadoChipClass(hero) }}">{{ relLabel(hero) }}</span>
+              </div>
+            </div>
+
+            <!-- CTA asistencia si está en curso -->
+            <div *ngIf="relLabel(hero)==='EN CURSO'" class="flex flex-wrap gap-2 items-center">
+              <!-- Enlaces ABSOLUTOS para evitar navegación relativa inesperada -->
+              <a class="px-3 py-1.5 rounded border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-sm"
+                 [routerLink]="['/vm','sesiones', hero.sesion.id, 'qr']">
+                Pantalla QR
+              </a>
+              <a class="px-3 py-1.5 rounded border border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-sm"
+                 [routerLink]="['/vm','sesiones', hero.sesion.id, 'asistencia']">
+                Llamado manual
+              </a>
+
+              <!-- Botón 'Ver detalles' del proyecto (estilo solicitado) -->
+              <a [routerLink]="['/vm','proyectos', hero.proyecto.id]"
+                 class="px-3 py-1.5 rounded-lg text-white bg-blue-600 hover:bg-blue-700 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Ver detalles
+              </a>
+            </div>
+
+            <!-- Si no está en curso pero quieres ver detalles -->
+            <div *ngIf="relLabel(hero)!=='EN CURSO'" class="mt-3 md:mt-0">
+              <a [routerLink]="['/vm','proyectos', hero.proyecto.id]"
+                 class="px-3 py-1.5 rounded-lg text-white bg-blue-600 hover:bg-blue-700 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Ver detalles
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POR VENIR / HISTORIAL (sin cambios visuales) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Por venir -->
+      <section>
+        <h2 class="text-sm font-semibold text-slate-700 mb-2">Por venir</h2>
+        <ng-container *ngIf="upcomingList().length; else noUpcoming">
+          <div *ngFor="let card of upcomingList(); trackBy: trackBySesion" class="mb-3 rounded-lg border bg-white shadow-sm">
+            <div class="p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="min-w-0">
+                  <div class="text-sm font-medium text-slate-700 truncate">
+                    {{ card.proyecto.titulo }} <span class="text-slate-400">·</span> {{ card.proceso.nombre }}
+                  </div>
+                  <div class="mt-1 flex items-center gap-2">
+                    <span class="text-xs text-slate-500">{{ card.sesion.fecha | date:'mediumDate' }}</span>
+                    <span class="text-xs px-2 py-0.5 rounded border">{{ horaRange(card.sesion) }}</span>
+                    <span class="{{ estadoChipClass(card) }}">{{ relLabel(card) }}</span>
+                  </div>
+                </div>
+
+                <!-- Acciones: Ver detalles (absoluto) -->
+                <div class="ml-auto flex items-center gap-2">
+                  <a [routerLink]="['/vm','proyectos', card.proyecto.id]"
+                     class="px-3 py-1.5 rounded-lg text-white bg-blue-600 hover:bg-blue-700 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Ver detalles
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+        <ng-template #noUpcoming>
+          <div class="p-4 rounded border bg-white text-xs text-slate-500">No hay más sesiones próximas.</div>
+        </ng-template>
+      </section>
+
+      <!-- Historial -->
+      <section>
+        <h2 class="text-sm font-semibold text-slate-700 mb-2">Historial</h2>
+        <ng-container *ngIf="historyList().length; else noHistory">
+          <div *ngFor="let card of historyList(); trackBy: trackBySesion" class="mb-3 rounded-lg border bg-white shadow-sm">
+            <div class="p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="min-w-0">
+                  <div class="text-sm font-medium text-slate-700 truncate">
+                    {{ card.proyecto.titulo }} <span class="text-slate-400">·</span> {{ card.proceso.nombre }}
+                  </div>
+                  <div class="mt-1 flex items-center gap-2">
+                    <span class="text-xs text-slate-500">{{ card.sesion.fecha | date:'mediumDate' }}</span>
+                    <span class="text-xs px-2 py-0.5 rounded border">{{ horaRange(card.sesion) }}</span>
+                    <span class="{{ estadoChipClass(card) }}">{{ relLabel(card) }}</span>
+                  </div>
+                </div>
+
+                <!-- Acciones: Ver detalles -->
+                <div class="ml-auto flex items-center gap-2">
+                  <a [routerLink]="['/vm','proyectos', card.proyecto.id]"
+                     class="px-3 py-1.5 rounded-lg text-white bg-blue-600 hover:bg-blue-700 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Ver detalles
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+        <ng-template #noHistory>
+          <div class="p-4 rounded border bg-white text-xs text-slate-500">Aún sin historial.</div>
+        </ng-template>
+      </section>
+    </div>
+  </ng-container>
+</div>

@@ -1,0 +1,42 @@
+<div class="w-full bg-[#111] p-4 md:p-6 brutal-shadow">
+  <div class="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
+    <!-- Buscar por nombre -->
+    <div class="flex-1">
+      <label class="block text-sm font-bold mb-2">Buscar por nombre</label>
+      <input
+        type="text"
+        [(ngModel)]="search"
+        (ngModelChange)="emitSearch()"
+        placeholder="Ej. Jornada de inducción"
+        class="bg-[#1C1C1C] border-2 border-[#00E0FF] text-white p-3 w-full focus:border-[#FF007A] outline-none"
+      />
+    </div>
+
+    <!-- Seleccionar periodo -->
+    <div class="w-full md:w-72">
+      <label class="block text-sm font-bold mb-2">Periodo</label>
+      <select
+        [(ngModel)]="periodoId"
+        (ngModelChange)="emitPeriodo()"
+        class="bg-[#1C1C1C] border-2 border-[#00E0FF] text-white p-3 w-full focus:border-[#FF007A] outline-none"
+      >
+        <option [ngValue]="undefined" class="text-black">Todos</option>
+        <option *ngFor="let p of periodos" [ngValue]="p.id" class="text-black">
+          {{ p.anio }} - {{ p.ciclo }} <span *ngIf="p.estado">({{ p.estado }})</span>
+        </option>
+      </select>
+    </div>
+
+    <!-- Crear nuevo -->
+    <div class="w-full md:w-auto">
+      <label class="block text-sm font-bold mb-2 opacity-0 select-none">Crear</label>
+      <button
+        type="button"
+        (click)="crear.emit()"
+        class="bg-yellow-500 text-black px-5 py-3 font-bold brutal-shadow btn hover:bg-white w-full"
+      >
+        ➕ Crear evento
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,23 @@
+{
+
+  "app": {
+    "title": "Webapp",
+    "settings": "Configuración",
+    "language": "Idioma",
+    "theme": "Tema",
+    "density": "Densidad",
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "comfortable": "Cómodo",
+    "compact": "Compacto"
+  },
+
+
+
+  "alerts": {
+    "forbidden": "No tienes permiso para esta acción.",
+    "unexpected": "Ocurrió un error inesperado.",
+    "network": "No hay conexión con el servidor."
+  }
+}

@@ -1,1 +1,53 @@
-/* You can add global styles to this file, and also import other style files */
+/* 1) Carga Sass de Angular Material (debe ir al inicio del archivo) */
+@use '@angular/material' as mat;
+
+/* 2) Tailwind v4: estas 3 directivas deben ser los PRIMEROS *CSS rules* */
+@use "tailwindcss";
+/* 3) Theming Material 3 */
+html {
+  /* Tema claro por defecto */
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+  color-scheme: light;
+}
+
+/* Tema oscuro cuando ThemeService ponga data-theme="dark" */
+html[data-theme='dark'] {
+  @include mat.theme((
+    color: (
+      theme-type: dark,
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+  color-scheme: dark;
+}
+
+/* 4) Variables tuyas (para mapear a Tailwind si quieres) */
+:root {
+  --bg: 255 255 255;
+  --fg: 17 24 39;
+  --primary: 59 130 246;
+}
+:root[data-theme='dark'] {
+  --bg: 17 24 39;
+  --fg: 229 231 235;
+  --primary: 96 165 250;
+}
+
+/* 5) Base */
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background-color: rgb(var(--bg));
+  color: rgb(var(--fg));
+  font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+}

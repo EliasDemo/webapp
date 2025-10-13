@@ -1,0 +1,77 @@
+<section class="p-6 md:p-10 mt-24 max-w-4xl mx-auto space-y-6 text-white">
+  <h1 class="text-4xl font-bold brutal-shadow inline-block px-4 py-2">
+    ➕ Crear nuevo evento
+  </h1>
+
+  <form (ngSubmit)="crearEvento()" class="form-container brutal-shadow space-y-6 bg-[#111111]">
+    <!-- Título -->
+    <div>
+      <label class="block text-lg font-bold mb-2">Título del evento *</label>
+      <input type="text" [(ngModel)]="form.titulo" name="titulo"
+        placeholder="Ej. Jornada de inducción"
+        class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
+    </div>
+
+    <!-- Periodo -->
+    <div>
+      <label class="block text-lg font-bold mb-2">Periodo académico *</label>
+      <select [(ngModel)]="form.periodo_id" name="periodo_id"
+        class="bg-[#1C1C1C] border-2 border-[#00E0FF] text-white p-3 w-full focus:border-[#FF007A] outline-none">
+        <option *ngFor="let p of periodos" [ngValue]="p.id" class="text-black">
+          {{ p.anio }} - {{ p.ciclo }} ({{ p.estado }})
+        </option>
+      </select>
+    </div>
+
+    <!-- Fecha -->
+    <div>
+      <label class="block text-lg font-bold mb-2">Fecha *</label>
+      <input type="date" [(ngModel)]="form.fecha" name="fecha"
+        class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
+    </div>
+
+    <!-- Horario -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block text-lg font-bold mb-2">Hora inicio *</label>
+        <input type="time" [(ngModel)]="form.hora_inicio" name="hora_inicio"
+          class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
+      </div>
+      <div>
+        <label class="block text-lg font-bold mb-2">Hora fin *</label>
+        <input type="time" [(ngModel)]="form.hora_fin" name="hora_fin"
+          class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
+      </div>
+    </div>
+
+    <!-- Inscripción -->
+    <div class="flex items-center gap-3">
+      <input type="checkbox" [(ngModel)]="form.requiere_inscripcion" name="requiere_inscripcion"
+        class="w-5 h-5 accent-[#00E0FF]" />
+      <label class="text-lg font-semibold">¿Requiere inscripción?</label>
+    </div>
+
+    <!-- Cupo máximo -->
+    <div>
+      <label class="block text-lg font-bold mb-2">Cupo máximo</label>
+      <input type="number" [(ngModel)]="form.cupo_maximo" name="cupo_maximo"
+        min="1"
+        placeholder="Opcional"
+        class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
+    </div>
+
+    <!-- Botones -->
+    <div class="flex justify-end gap-4 pt-4">
+      <button type="button"
+        routerLink="/events"
+        class="bg-gray-600 text-white px-6 py-3 font-bold brutal-shadow btn hover:bg-gray-400">
+        Cancelar
+      </button>
+      <button type="submit"
+        [disabled]="cargando"
+        class="bg-yellow-500 text-black px-6 py-3 font-bold brutal-shadow btn hover:bg-white disabled:opacity-50">
+        {{ cargando ? 'Creando...' : 'Crear evento' }}
+      </button>
+    </div>
+  </form>
+</section>

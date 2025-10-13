@@ -1,0 +1,44 @@
+<svg viewBox="0 0 512 512" width="512" height="512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Modalidad virtual — aprendizaje online (UPeU)</title>
+  <desc id="desc">Icono de videollamada en un portátil con motivos de servicio, representando trabajo o aprendizaje online.</desc>
+  
+<style>
+  .bg { fill: #F8FAFC; }
+  .primary { fill: #1E3A8A; } /* deep indigo (academia) */
+  .accent { fill: #F59E0B; }  /* amber (service/social impact) */
+  .secondary { fill: #10B981; } /* teal/green (growth/community) */
+  .muted { fill: #E5E7EB; }
+  .line { stroke: #0F172A; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .soft { opacity: .08; }
+  .shadow { filter: drop-shadow(0 2px 2px rgba(0,0,0,.15)); }
+  text { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+</style>
+
+  <rect class="bg" x="0" y="0" width="512" height="512" rx="32" ry="32"/>
+  
+  <!-- laptop -->
+  <rect x="96" y="120" width="320" height="200" rx="16" class="muted"/>
+  <rect x="112" y="136" width="288" height="168" rx="12" class="bg"/>
+  <!-- video grid -->
+  <rect x="124" y="148" width="130" height="72" rx="10" class="primary" opacity=".12"/>
+  <circle cx="160" cy="184" r="18" class="primary"/>
+  <rect x="264" y="148" width="120" height="72" rx="10" class="secondary" opacity=".12"/>
+  <circle cx="304" cy="184" r="18" class="secondary"/>
+  <rect x="124" y="228" width="260" height="64" rx="10" class="accent" opacity=".12"/>
+  <path d="M148 260 h60" class="line" opacity=".35"/>
+  <path d="M148 276 h96" class="line" opacity=".35"/>
+
+  <!-- laptop base -->
+  <rect x="72" y="324" width="368" height="40" rx="12" class="muted"/>
+  <rect x="92" y="332" width="328" height="24" rx="8" class="primary" opacity=".08"/>
+
+  <!-- wifi/camera hint -->
+  <circle cx="256" cy="116" r="6" class="accent"/>
+  <path d="M380 116 q-24 24 0 48" class="line" opacity=".25"/>
+  <path d="M396 100 q-44 44 0 88" class="line" opacity=".15"/>
+
+  <!-- service motif: hand + heart stylized -->
+  <path d="M132 380 q36 22 74 0 12 -6 24 4 10 8 10 22 v8 h-160 v-8 q0 -20 18 -28 14 -6 34 2z" class="secondary" opacity=".6"/>
+  <path d="M256 370 c-16 -18 -44 -8 -44 14 0 24 44 46 44 46s44 -22 44 -46c0 -22 -28 -32 -44 -14z" class="accent" opacity=".6"/>
+
+</svg>

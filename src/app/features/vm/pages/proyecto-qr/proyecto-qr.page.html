@@ -1,0 +1,132 @@
+<div class="p-4 lg:p-6">
+  <div class="flex items-center gap-3 mb-5">
+    <h1 class="text-xl font-semibold">Abrir QR de asistencia</h1>
+
+    <span class="text-xs text-slate-500 ml-auto">
+      Sesión: #{{ sesionId() }}
+    </span>
+  </div>
+
+  <ng-container *ngIf="error()">
+    <div class="p-3 rounded bg-rose-50 text-rose-700 border border-rose-200 mb-4">
+      {{ error() }}
+    </div>
+  </ng-container>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- IZQ: Configuración -->
+    <section class="rounded-xl border bg-white shadow-sm p-4 space-y-4">
+      <h2 class="text-sm font-semibold text-slate-700">Configuración</h2>
+
+      <!-- Max usos -->
+      <div>
+        <label class="block text-sm text-slate-700 mb-1">Máx. usos (opcional)</label>
+        <input
+          type="number"
+          min="1"
+          class="w-full border rounded-lg px-3 py-2"
+          [formControl]="maxUsos"
+          placeholder="Ej: 200"
+        />
+        <p class="text-xs text-slate-500 mt-1">Déjalo vacío para ilimitado durante la ventana.</p>
+      </div>
+
+      <!-- Geocerca -->
+      <div class="flex items-start gap-3">
+        <input id="geo-toggle" type="checkbox" class="mt-1" [checked]="usarGeocerca()" (change)="toggleGeocerca($event)" />
+        <div class="flex-1">
+          <label for="geo-toggle" class="block text-sm font-medium text-slate-700">Usar geocerca</label>
+          <p class="text-xs text-slate-500">
+            Si se activa, el alumno deberá estar dentro del radio para poder registrar.
+          </p>
+
+          <div class="mt-3 grid grid-cols-3 gap-2">
+            <input
+              class="border rounded-lg px-3 py-2 col-span-1 disabled:bg-slate-50"
+              [disabled]="!usarGeocerca()"
+              [value]="geo()?.lat ?? ''"
+              placeholder="lat"
+              readonly
+            />
+            <input
+              class="border rounded-lg px-3 py-2 col-span-1 disabled:bg-slate-50"
+              [disabled]="!usarGeocerca()"
+              [value]="geo()?.lng ?? ''"
+              placeholder="lng"
+              readonly
+            />
+            <input
+              type="number"
+              min="10"
+              max="5000"
+              class="border rounded-lg px-3 py-2 col-span-1 disabled:bg-slate-50"
+              [disabled]="!usarGeocerca()"
+              [formControl]="radioM"
+              placeholder="radio (m)"
+            />
+          </div>
+
+          <div class="mt-2 flex gap-2">
+            <button class="px-3 py-1.5 rounded border" [disabled]="!usarGeocerca()" (click)="detectarUbicacion()">
+              Detectar ubicación
+            </button>
+            <span class="text-xs text-slate-500" *ngIf="geo()">
+              Ubicación detectada: {{ geo()?.lat | number:'1.6-6' }}, {{ geo()?.lng | number:'1.6-6' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button
+          class="px-4 py-2 rounded border border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+          (click)="abrirQr()"
+          [disabled]="loading()"
+        >
+          {{ loading() ? 'Abriendo…' : 'Abrir ventana QR' }}
+        </button>
+      </div>
+    </section>
+
+    <!-- DER: Resultados -->
+    <section class="rounded-xl border bg-white shadow-sm p-4 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-slate-700">QR activo</h2>
+        <button class="px-3 py-1.5 rounded border" (click)="reiniciarQr()" [disabled]="loading()">
+          Renovar
+        </button>
+      </div>
+
+      <ng-container *ngIf="ventana() as v; else noQr">
+        <div class="text-sm">
+          <div class="mb-1"><b>Token:</b> <code class="bg-slate-50 border px-1 py-0.5 rounded">{{ v.token }}</code></div>
+          <div class="text-xs text-slate-500">
+            Desde <b>{{ v.usable_from | date:'short' }}</b> hasta <b>{{ v.expires_at | date:'short' }}</b>
+          </div>
+          <div class="text-xs text-slate-500" *ngIf="v.geo">
+            Geocerca: lat {{ v.geo.lat }}, lng {{ v.geo.lng }}, radio {{ v.geo.radio_m }} m
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <canvas #qrCanvas class="border rounded-lg"></canvas>
+          <div class="mt-2 flex gap-2">
+            <button class="px-3 py-1.5 rounded border" (click)="copiarToken(v.token)">Copiar token</button>
+            <button class="px-3 py-1.5 rounded border" (click)="descargarPng()">Descargar PNG</button>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">
+            El QR contiene el <b>token</b>. La app del alumno debe enviar:
+            <code>POST /api/vm/sesiones/{{ sesionId() }}/check-in/qr</code> con
+            <!-- Escapar llaves para evitar NG5002 -->
+            <code>&#123;"token":"...", "lat":..., "lng":...&#125;</code>
+            (lat/lng si hay geocerca).
+          </p>
+        </div>
+      </ng-container>
+
+      <ng-template #noQr>
+        <div class="text-xs text-slate-500">Aún no has abierto una ventana QR.</div>
+      </ng-template>
+    </section>
+  </div>
+</div>

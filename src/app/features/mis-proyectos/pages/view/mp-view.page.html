@@ -1,0 +1,380 @@
+<!-- HERO SECTION MEJORADO -->
+<section class="bg-gradient-to-br from-neutral-900 via-neutral-800 to-amber-900 relative overflow-hidden">
+  <!-- Elementos decorativos de fondo -->
+  <div class="absolute inset-0 opacity-10">
+    <div class="absolute top-10 left-10 w-20 h-20 rounded-full bg-amber-400 blur-xl"></div>
+    <div class="absolute bottom-10 right-10 w-32 h-32 rounded-full bg-amber-500 blur-2xl"></div>
+  </div>
+
+  <div class="relative">
+    <svg viewBox="0 0 1925 375" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M0.0021713 0L0.000976562 375.003L1925 0H0.0021713Z" fill="#F9B800"></path>
+    </svg>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 pb-6 relative z-10">
+    <div class="flex flex-col lg:flex-row gap-8 items-start lg:items-center justify-between">
+      <div class="text-white">
+        <div class="inline-flex items-center gap-2 bg-amber-500/20 backdrop-blur-sm rounded-full px-3 py-1 border border-amber-400/30 mb-3">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <p class="text-amber-300 text-xs tracking-wider uppercase font-medium">Mi proyecto</p>
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-bold mt-2 bg-gradient-to-r from-white to-amber-100 bg-clip-text text-transparent">{{ proyecto()?.titulo || 'Proyecto' }}</h1>
+        <div class="flex flex-wrap items-center gap-4 mt-4 text-neutral-300">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <span>Código: <b class="text-white">{{ proyecto()?.codigo || '—' }}</b></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path>
+            </svg>
+            <span>Tipo: <b class="text-white">{{ proyecto()?.tipo }}</b></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"></path>
+            </svg>
+            <span>Modalidad: <b class="text-white">{{ proyecto()?.modalidad }}</b></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center gap-4">
+        <div class="flex flex-col items-end">
+          <span class="text-xs text-amber-300 mb-1">Estado del proyecto</span>
+          <span class="px-4 py-2 rounded-full text-sm font-bold shadow-lg" [ngClass]="headerEstadoBadge()">
+            {{ proyecto()?.estado }}
+          </span>
+        </div>
+        <a [routerLink]="['/mp']" class="group flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 backdrop-blur-sm text-white font-semibold hover:bg-white/20 border border-white/20 transition-all shadow-lg hover:shadow-amber-500/10">
+          <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+          </svg>
+          Volver al listado
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="rotate-180 relative">
+    <svg viewBox="0 0 1925 375" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M0.0021713 0L0.000976562 375.003L1925 0H0.0021713Z" fill="#F9B800"></path>
+    </svg>
+  </div>
+</section>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+
+    <ng-container *ngIf="!loading(); else loadingTpl">
+      <ng-container *ngIf="!error() && proyecto(); else errorTpl">
+
+        <!-- Resumen y Portada - DISEÑO MEJORADO -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <!-- Tarjeta de Resumen -->
+          <div class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="p-2 bg-amber-50 rounded-lg">
+                <svg class="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+              </div>
+              <h2 class="text-xl font-bold text-gray-900">Resumen del proyecto</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <span class="text-sm font-medium text-gray-500">Código</span>
+                  <span class="text-sm font-semibold text-gray-900">{{ proyecto()?.codigo || '—' }}</span>
+                </div>
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <span class="text-sm font-medium text-gray-500">Tipo</span>
+                  <span class="text-sm font-semibold text-gray-900">{{ proyecto()?.tipo }}</span>
+                </div>
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <span class="text-sm font-medium text-gray-500">Modalidad</span>
+                  <span class="text-sm font-semibold text-gray-900">{{ proyecto()?.modalidad }}</span>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <span class="text-sm font-medium text-gray-500">Nivel</span>
+                  <span class="text-sm font-semibold text-gray-900">{{ proyecto()?.nivel ?? '—' }}</span>
+                </div>
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <span class="text-sm font-medium text-gray-500">Período</span>
+                  <span class="text-sm font-semibold text-gray-900">{{ proyecto()?.periodo_id }}</span>
+                </div>
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                  <span class="text-sm font-medium text-gray-500">Horas planificadas</span>
+                  <span class="text-sm font-semibold text-amber-600">{{ proyecto()?.horas_planificadas }} h</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-medium text-gray-500">Mín. por participante</span>
+                  <span class="text-sm font-semibold text-gray-900">{{ proyecto()?.horas_minimas_participante ?? '—' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjeta de Portada -->
+          <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="p-2 bg-blue-50 rounded-lg">
+                <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                </svg>
+              </div>
+              <h2 class="text-xl font-bold text-gray-900">Portada</h2>
+            </div>
+
+            <div *ngIf="portadaUrl(); else noCover" class="relative group">
+              <img [src]="portadaUrl()!" class="w-full h-64 object-cover rounded-xl border-2 border-gray-200 group-hover:border-amber-300 transition-colors" alt="Portada del proyecto" />
+              <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <span class="text-white font-medium text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">Ver imagen</span>
+              </div>
+            </div>
+            <ng-template #noCover>
+              <div class="w-full h-64 flex flex-col items-center justify-center rounded-xl bg-gray-50 border-2 border-dashed border-gray-300 text-gray-400">
+                <svg class="w-12 h-12 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="text-sm">Sin imagen de portada</span>
+              </div>
+            </ng-template>
+          </div>
+        </section>
+
+        <!-- Galería - DISEÑO MEJORADO -->
+        <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm mb-8 hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-purple-50 rounded-lg">
+                <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"></path>
+                </svg>
+              </div>
+              <h2 class="text-xl font-bold text-gray-900">Galería</h2>
+            </div>
+            <span class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{{ galeria().length }} imagen(es)</span>
+          </div>
+
+          <ng-container *ngIf="galeria().length; else noImgs">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div *ngFor="let img of galeria(); let i = index" class="relative group">
+                <div class="aspect-square overflow-hidden rounded-xl border-2 border-gray-200 group-hover:border-amber-300 transition-colors">
+                  <img [src]="img.url || ''" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" alt="Imagen {{ i + 1 }}" />
+                </div>
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <span class="text-white font-medium text-xs bg-black bg-opacity-70 px-2 py-1 rounded">Ver</span>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #noImgs>
+            <div class="text-center py-8">
+              <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-5L9 4H4zm3 6a1 1 0 000 2h6a1 1 0 100-2H7z"></path>
+              </svg>
+              <p class="text-gray-500">No hay imágenes adicionales en la galería.</p>
+            </div>
+          </ng-template>
+        </section>
+
+        <!-- Procesos y sesiones - DISEÑO COMPLETAMENTE REDISEÑADO -->
+        <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 bg-green-50 rounded-lg">
+              <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+            <h2 class="text-xl font-bold text-gray-900">Procesos y sesiones</h2>
+          </div>
+
+          <ng-container *ngIf="procesos().length; else noProc">
+            <div class="space-y-6">
+              <div *ngFor="let p of procesos(); let pi = index" class="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50/50 p-6 hover:shadow-sm transition-all">
+                <!-- Header del proceso -->
+                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+                  <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-3 mb-2">
+                      <h3 class="text-xl font-bold text-gray-900">{{ p.nombre }}</h3>
+                      <div class="flex items-center gap-2">
+                        <span [ngClass]="estadoChipClass(p.estado)">{{ p.estado }}</span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                          {{ p.tipo_registro }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                      <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>Horas: <b class="text-gray-900">{{ p.horas_asignadas || 0 }}h</b></span>
+                      </div>
+                      <div *ngIf="p.sesiones?.length" class="flex items-center gap-1">
+                        <svg class="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path>
+                        </svg>
+                        <span>Sesiones: <b class="text-gray-900">{{ p.sesiones?.length }}</b></span>
+                      </div>
+                      <div *ngIf="p.sesiones?.length" class="flex items-center gap-1">
+                        <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>Total: <b class="text-gray-900">{{ totalHorasSesiones(pi) }}h</b></span>
+                      </div>
+                    </div>
+
+                    <p class="text-gray-700 mt-3 bg-gray-50 p-3 rounded-lg border border-gray-100" *ngIf="p.descripcion">
+                      {{ p.descripcion }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Lista de sesiones -->
+                <div>
+                  <div class="flex items-center justify-between mb-4">
+                    <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                      <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                      </svg>
+                      Sesiones programadas
+                    </h4>
+                    <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{{ p.sesiones?.length || 0 }} sesión(es)</span>
+                  </div>
+
+                  <div *ngIf="p.sesiones?.length; else noSes" class="space-y-3">
+                    <!-- ❗️ trackBy corregido -->
+                    <div *ngFor="let s of p.sesiones; trackBy: trackBySesion"
+                         class="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 hover:border-amber-200 hover:shadow-xs transition-all">
+                      <!-- Información de la sesión -->
+                      <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-3 mb-2">
+                          <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="font-medium text-gray-900">{{ s.fecha }}</span>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="text-gray-700">{{ horaRange(s) }}</span>
+                          </div>
+                          <span class="text-sm font-semibold text-amber-600">{{ sesionHoras(s) }} h</span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span [ngClass]="estadoChipClass(s.estado)">{{ s.estado }}</span>
+                          <span [ngClass]="sesionRelChipClass(s)">{{ sesionRelativa(s) }}</span>
+
+                          <!-- Nuevo: Indicador de asistencia (solo diseño) -->
+                          <span *ngIf="sesionRelativa(s) === 'PASADA'"
+                                class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                            <svg class="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                            Faltó
+                          </span>
+
+                          <span *ngIf="sesionRelativa(s) === 'PASADA'"
+                                class="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                            <svg class="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            Asistió
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Botón de acción -->
+                      <div class="flex flex-col sm:flex-row gap-2">
+                        <button
+                          class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all shadow-sm"
+                          [ngClass]="puedeRegistrar(s)
+                            ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600 hover:border-amber-600 hover:shadow-md'
+                            : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'"
+                          [disabled]="!puedeRegistrar(s)"
+                          [routerLink]="['/mis-proyectos/sesiones', s.id, 'register-qr']"
+                          [title]="puedeRegistrar(s) ? 'Registrar asistencia ahora' : 'Sesión fuera de horario'">
+                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                                  clip-rule="evenodd"></path>
+                          </svg>
+                          Registrar
+                        </button>
+                      </div>
+
+
+                    </div>
+                  </div>
+
+                  <ng-template #noSes>
+                    <div class="text-center py-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                      <svg class="w-10 h-10 mx-auto text-gray-300 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path>
+                      </svg>
+                      <p class="text-gray-500 text-sm">No hay sesiones programadas para este proceso.</p>
+                    </div>
+                  </ng-template>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-template #noProc>
+            <div class="text-center py-10">
+              <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+              </svg>
+              <h3 class="text-lg font-medium text-gray-700 mb-2">Sin procesos activos</h3>
+              <p class="text-gray-500 max-w-md mx-auto">Aún no se han definido procesos para este proyecto. Los procesos aparecerán aquí una vez que sean creados.</p>
+            </div>
+          </ng-template>
+        </section>
+      </ng-container>
+    </ng-container>
+
+    <!-- Loading - MEJORADO -->
+    <ng-template #loadingTpl>
+      <div class="flex flex-col justify-center items-center py-20">
+        <div class="relative">
+          <div class="w-16 h-16 border-4 border-amber-200 rounded-full"></div>
+          <div class="w-16 h-16 border-4 border-amber-500 rounded-full animate-spin absolute top-0 left-0 border-t-transparent"></div>
+        </div>
+        <p class="mt-4 text-gray-600 font-medium">Cargando información del proyecto...</p>
+      </div>
+    </ng-template>
+
+    <!-- Error - MEJORADO -->
+    <ng-template #errorTpl>
+      <div class="bg-white rounded-2xl border border-red-200 p-10 text-center shadow-sm max-w-2xl mx-auto">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">Error al cargar el proyecto</h3>
+        <p class="text-red-600 mb-6">{{ error() }}</p>
+        <a [routerLink]="['/mp']" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+          </svg>
+          Volver al listado
+        </a>
+      </div>
+    </ng-template>
+  </div>
+</div>

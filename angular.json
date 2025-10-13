@@ -24,7 +24,9 @@
               {
                 "glob": "**/*",
                 "input": "public"
-              }
+              },
+                "src/assets",
+                "src/favicon.ico"
             ],
             "styles": [
               "src/styles.scss"
@@ -61,7 +63,9 @@
               "buildTarget": "webapp:build:production"
             },
             "development": {
-              "buildTarget": "webapp:build:development"
+              "buildTarget": "webapp:build:development",
+              "proxyConfig": "proxy.conf.json"
+
             }
           },
           "defaultConfiguration": "development"
@@ -87,5 +91,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

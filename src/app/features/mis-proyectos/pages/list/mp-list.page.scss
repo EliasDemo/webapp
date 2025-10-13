@@ -1,0 +1,7 @@
+/* Habilita utilidades de Tailwind dentro de este SCSS */
+@reference "tailwindcss";
+
+/* Helpers opcionales que usamos en el HTML */
+.section-title { @apply text-xl font-semibold; }
+.section-sub   { @apply text-sm text-gray-600 mt-1; }
+.empty         { @apply text-sm text-gray-500 mt-3; }

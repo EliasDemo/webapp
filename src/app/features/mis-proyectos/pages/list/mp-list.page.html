@@ -1,0 +1,345 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4">
+
+    <!-- Header / Contexto -->
+    <div class="rounded-2xl border bg-white p-6 shadow-sm mb-6">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 class="text-2xl font-bold">Mis Proyectos</h1>
+          <p class="text-gray-600 text-sm mt-1">
+            Período: <b>{{ periodoCodigo() }}</b>
+            <span *ngIf="nivelObjetivo() !== null">· Nivel objetivo: <b>{{ nivelObjetivo() }}</b></span>
+            <span *ngIf="tienePendiente()" class="ml-2 rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs">
+              Tienes un vinculado pendiente
+            </span>
+          </p>
+        </div>
+
+        <a [routerLink]="['/']" class="px-4 py-2 rounded-lg border hover:bg-gray-50 transition-colors duration-200">Volver</a>
+      </div>
+    </div>
+
+    <ng-container *ngIf="!loading(); else loadingTpl">
+      <ng-container *ngIf="!error(); else errorTpl">
+
+        <!-- NIVEL 1: Inscritos -->
+        <section class="mb-10">
+          <h2 class="text-xl font-semibold text-gray-800">1) Proyectos inscritos</h2>
+          <p class="text-sm text-gray-600 mt-1">
+            Tus proyectos actuales (del período) y los vinculados pendientes de completar.
+          </p>
+
+          <div
+            *ngIf="inscritos().length; else noInscritos"
+            class="mt-6 space-y-6"
+          >
+            <div *ngFor="let p of inscritos()" class="w-full">
+              <!-- Tarjeta mejorada inspirada en el segundo diseño -->
+              <div class="flex flex-wrap md:flex-nowrap shadow-lg group cursor-pointer transform duration-500 hover:-translate-y-1 bg-white rounded-xl overflow-hidden border border-gray-100">
+                <!-- Imagen -->
+                <div class="w-full md:w-64 h-48 md:h-auto">
+                  <img
+                    class="w-full h-full object-cover"
+                    [src]="getImageSrc(p)"
+                    [alt]="p.titulo || 'Proyecto'"
+                    loading="lazy"
+                  />
+                </div>
+
+                <!-- Contenido -->
+                <div class="flex-1 flex flex-col justify-between">
+                  <div class="p-5">
+                    <h3 class="text-xl font-semibold text-gray-800 mt-2">
+                      {{ p.titulo }}
+                    </h3>
+                    <p class="text-gray-500 text-sm mt-1">
+                      Código: <span class="font-mono">{{ p.codigo || '—' }}</span>
+                    </p>
+                    <p class="text-gray-600 mt-3 leading-relaxed line-clamp-2">
+                      {{ p.descripcion || 'Sin descripción disponible.' }}
+                    </p>
+                  </div>
+
+                  <div class="bg-blue-50 p-5">
+                    <div class="sm:flex sm:justify-between sm:items-center">
+                      <div>
+                        <div class="text-gray-700">
+                          <span class="text-gray-900 font-bold">
+                            {{ p.horas_planificadas }}
+                          </span>
+                          horas planificadas
+                        </div>
+                        <div class="text-gray-600 text-sm mt-1">
+                          Modalidad: <b>{{ p.modalidad }}</b> · Estado: <b>{{ p.estado }}</b>
+                        </div>
+                      </div>
+
+                      <a
+                        [routerLink]="['/mis-proyectos', p.id]"
+                        class="mt-3 sm:mt-0 inline-flex items-center justify-center py-2 px-5 bg-indigo-600 hover:bg-indigo-500 font-medium text-white rounded-lg shadow-sm transition-colors duration-200"
+                      >
+                        Ver detalle
+                      </a>
+                    </div>
+
+                    <div *ngIf="p.nivel !== null" class="mt-3 text-gray-600 text-sm">
+                      Nivel académico: <b>{{ p.nivel }}</b>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #noInscritos>
+            <div class="mt-6 p-8 text-center bg-white rounded-xl border border-dashed border-gray-300">
+              <p class="text-gray-500">Aún no tienes proyectos inscritos ni pendientes.</p>
+            </div>
+          </ng-template>
+        </section>
+
+        <!-- NIVEL 2: Para este período -->
+        <section class="mb-10">
+          <h2 class="text-xl font-semibold text-gray-800">2) Para este período</h2>
+          <p class="text-sm text-gray-600 mt-1">
+            Inscríbete al VINCULADO del nivel objetivo (si corresponde) o a proyectos LIBRES.
+          </p>
+
+          <!-- Vinculados -->
+          <div class="mt-6">
+            <h3 class="text-lg font-medium text-gray-700 mb-4">Vinculados (prioridad)</h3>
+
+            <div
+              *ngIf="vinculados().length; else noVinculados"
+              class="space-y-6"
+            >
+              <div *ngFor="let p of vinculados()" class="w-full">
+                <!-- Tarjeta mejorada -->
+                <div class="flex flex-wrap md:flex-nowrap shadow-lg group cursor-pointer transform duration-500 hover:-translate-y-1 bg-white rounded-xl overflow-hidden border border-gray-100">
+                  <!-- Imagen -->
+                  <div class="w-full md:w-64 h-48 md:h-auto">
+                    <img
+                      class="w-full h-full object-cover"
+                      [src]="getImageSrc(p)"
+                      [alt]="p.titulo || 'Proyecto'"
+                      loading="lazy"
+                    />
+                  </div>
+
+                  <!-- Contenido -->
+                  <div class="flex-1 flex flex-col justify-between">
+                    <div class="p-5">
+                      <h3 class="text-xl font-semibold text-gray-800 mt-2">
+                        {{ p.titulo }}
+                      </h3>
+                      <p class="text-gray-500 text-sm mt-1">
+                        Código: <span class="font-mono">{{ p.codigo || '—' }}</span>
+                      </p>
+                      <p class="text-gray-600 mt-3 leading-relaxed line-clamp-2">
+                        {{ p.descripcion || 'Sin descripción disponible.' }}
+                      </p>
+                    </div>
+
+                    <div class="bg-blue-50 p-5">
+                      <div class="sm:flex sm:justify-between sm:items-center">
+                        <div>
+                          <div class="text-gray-700">
+                            <span class="text-gray-900 font-bold">
+                              {{ p.horas_planificadas }}
+                            </span>
+                            horas planificadas
+                          </div>
+                          <div class="text-gray-600 text-sm mt-1">
+                            Modalidad: <b>{{ p.modalidad }}</b> · Estado: <b>{{ p.estado }}</b>
+                          </div>
+                        </div>
+
+                        <button
+                          (click)="inscribirse(p)"
+                          class="mt-3 sm:mt-0 py-2 px-5 bg-indigo-600 hover:bg-indigo-500 font-medium text-white rounded-lg shadow-sm transition-colors duration-200"
+                        >
+                          Inscribirse
+                        </button>
+                      </div>
+
+                      <div *ngIf="p.nivel !== null" class="mt-3 text-gray-600 text-sm">
+                        Nivel académico: <b>{{ p.nivel }}</b>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <ng-template #noVinculados>
+              <div class="mt-4 p-6 text-center bg-white rounded-xl border border-dashed border-gray-300">
+                <p class="text-gray-500">No hay vinculados disponibles para tu nivel objetivo (o tienes uno pendiente).</p>
+              </div>
+            </ng-template>
+          </div>
+
+          <!-- Libres -->
+          <div class="mt-8">
+            <h3 class="text-lg font-medium text-gray-700 mb-4">Libres</h3>
+
+            <div
+              *ngIf="libres().length; else noLibres"
+              class="space-y-6"
+            >
+              <div *ngFor="let p of libres()" class="w-full">
+                <!-- Tarjeta mejorada -->
+                <div class="flex flex-wrap md:flex-nowrap shadow-lg group cursor-pointer transform duration-500 hover:-translate-y-1 bg-white rounded-xl overflow-hidden border border-gray-100">
+                  <!-- Imagen -->
+                  <div class="w-full md:w-64 h-48 md:h-auto">
+                    <img
+                      class="w-full h-full object-cover"
+                      [src]="getImageSrc(p)"
+                      [alt]="p.titulo || 'Proyecto'"
+                      loading="lazy"
+                    />
+                  </div>
+
+                  <!-- Contenido -->
+                  <div class="flex-1 flex flex-col justify-between">
+                    <div class="p-5">
+                      <h3 class="text-xl font-semibold text-gray-800 mt-2">
+                        {{ p.titulo }}
+                      </h3>
+                      <p class="text-gray-500 text-sm mt-1">
+                        Código: <span class="font-mono">{{ p.codigo || '—' }}</span>
+                      </p>
+                      <p class="text-gray-600 mt-3 leading-relaxed line-clamp-2">
+                        {{ p.descripcion || 'Sin descripción disponible.' }}
+                      </p>
+                    </div>
+
+                    <div class="bg-blue-50 p-5">
+                      <div class="sm:flex sm:justify-between sm:items-center">
+                        <div>
+                          <div class="text-gray-700">
+                            <span class="text-gray-900 font-bold">
+                              {{ p.horas_planificadas }}
+                            </span>
+                            horas planificadas
+                          </div>
+                          <div class="text-gray-600 text-sm mt-1">
+                            Modalidad: <b>{{ p.modalidad }}</b> · Estado: <b>{{ p.estado }}</b>
+                          </div>
+                        </div>
+
+                        <button
+                          (click)="inscribirse(p)"
+                          class="mt-3 sm:mt-0 py-2 px-5 bg-indigo-600 hover:bg-indigo-500 font-medium text-white rounded-lg shadow-sm transition-colors duration-200"
+                        >
+                          Inscribirse
+                        </button>
+                      </div>
+
+                      <div *ngIf="p.nivel !== null" class="mt-3 text-gray-600 text-sm">
+                        Nivel académico: <b>{{ p.nivel }}</b>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <ng-template #noLibres>
+              <div class="mt-4 p-6 text-center bg-white rounded-xl border border-dashed border-gray-300">
+                <p class="text-gray-500">No hay proyectos libres disponibles por ahora.</p>
+              </div>
+            </ng-template>
+          </div>
+        </section>
+
+        <!-- NIVEL 3: Historial (llevados) -->
+        <section class="mb-10">
+          <h2 class="text-xl font-semibold text-gray-800">3) Proyectos llevados (historial)</h2>
+          <p class="text-sm text-gray-600 mt-1">
+            Aquí verás tus proyectos finalizados cuando el endpoint esté disponible.
+          </p>
+
+          <div
+            *ngIf="historiales().length; else noHistorial"
+            class="mt-6 space-y-6"
+          >
+            <div *ngFor="let p of historiales()" class="w-full">
+              <!-- Tarjeta mejorada -->
+              <div class="flex flex-wrap md:flex-nowrap shadow-lg group cursor-pointer transform duration-500 hover:-translate-y-1 bg-white rounded-xl overflow-hidden border border-gray-100">
+                <!-- Imagen -->
+                <div class="w-full md:w-64 h-48 md:h-auto">
+                  <img
+                    class="w-full h-full object-cover"
+                    [src]="getImageSrc(p)"
+                    [alt]="p.titulo || 'Proyecto'"
+                    loading="lazy"
+                  />
+                </div>
+
+                <!-- Contenido -->
+                <div class="flex-1 flex flex-col justify-between">
+                  <div class="p-5">
+                    <h3 class="text-xl font-semibold text-gray-800 mt-2">
+                      {{ p.titulo }}
+                    </h3>
+                    <p class="text-gray-500 text-sm mt-1">
+                      Código: <span class="font-mono">{{ p.codigo || '—' }}</span>
+                    </p>
+                    <p class="text-gray-600 mt-3 leading-relaxed line-clamp-2">
+                      {{ p.descripcion || 'Sin descripción disponible.' }}
+                    </p>
+                  </div>
+
+                  <div class="bg-green-50 p-5">
+                    <div class="sm:flex sm:justify-between sm:items-center">
+                      <div>
+                        <div class="text-gray-700">
+                          <span class="text-gray-900 font-bold">
+                            {{ p.horas_planificadas }}
+                          </span>
+                          horas planificadas
+                        </div>
+                        <div class="text-gray-600 text-sm mt-1">
+                          Modalidad: <b>{{ p.modalidad }}</b> · Estado: <b>{{ p.estado }}</b>
+                        </div>
+                      </div>
+
+                      <div class="mt-3 sm:mt-0 py-2 px-5 bg-green-600 font-medium text-white rounded-lg shadow-sm">
+                        Completado
+                      </div>
+                    </div>
+
+                    <div *ngIf="p.nivel !== null" class="mt-3 text-gray-600 text-sm">
+                      Nivel académico: <b>{{ p.nivel }}</b>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #noHistorial>
+            <div class="mt-6 p-8 text-center bg-white rounded-xl border border-dashed border-gray-300">
+              <p class="text-gray-500">Sin historial todavía.</p>
+            </div>
+          </ng-template>
+        </section>
+
+      </ng-container>
+    </ng-container>
+
+    <!-- Loading / Error -->
+    <ng-template #loadingTpl>
+      <div class="flex items-center justify-center py-16">
+        <div class="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent"></div>
+      </div>
+    </ng-template>
+
+    <ng-template #errorTpl>
+      <div class="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
+        {{ error() }}
+      </div>
+    </ng-template>
+
+  </div>
+</div>

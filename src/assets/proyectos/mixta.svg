@@ -1,0 +1,47 @@
+<svg viewBox="0 0 512 512" width="512" height="512" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Modalidad mixta — presencial + virtual (UPeU)</title>
+  <desc id="desc">Composición dividida: portátil (virtual) y aula con personas (presencial), simbolizando combinación de modalidades.</desc>
+  
+<style>
+  .bg { fill: #F8FAFC; }
+  .primary { fill: #1E3A8A; } /* deep indigo (academia) */
+  .accent { fill: #F59E0B; }  /* amber (service/social impact) */
+  .secondary { fill: #10B981; } /* teal/green (growth/community) */
+  .muted { fill: #E5E7EB; }
+  .line { stroke: #0F172A; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .soft { opacity: .08; }
+  .shadow { filter: drop-shadow(0 2px 2px rgba(0,0,0,.15)); }
+  text { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+</style>
+
+  <rect class="bg" x="0" y="0" width="512" height="512" rx="32" ry="32"/>
+  
+  <!-- diagonal split background -->
+  <polygon points="0,0 512,0 512,512" class="primary" opacity=".06"/>
+  <polygon points="0,0 0,512 512,512" class="secondary" opacity=".06"/>
+
+  <!-- divider -->
+  <path d="M64 448 L448 64" class="line" opacity=".25"/>
+
+  <!-- left: laptop -->
+  <rect x="72" y="164" width="184" height="116" rx="12" class="muted"/>
+  <rect x="84" y="176" width="160" height="92" rx="10" class="bg"/>
+  <circle cx="100" cy="192" r="12" class="primary"/>
+  <circle cx="132" cy="192" r="12" class="secondary"/>
+  <rect x="100" y="220" width="120" height="36" rx="8" class="accent" opacity=".15"/>
+  <rect x="60" y="280" width="208" height="32" rx="10" class="muted"/>
+
+  <!-- right: aula (pizarra + 2 personas) -->
+  <rect x="276" y="116" width="164" height="96" rx="12" class="primary" opacity=".12"/>
+  <circle cx="316" cy="246" r="22" class="primary"/>
+  <path d="M292 280 Q316 266 340 280 V310 H292 Z" class="secondary"/>
+  <circle cx="392" cy="246" r="22" class="primary"/>
+  <path d="M368 280 Q392 266 416 280 V310 H368 Z" class="secondary"/>
+  <rect x="284" y="318" width="124" height="20" rx="10" class="accent"/>
+
+  <!-- overlay badge showing mix -->
+  <circle cx="256" cy="352" r="44" class="bg" />
+  <path d="M232 352 a24 24 0 0 1 48 0 v0" class="line" />
+  <path d="M224 336 h64 v32 h-64 z" class="accent" opacity=".35"/>
+
+</svg>
