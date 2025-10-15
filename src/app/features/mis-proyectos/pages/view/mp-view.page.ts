@@ -18,10 +18,13 @@ export class MpViewPage {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
+  // --- state
   loading = signal(true);
   error = signal<string | null>(null);
   data = signal<VmProyectoArbol | null>(null);
+  private lastProyectoId = signal<number | null>(null);
 
+  // --- computed
   proyecto = computed(() => this.data()?.proyecto ?? null);
   procesos  = computed(() => this.data()?.procesos ?? []);
   portadaUrl = computed(() => {
@@ -40,6 +43,7 @@ export class MpViewPage {
         this.loading.set(false);
         return;
       }
+      this.lastProyectoId.set(id);
       await this.fetchAll(id);
     });
   }
@@ -85,21 +89,25 @@ export class MpViewPage {
   horaRange(s: VmSesion): string {
     return `${s.hora_inicio}–${s.hora_fin}`;
   }
+
   sesionHoras(s: VmSesion): number {
     const [h1, m1] = (s.hora_inicio ?? '00:00').split(':').map(Number);
     const [h2, m2] = (s.hora_fin ?? '00:00').split(':').map(Number);
     let a = h1 * 60 + (m1 || 0);
     let b = h2 * 60 + (m2 || 0);
-    if (b < a) b += 24 * 60;
+    if (b < a) b += 24 * 60; // cruza medianoche
     const min = Math.max(0, b - a);
     return Math.round((min / 60) * 10) / 10;
   }
+
   totalHorasSesiones(procIdx: number): number {
     const p = this.procesos()[procIdx];
     const tot = (p?.sesiones ?? []).reduce((acc: number, s: VmSesion) => acc + this.sesionHoras(s), 0);
     return Math.round(tot * 10) / 10;
   }
+
   private combine(fecha: string, hhmm: string): Date { return new Date(`${fecha}T${hhmm}`); }
+
   sesionRelativa(s: VmSesion): 'PROXIMA' | 'ACTUAL' | 'PASADA' {
     if (!s.fecha || !s.hora_inicio || !s.hora_fin) return 'PROXIMA';
     const now = new Date();
@@ -110,6 +118,10 @@ export class MpViewPage {
     if (now > fin) return 'PASADA';
     return 'ACTUAL';
   }
+
+  // Alias para coincidir con el template (usa relativoSesion(s))
+  relativoSesion(s: VmSesion) { return this.sesionRelativa(s); }
+
   sesionRelChipClass(s: VmSesion): string {
     const r = this.sesionRelativa(s);
     const base = 'px-2.5 py-1 rounded-full text-xs font-semibold border shadow-sm';
@@ -117,6 +129,50 @@ export class MpViewPage {
     if (r === 'PROXIMA')  return `${base} bg-indigo-50 text-indigo-700 border-indigo-200`;
     return `${base} bg-slate-100 text-slate-600 border-slate-200`;
   }
+
+  // Puntos de estado (lucecita)
+  dotClass(rel: 'PROXIMA' | 'ACTUAL' | 'PASADA' | string): string {
+    const s = String(rel).toUpperCase();
+    if (s === 'ACTUAL')  return 'bg-blue-500';
+    if (s === 'PROXIMA') return 'bg-amber-500';
+    if (s === 'PASADA')  return 'bg-slate-400';
+    return 'bg-gray-300';
+  }
+
+  // Dashboard mini (total sesiones / próximas)
+  totalSesiones(): number {
+    return this.procesos().reduce((acc: number, p: any) => acc + (p?.sesiones?.length ?? 0), 0);
+  }
+
+  totalProximas(): number {
+    return this.procesos().reduce((acc: number, p: any) => {
+      const add = (p?.sesiones ?? []).filter((s: VmSesion) => this.sesionRelativa(s) === 'PROXIMA').length;
+      return acc + add;
+    }, 0);
+  }
+
+  // Navegación / acciones
+  verGaleriaCompleta(): void {
+    const id = this.lastProyectoId();
+    // Ajusta esta ruta a la que tengas definida para la galería
+    if (id) {
+      this.router.navigate(['/mis-proyectos', id, 'galeria']);
+    } else {
+      // fallback: si no hay ruta, al menos no rompas la UI
+      console.warn('Ruta de galería no configurada.');
+    }
+  }
+
+  recargarProcesos(): void {
+    const id = this.lastProyectoId();
+    if (id) this.fetchAll(id);
+  }
+
+  recargarPagina(): void {
+    // Si prefieres no recargar completamente, reutiliza recargarProcesos()
+    if (typeof window !== 'undefined') window.location.reload();
+  }
+
   trackBySesion = (_: number, s: VmSesion) => s.id;
 
   goBack() { this.router.navigateByUrl('/mp'); }

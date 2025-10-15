@@ -147,4 +147,5 @@ export class ProyectoListPage {
       this.loading.set(false);
     }
   }
+
 }

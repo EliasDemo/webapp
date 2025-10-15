@@ -1,0 +1,109 @@
+<div class="login-container">
+  <!-- Fondo con imagen -->
+  <div class="background-section">
+    <div class="background-overlay"></div>
+    <img src="assets/peru.jpg" alt="Universidad UPeU" class="background-image" />
+
+    <div class="background-content">
+      <div class="welcome-text"></div>
+    </div>
+  </div>
+
+  <!-- Formulario glass CENTRADO -->
+  <div class="form-section">
+    <div class="glass-form">
+      <div class="form-header">
+        <div class="logo-container">
+          <img
+            src="https://upeu.edu.pe/wp-content/uploads/2022/04/logo-upeu-dark-svg.svg"
+            alt="UPeU"
+            class="main-logo"
+            onerror="this.style.display='none'"
+          />
+        </div>
+
+        <h2 class="welcome-question">¿Listo para comenzar?</h2>
+        <h1 class="form-title">{{ title() }}</h1>
+      </div>
+
+      <!-- Paso 1: username -->
+      <form *ngIf="step() === 1" [formGroup]="lookupForm" (ngSubmit)="submitLookup()" class="form-content">
+        <div class="input-group">
+          <label for="username">Usuario:</label>
+          <input id="username" formControlName="username" autocomplete="username" placeholder="Tu usuario" />
+          <small class="error-text" *ngIf="username.invalid && username.touched">Requerido</small>
+        </div>
+        <button type="submit" class="submit-btn" [disabled]="lookupForm.invalid">Continuar</button>
+      </form>
+
+      <!-- Paso 2: password -->
+      <form *ngIf="step() === 2" [formGroup]="loginForm" (ngSubmit)="submitLogin()" class="form-content">
+        <!-- Info básica del usuario -->
+        <div class="user-info-simple">
+          <div class="user-avatar" *ngIf="profilePhoto()">
+            <img [src]="profilePhoto()!" alt="Foto de perfil" />
+          </div>
+          <div class="user-details">
+            <div class="user-name">{{ fullName() }}</div>
+            <div class="user-meta">{{ escuela() }} • {{ rol() || 'Usuario' }}</div>
+          </div>
+        </div>
+
+        <!-- Mensaje de bloqueo -->
+        <div *ngIf="isLocked()" class="lock-message">
+          <div class="lock-icon">🔒</div>
+          <div class="lock-text">
+            <strong>Cuenta temporalmente bloqueada</strong>
+            <p>Por seguridad. Tiempo restante: {{ remainingTime() }} segundos</p>
+          </div>
+        </div>
+
+        <!-- Campo de contraseña con ojito -->
+        <div class="input-group">
+          <label for="password">Contraseña</label>
+          <div class="password-wrapper">
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              id="password"
+              formControlName="password"
+              autocomplete="current-password"
+              placeholder="Ingresa tu contraseña"
+              class="password-input"
+              [class.error]="loginError()"
+              [disabled]="isLocked()"
+            />
+            <button
+              type="button"
+              class="toggle-password-btn"
+              (click)="togglePasswordVisibility()"
+              [disabled]="isLocked()"
+              tabindex="-1"
+            >
+              <span class="password-icon">{{ showPassword() ? '🔒' : '👁' }}</span>
+            </button>
+          </div>
+
+          <small class="error-text" *ngIf="password.invalid && password.touched">La contraseña es requerida</small>
+          <small class="error-text" *ngIf="loginError() && !isLocked()">{{ loginError() }}</small>
+
+          <div class="password-actions">
+            <a href="#" class="forgot-password" (click)="requestPasswordReset(); $event.preventDefault()">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button type="button" class="secondary-btn" (click)="back()">Cambiar usuario</button>
+          <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isLocked()">
+            {{ isLocked() ? 'Cuenta Bloqueada' : 'Ingresar' }}
+          </button>
+        </div>
+      </form>
+
+      <div class="form-footer">
+        <p>¿Necesitas ayuda? <a href="#" class="help-link">Contáctanos</a></p>
+      </div>
+    </div>
+  </div>
+</div>

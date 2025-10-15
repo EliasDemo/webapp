@@ -1,0 +1,32 @@
+/* Animaciones personalizadas */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-fade-in { animation: fade-in 0.6s ease-out; }
+.animate-fade-in-up { animation: fade-in-up 0.8s ease-out; }
+.animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
+
+/* Mejoras de scroll suave */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Mejora de focus para accesibilidad */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

@@ -1,0 +1,90 @@
+.history-page {
+  .filters {
+    ion-item {
+      --padding-start: 12px;
+      --padding-end: 12px;
+    }
+  }
+
+  .total-card {
+    border-radius: 18px;
+    .total-hrs {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      .big {
+        font-size: 48px;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .label {
+        font-size: 14px;
+        opacity: 0.7;
+      }
+    }
+    .totals-row {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      .chip {
+        background: var(--ion-color-light, #f3f4f6);
+        border-radius: 12px;
+        padding: 8px 12px;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 8px;
+        .n { font-weight: 700; }
+        .t { font-size: 12px; opacity: .7; }
+      }
+    }
+  }
+
+  .period-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    .code { font-weight: 700; }
+    .hrs { font-size: 14px; opacity: .8; }
+  }
+  .period-sub {
+    font-size: 12px;
+    opacity: .7;
+    margin-top: 4px;
+  }
+
+  .projects {
+    .proj-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      .title { font-weight: 600; }
+      .badge {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        &.closed {
+          background: #fee2e2;
+          color: #991b1b;
+        }
+      }
+    }
+    .proj-sub {
+      .muted { opacity: .75; font-size: 12px; }
+      .dot { padding: 0 6px; opacity: .4; }
+    }
+    .proj-hours {
+      text-align: right;
+      .h { font-weight: 700; }
+      .m { font-size: 12px; opacity: .7; }
+    }
+  }
+
+  .empty {
+    ion-icon { color: var(--ion-color-medium); margin-bottom: 8px; }
+    h4 { margin: 6px 0; }
+    p { opacity: .7; margin: 0; }
+  }
+}

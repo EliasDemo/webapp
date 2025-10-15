@@ -1,345 +1,482 @@
-<div class="min-h-screen bg-gray-50 py-8">
-  <div class="max-w-7xl mx-auto px-4">
+<!-- src/app/features/mis-proyectos/pages/mp-list/mp-list.page.html -->
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 pb-10">
 
-    <!-- Header / Contexto -->
-    <div class="rounded-2xl border bg-white p-6 shadow-sm mb-6">
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 class="text-2xl font-bold">Mis Proyectos</h1>
-          <p class="text-gray-600 text-sm mt-1">
-            Período: <b>{{ periodoCodigo() }}</b>
-            <span *ngIf="nivelObjetivo() !== null">· Nivel objetivo: <b>{{ nivelObjetivo() }}</b></span>
-            <span *ngIf="tienePendiente()" class="ml-2 rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs">
-              Tienes un vinculado pendiente
-            </span>
-          </p>
+  <!-- Sticky Header Mejorado -->
+  <div class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-lg supports-[backdrop-filter]:bg-white/60">
+    <div class="mx-auto max-w-7xl px-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 py-4">
+
+        <!-- Selector de período mejorado -->
+        <div class="flex items-center gap-3">
+          <div class="rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-2 shadow-lg">
+            <i class="fa-solid fa-calendar text-white text-sm"></i>
+          </div>
+          <div class="flex flex-col">
+            <label class="text-xs font-medium text-slate-500 mb-1">PERÍODO ACADÉMICO</label>
+            <select
+              class="rounded-xl border-0 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-slate-200/60 backdrop-blur-sm transition-all duration-300 hover:ring-slate-300 focus:ring-2 focus:ring-blue-500/30 focus:bg-white"
+              [ngModel]="selectedPeriodoId() ?? ''"
+              (ngModelChange)="onPeriodoChange($event ? +$event : null)">
+              <option [ngValue]="null">– Selecciona un período –</option>
+              <option *ngFor="let p of periodos()" [ngValue]="p.id">
+                {{ p.anio }}-{{ p.ciclo }} {{ (p.estado||'')==='EN_CURSO' ? ' ⭐ En curso' : '' }}
+              </option>
+            </select>
+          </div>
         </div>
 
-        <a [routerLink]="['/']" class="px-4 py-2 rounded-lg border hover:bg-gray-50 transition-colors duration-200">Volver</a>
+        <!-- Pestañas mejoradas -->
+        <div class="flex items-center gap-1 rounded-2xl bg-slate-100/80 p-1.5 backdrop-blur-sm ring-1 ring-white/50">
+          <button
+            (click)="activeTab.set('periodo')"
+            [class]="activeTab()==='periodo' ?
+                    'rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transform transition-all duration-300' :
+                    'rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-all duration-300'">
+            <span class="flex items-center gap-2">
+              <i class="fa-solid fa-rocket text-[10px]"></i>
+              Mi período
+            </span>
+          </button>
+          <button
+            (click)="activeTab.set('historial')"
+            [class]="activeTab()==='historial' ?
+                    'rounded-xl bg-gradient-to-r from-slate-700 to-slate-800 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-500/25 transform transition-all duration-300' :
+                    'rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-all duration-300'">
+            <span class="flex items-center gap-2">
+              <i class="fa-solid fa-history text-[10px]"></i>
+              Historial
+            </span>
+          </button>
+        </div>
       </div>
     </div>
+  </div>
 
-    <ng-container *ngIf="!loading(); else loadingTpl">
-      <ng-container *ngIf="!error(); else errorTpl">
+  <!-- BODY -->
+  <div class="mx-auto max-w-7xl px-4 space-y-8 pt-8">
 
-        <!-- NIVEL 1: Inscritos -->
-        <section class="mb-10">
-          <h2 class="text-xl font-semibold text-gray-800">1) Proyectos inscritos</h2>
-          <p class="text-sm text-gray-600 mt-1">
-            Tus proyectos actuales (del período) y los vinculados pendientes de completar.
-          </p>
-
-          <div
-            *ngIf="inscritos().length; else noInscritos"
-            class="mt-6 space-y-6"
-          >
-            <div *ngFor="let p of inscritos()" class="w-full">
-              <!-- Tarjeta mejorada inspirada en el segundo diseño -->
-              <div class="flex flex-wrap md:flex-nowrap shadow-lg group cursor-pointer transform duration-500 hover:-translate-y-1 bg-white rounded-xl overflow-hidden border border-gray-100">
-                <!-- Imagen -->
-                <div class="w-full md:w-64 h-48 md:h-auto">
-                  <img
-                    class="w-full h-full object-cover"
-                    [src]="getImageSrc(p)"
-                    [alt]="p.titulo || 'Proyecto'"
-                    loading="lazy"
-                  />
-                </div>
-
-                <!-- Contenido -->
-                <div class="flex-1 flex flex-col justify-between">
-                  <div class="p-5">
-                    <h3 class="text-xl font-semibold text-gray-800 mt-2">
-                      {{ p.titulo }}
-                    </h3>
-                    <p class="text-gray-500 text-sm mt-1">
-                      Código: <span class="font-mono">{{ p.codigo || '—' }}</span>
-                    </p>
-                    <p class="text-gray-600 mt-3 leading-relaxed line-clamp-2">
-                      {{ p.descripcion || 'Sin descripción disponible.' }}
-                    </p>
-                  </div>
-
-                  <div class="bg-blue-50 p-5">
-                    <div class="sm:flex sm:justify-between sm:items-center">
-                      <div>
-                        <div class="text-gray-700">
-                          <span class="text-gray-900 font-bold">
-                            {{ p.horas_planificadas }}
-                          </span>
-                          horas planificadas
-                        </div>
-                        <div class="text-gray-600 text-sm mt-1">
-                          Modalidad: <b>{{ p.modalidad }}</b> · Estado: <b>{{ p.estado }}</b>
-                        </div>
-                      </div>
-
-                      <a
-                        [routerLink]="['/mis-proyectos', p.id]"
-                        class="mt-3 sm:mt-0 inline-flex items-center justify-center py-2 px-5 bg-indigo-600 hover:bg-indigo-500 font-medium text-white rounded-lg shadow-sm transition-colors duration-200"
-                      >
-                        Ver detalle
-                      </a>
-                    </div>
-
-                    <div *ngIf="p.nivel !== null" class="mt-3 text-gray-600 text-sm">
-                      Nivel académico: <b>{{ p.nivel }}</b>
-                    </div>
-                  </div>
-                </div>
-              </div>
+    <!-- LOADING MEJORADO -->
+    <ng-container *ngIf="loading(); else contentTpl">
+      <div class="flex items-center justify-center py-32" role="status" aria-live="polite">
+        <div class="text-center">
+          <div class="relative mx-auto mb-6">
+            <div class="h-20 w-20 rounded-full border-4 border-slate-100"></div>
+            <div class="absolute inset-0 h-20 w-20 animate-spin rounded-full border-4 border-blue-500 border-t-transparent shadow-lg"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <i class="fa-solid fa-rocket text-blue-500 text-xl animate-bounce"></i>
             </div>
           </div>
-
-          <ng-template #noInscritos>
-            <div class="mt-6 p-8 text-center bg-white rounded-xl border border-dashed border-gray-300">
-              <p class="text-gray-500">Aún no tienes proyectos inscritos ni pendientes.</p>
-            </div>
-          </ng-template>
-        </section>
-
-        <!-- NIVEL 2: Para este período -->
-        <section class="mb-10">
-          <h2 class="text-xl font-semibold text-gray-800">2) Para este período</h2>
-          <p class="text-sm text-gray-600 mt-1">
-            Inscríbete al VINCULADO del nivel objetivo (si corresponde) o a proyectos LIBRES.
-          </p>
-
-          <!-- Vinculados -->
-          <div class="mt-6">
-            <h3 class="text-lg font-medium text-gray-700 mb-4">Vinculados (prioridad)</h3>
-
-            <div
-              *ngIf="vinculados().length; else noVinculados"
-              class="space-y-6"
-            >
-              <div *ngFor="let p of vinculados()" class="w-full">
-                <!-- Tarjeta mejorada -->
-                <div class="flex flex-wrap md:flex-nowrap shadow-lg group cursor-pointer transform duration-500 hover:-translate-y-1 bg-white rounded-xl overflow-hidden border border-gray-100">
-                  <!-- Imagen -->
-                  <div class="w-full md:w-64 h-48 md:h-auto">
-                    <img
-                      class="w-full h-full object-cover"
-                      [src]="getImageSrc(p)"
-                      [alt]="p.titulo || 'Proyecto'"
-                      loading="lazy"
-                    />
-                  </div>
-
-                  <!-- Contenido -->
-                  <div class="flex-1 flex flex-col justify-between">
-                    <div class="p-5">
-                      <h3 class="text-xl font-semibold text-gray-800 mt-2">
-                        {{ p.titulo }}
-                      </h3>
-                      <p class="text-gray-500 text-sm mt-1">
-                        Código: <span class="font-mono">{{ p.codigo || '—' }}</span>
-                      </p>
-                      <p class="text-gray-600 mt-3 leading-relaxed line-clamp-2">
-                        {{ p.descripcion || 'Sin descripción disponible.' }}
-                      </p>
-                    </div>
-
-                    <div class="bg-blue-50 p-5">
-                      <div class="sm:flex sm:justify-between sm:items-center">
-                        <div>
-                          <div class="text-gray-700">
-                            <span class="text-gray-900 font-bold">
-                              {{ p.horas_planificadas }}
-                            </span>
-                            horas planificadas
-                          </div>
-                          <div class="text-gray-600 text-sm mt-1">
-                            Modalidad: <b>{{ p.modalidad }}</b> · Estado: <b>{{ p.estado }}</b>
-                          </div>
-                        </div>
-
-                        <button
-                          (click)="inscribirse(p)"
-                          class="mt-3 sm:mt-0 py-2 px-5 bg-indigo-600 hover:bg-indigo-500 font-medium text-white rounded-lg shadow-sm transition-colors duration-200"
-                        >
-                          Inscribirse
-                        </button>
-                      </div>
-
-                      <div *ngIf="p.nivel !== null" class="mt-3 text-gray-600 text-sm">
-                        Nivel académico: <b>{{ p.nivel }}</b>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <ng-template #noVinculados>
-              <div class="mt-4 p-6 text-center bg-white rounded-xl border border-dashed border-gray-300">
-                <p class="text-gray-500">No hay vinculados disponibles para tu nivel objetivo (o tienes uno pendiente).</p>
-              </div>
-            </ng-template>
-          </div>
-
-          <!-- Libres -->
-          <div class="mt-8">
-            <h3 class="text-lg font-medium text-gray-700 mb-4">Libres</h3>
-
-            <div
-              *ngIf="libres().length; else noLibres"
-              class="space-y-6"
-            >
-              <div *ngFor="let p of libres()" class="w-full">
-                <!-- Tarjeta mejorada -->
-                <div class="flex flex-wrap md:flex-nowrap shadow-lg group cursor-pointer transform duration-500 hover:-translate-y-1 bg-white rounded-xl overflow-hidden border border-gray-100">
-                  <!-- Imagen -->
-                  <div class="w-full md:w-64 h-48 md:h-auto">
-                    <img
-                      class="w-full h-full object-cover"
-                      [src]="getImageSrc(p)"
-                      [alt]="p.titulo || 'Proyecto'"
-                      loading="lazy"
-                    />
-                  </div>
-
-                  <!-- Contenido -->
-                  <div class="flex-1 flex flex-col justify-between">
-                    <div class="p-5">
-                      <h3 class="text-xl font-semibold text-gray-800 mt-2">
-                        {{ p.titulo }}
-                      </h3>
-                      <p class="text-gray-500 text-sm mt-1">
-                        Código: <span class="font-mono">{{ p.codigo || '—' }}</span>
-                      </p>
-                      <p class="text-gray-600 mt-3 leading-relaxed line-clamp-2">
-                        {{ p.descripcion || 'Sin descripción disponible.' }}
-                      </p>
-                    </div>
-
-                    <div class="bg-blue-50 p-5">
-                      <div class="sm:flex sm:justify-between sm:items-center">
-                        <div>
-                          <div class="text-gray-700">
-                            <span class="text-gray-900 font-bold">
-                              {{ p.horas_planificadas }}
-                            </span>
-                            horas planificadas
-                          </div>
-                          <div class="text-gray-600 text-sm mt-1">
-                            Modalidad: <b>{{ p.modalidad }}</b> · Estado: <b>{{ p.estado }}</b>
-                          </div>
-                        </div>
-
-                        <button
-                          (click)="inscribirse(p)"
-                          class="mt-3 sm:mt-0 py-2 px-5 bg-indigo-600 hover:bg-indigo-500 font-medium text-white rounded-lg shadow-sm transition-colors duration-200"
-                        >
-                          Inscribirse
-                        </button>
-                      </div>
-
-                      <div *ngIf="p.nivel !== null" class="mt-3 text-gray-600 text-sm">
-                        Nivel académico: <b>{{ p.nivel }}</b>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <ng-template #noLibres>
-              <div class="mt-4 p-6 text-center bg-white rounded-xl border border-dashed border-gray-300">
-                <p class="text-gray-500">No hay proyectos libres disponibles por ahora.</p>
-              </div>
-            </ng-template>
-          </div>
-        </section>
-
-        <!-- NIVEL 3: Historial (llevados) -->
-        <section class="mb-10">
-          <h2 class="text-xl font-semibold text-gray-800">3) Proyectos llevados (historial)</h2>
-          <p class="text-sm text-gray-600 mt-1">
-            Aquí verás tus proyectos finalizados cuando el endpoint esté disponible.
-          </p>
-
-          <div
-            *ngIf="historiales().length; else noHistorial"
-            class="mt-6 space-y-6"
-          >
-            <div *ngFor="let p of historiales()" class="w-full">
-              <!-- Tarjeta mejorada -->
-              <div class="flex flex-wrap md:flex-nowrap shadow-lg group cursor-pointer transform duration-500 hover:-translate-y-1 bg-white rounded-xl overflow-hidden border border-gray-100">
-                <!-- Imagen -->
-                <div class="w-full md:w-64 h-48 md:h-auto">
-                  <img
-                    class="w-full h-full object-cover"
-                    [src]="getImageSrc(p)"
-                    [alt]="p.titulo || 'Proyecto'"
-                    loading="lazy"
-                  />
-                </div>
-
-                <!-- Contenido -->
-                <div class="flex-1 flex flex-col justify-between">
-                  <div class="p-5">
-                    <h3 class="text-xl font-semibold text-gray-800 mt-2">
-                      {{ p.titulo }}
-                    </h3>
-                    <p class="text-gray-500 text-sm mt-1">
-                      Código: <span class="font-mono">{{ p.codigo || '—' }}</span>
-                    </p>
-                    <p class="text-gray-600 mt-3 leading-relaxed line-clamp-2">
-                      {{ p.descripcion || 'Sin descripción disponible.' }}
-                    </p>
-                  </div>
-
-                  <div class="bg-green-50 p-5">
-                    <div class="sm:flex sm:justify-between sm:items-center">
-                      <div>
-                        <div class="text-gray-700">
-                          <span class="text-gray-900 font-bold">
-                            {{ p.horas_planificadas }}
-                          </span>
-                          horas planificadas
-                        </div>
-                        <div class="text-gray-600 text-sm mt-1">
-                          Modalidad: <b>{{ p.modalidad }}</b> · Estado: <b>{{ p.estado }}</b>
-                        </div>
-                      </div>
-
-                      <div class="mt-3 sm:mt-0 py-2 px-5 bg-green-600 font-medium text-white rounded-lg shadow-sm">
-                        Completado
-                      </div>
-                    </div>
-
-                    <div *ngIf="p.nivel !== null" class="mt-3 text-gray-600 text-sm">
-                      Nivel académico: <b>{{ p.nivel }}</b>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <ng-template #noHistorial>
-            <div class="mt-6 p-8 text-center bg-white rounded-xl border border-dashed border-gray-300">
-              <p class="text-gray-500">Sin historial todavía.</p>
-            </div>
-          </ng-template>
-        </section>
-
-      </ng-container>
+          <p class="text-lg font-bold text-slate-700 mb-2">Cargando mis proyectos</p>
+          <p class="text-sm text-slate-500">Preparando tu experiencia de vinculación...</p>
+        </div>
+      </div>
     </ng-container>
 
-    <!-- Loading / Error -->
-    <ng-template #loadingTpl>
-      <div class="flex items-center justify-center py-16">
-        <div class="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent"></div>
-      </div>
-    </ng-template>
+    <ng-template #contentTpl>
+      <!-- ERROR MEJORADO -->
+      <ng-container *ngIf="error(); else tabsContentTpl">
+        <div class="mx-auto max-w-2xl rounded-3xl border border-rose-200 bg-gradient-to-br from-white to-rose-50/50 p-10 text-center shadow-xl backdrop-blur-lg">
+          <div class="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 text-rose-600 shadow-lg">
+            <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+          </div>
+          <h3 class="mb-2 text-xl font-bold text-slate-900">No se pudieron cargar tus proyectos</h3>
+          <p class="mb-8 text-base font-medium text-rose-700/90">{{ error() }}</p>
+          <button (click)="loadAll()"
+                  class="inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30 transition-all duration-300 transform hover:scale-105">
+            <i class="fa-solid fa-rotate animate-spin-on-hover"></i>
+            Reintentar carga
+          </button>
+        </div>
+      </ng-container>
 
-    <ng-template #errorTpl>
-      <div class="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
-        {{ error() }}
-      </div>
-    </ng-template>
+      <ng-template #tabsContentTpl>
 
+        <!-- HEADER KPIs MEJORADO -->
+        <section class="rounded-3xl border border-white/80 bg-gradient-to-br from-white to-blue-50/50 p-8 shadow-2xl backdrop-blur-xl">
+          <div class="flex flex-wrap items-start justify-between gap-6">
+            <div class="space-y-4">
+              <div class="flex items-center gap-4">
+                <div class="rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-3 shadow-lg">
+                  <i class="fa-solid fa-rocket text-white text-lg"></i>
+                </div>
+                <div>
+                  <h1 class="text-3xl font-black tracking-tight text-slate-900 bg-gradient-to-r from-slate-900 to-blue-800 bg-clip-text text-transparent">Mis Proyectos</h1>
+                  <div class="flex flex-wrap gap-4 text-sm mt-3">
+                    <span class="inline-flex items-center gap-3 rounded-2xl bg-blue-50/80 px-4 py-2.5 text-blue-700 backdrop-blur-sm border border-blue-200/60 shadow-sm">
+                      <i class="fa-solid fa-calendar-star text-blue-600"></i>
+                      Período <b class="ml-1 text-blue-800">{{ periodoCodigo() }}</b>
+                    </span>
+                    <span *ngIf="nivelObjetivo() !== null" class="inline-flex items-center gap-3 rounded-2xl bg-emerald-50/80 px-4 py-2.5 text-emerald-700 backdrop-blur-sm border border-emerald-200/60 shadow-sm">
+                      <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
+                      Nivel <b class="ml-1 text-emerald-800">{{ nivelObjetivo() }}</b>
+                    </span>
+                    <span *ngIf="tienePendiente()" class="inline-flex items-center gap-3 rounded-2xl bg-amber-50/80 px-4 py-2.5 text-amber-700 backdrop-blur-sm border border-amber-200/60 shadow-sm">
+                      <i class="fa-solid fa-clock-rotate-left text-amber-600 animate-pulse"></i>
+                      Vinculado pendiente
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats Cards Mejoradas -->
+            <div class="flex gap-4">
+              <div class="rounded-2xl border border-white/80 bg-white/60 p-5 text-center backdrop-blur-lg shadow-lg min-w-[120px] transform transition-all duration-500 hover:scale-105 hover:shadow-xl">
+                <div class="text-2xl font-black text-slate-900 mb-1">{{ inscritosCount() }}</div>
+                <div class="text-xs uppercase tracking-wider font-bold text-blue-600/90">Inscritos</div>
+                <div class="mt-2 h-1 w-8 mx-auto bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
+              </div>
+              <div class="rounded-2xl border border-white/80 bg-white/60 p-5 text-center backdrop-blur-lg shadow-lg min-w-[120px] transform transition-all duration-500 hover:scale-105 hover:shadow-xl">
+                <div class="text-2xl font-black text-slate-900 mb-1">{{ vinculadosCount() + libresCount() }}</div>
+                <div class="text-xs uppercase tracking-wider font-bold text-emerald-600/90">Disponibles</div>
+                <div class="mt-2 h-1 w-8 mx-auto bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+              </div>
+              <div class="rounded-2xl border border-white/80 bg-white/60 p-5 text-center backdrop-blur-lg shadow-lg min-w-[120px] transform transition-all duration-500 hover:scale-105 hover:shadow-xl">
+                <div class="text-2xl font-black text-slate-900 mb-1">{{ historialesCount() }}</div>
+                <div class="text-xs uppercase tracking-wider font-bold text-slate-600/90">Historial</div>
+                <div class="mt-2 h-1 w-8 mx-auto bg-gradient-to-r from-slate-500 to-slate-600 rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VISTA: Mi período (Inscritos + Disponibles) MEJORADO -->
+        <section *ngIf="activeTab()==='periodo'" class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+
+          <!-- Columna izquierda: Inscritos -->
+          <div class="lg:col-span-5 space-y-6">
+            <div class="flex items-center gap-4">
+              <div class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-lg shadow-lg">1</div>
+              <div>
+                <h2 class="text-2xl font-black text-slate-900">Proyectos Inscritos</h2>
+                <p class="text-slate-600 text-sm mt-1">Tus proyectos activos este período</p>
+              </div>
+              <span class="ml-auto rounded-2xl bg-blue-100 px-3 py-1.5 text-sm font-bold text-blue-700 border border-blue-200">
+                {{ inscritosCount() }} proyecto{{ inscritosCount() !== 1 ? 's' : '' }}
+              </span>
+            </div>
+
+            <ng-container *ngIf="inscritos().length; else noInsTpl">
+              <div class="grid gap-6">
+                <div *ngFor="let p of inscritos()"
+                     class="group overflow-hidden rounded-3xl border border-white/80 bg-gradient-to-br from-white to-blue-50/30 shadow-xl hover:shadow-2xl transition-all duration-700 hover:scale-[1.02]">
+                  <div class="flex flex-col lg:flex-row h-full">
+                    <!-- IMAGEN MEJORADA -->
+                    <div class="lg:w-56 lg:shrink-0 relative overflow-hidden">
+                      <div class="relative h-48 lg:h-full">
+                        <img [src]="getImageSrc(p)" [alt]="p.titulo || 'Proyecto'"
+                             class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div class="absolute top-4 left-4">
+                          <span class="estado-pill transform transition-all duration-300 group-hover:scale-105" [ngClass]="getEstadoClasses(p.estado)">
+                            <i class="fa-solid fa-circle text-[6px] opacity-80"></i>
+                            {{ getEstadoDisplay(p.estado) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- CONTENIDO MEJORADO -->
+                    <div class="flex-1 p-6 flex flex-col">
+                      <div class="flex-1">
+                        <h3 class="text-xl font-bold text-slate-900 group-hover:text-blue-700 transition-colors duration-300 mb-3 line-clamp-2">{{ p.titulo }}</h3>
+
+                        <div class="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-4">
+                          <span class="inline-flex items-center gap-2 bg-slate-100/80 rounded-xl px-3 py-1.5">
+                            <i class="fa-solid fa-hashtag text-blue-600 text-xs"></i>
+                            <span class="font-semibold">{{ p.codigo || '—' }}</span>
+                          </span>
+                          <span class="inline-flex items-center gap-2 bg-slate-100/80 rounded-xl px-3 py-1.5">
+                            <i class="fa-solid fa-layer-group text-emerald-600 text-xs"></i>
+                            {{ getModalidadDisplay(p.modalidad) }}
+                          </span>
+                          <span class="inline-flex items-center gap-2 bg-slate-100/80 rounded-xl px-3 py-1.5">
+                            <i class="fa-solid fa-clock text-amber-600 text-xs"></i>
+                            {{ p.horas_planificadas }}h planificadas
+                          </span>
+                        </div>
+
+                        <p class="text-slate-700 line-clamp-3 leading-relaxed mb-6">{{ p.descripcion || 'Sin descripción disponible.' }}</p>
+
+                        <!-- PROGRESO MEJORADO -->
+                        <div *ngIf="p.horas_planificadas !== null" class="space-y-3">
+                          <div class="flex items-center justify-between text-sm">
+                            <div class="text-slate-600 font-medium">
+                              Progreso: {{ (getHorasHechas(p) | number:'1.0-2') }} / {{ getHorasPlan(p) }} h
+                              <span class="text-slate-400 ml-2">({{ getProgresoPct(p) | number:'1.0-0' }}%)</span>
+                            </div>
+                            <div class="font-bold text-lg"
+                                 [ngClass]="{
+                                   'text-emerald-600': getFaltantes(p) === 0 && getOverflow(p) === 0,
+                                   'text-amber-600': getFaltantes(p) > 0 && (p.estado || '').toUpperCase() === 'EN_CURSO',
+                                   'text-rose-600': getFaltantes(p) > 0 && ['CERRADO','CANCELADO','FINALIZADO'].includes((p.estado || '').toUpperCase()),
+                                   'text-indigo-600': getOverflow(p) > 0
+                                 }">
+                              <ng-container *ngIf="getOverflow(p) > 0">+{{ getOverflow(p) | number:'1.0-2' }} h</ng-container>
+                              <ng-container *ngIf="getOverflow(p) === 0 && getFaltantes(p) > 0">Faltan {{ getFaltantes(p) | number:'1.0-2' }} h</ng-container>
+                              <ng-container *ngIf="getOverflow(p) === 0 && getFaltantes(p) === 0">
+                                <i class="fa-solid fa-check mr-1"></i>Completado
+                              </ng-container>
+                            </div>
+                          </div>
+                          <div class="relative h-3 w-full overflow-hidden rounded-2xl bg-slate-200/80 shadow-inner"
+                               [ngClass]="getProgressRailClasses(p)" role="progressbar"
+                               [attr.aria-valuemin]="0" [attr.aria-valuemax]="100" [attr.aria-valuenow]="getProgresoPct(p)">
+                            <div class="h-full rounded-2xl transition-all duration-1000 ease-out shadow-lg"
+                                 [style.width.%]="getProgresoPct(p)"
+                                 [ngClass]="getProgressFillClasses(p)"></div>
+                            <div *ngIf="getOverflow(p) > 0" class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-white bg-indigo-600 px-1.5 py-0.5 rounded-lg">
+                              +{{ getOverflow(p) | number:'1.0-1' }}h
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- BOTÓN MEJORADO -->
+                      <div class="flex justify-end pt-4 mt-4 border-t border-slate-200/60">
+                        <a [routerLink]="['/mis-proyectos', p.id]"
+                           class="inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform transition-all duration-300 hover:scale-105 hover:from-blue-700 hover:to-indigo-700">
+                          <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                          Ver detalle del proyecto
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #noInsTpl>
+              <div class="grid place-items-center rounded-3xl border-2 border-dashed border-slate-300/80 bg-white/50 py-16 text-center backdrop-blur-sm">
+                <div class="mb-4 grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400 shadow-lg">
+                  <i class="fa-solid fa-inbox text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Aún no tienes proyectos inscritos</h3>
+                <p class="text-slate-600 max-w-md mx-auto">Explora los proyectos disponibles e inscríbete para comenzar tu experiencia de vinculación.</p>
+              </div>
+            </ng-template>
+          </div>
+
+          <!-- Columna derecha: Vinculados + Libres MEJORADOS -->
+          <div class="lg:col-span-7 space-y-10">
+
+            <!-- Vinculados Mejorado -->
+            <div class="bg-gradient-to-br from-amber-50/50 to-orange-50/30 rounded-3xl p-6 border border-amber-200/60 shadow-lg">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-black text-lg shadow-lg">2</div>
+                <div>
+                  <h2 class="text-2xl font-black text-slate-900">Proyectos Vinculados</h2>
+                  <p class="text-slate-600 text-sm mt-1">Prioritarios para tu nivel académico</p>
+                </div>
+                <span class="ml-auto rounded-2xl bg-amber-100 px-3 py-1.5 text-sm font-bold text-amber-700 border border-amber-200">
+                  {{ vinculadosCount() }} disponible{{ vinculadosCount() !== 1 ? 's' : '' }}
+                </span>
+              </div>
+
+              <ng-container *ngIf="vinculados().length; else noVincTpl">
+                <div class="h-scroll" aria-label="Proyectos vinculados" role="region">
+                  <div class="flex gap-6 snap-x snap-mandatory overflow-x-auto pb-4 px-2">
+                    <div *ngFor="let p of vinculados()"
+                         class="snap-start w-80 shrink-0 rounded-2xl border border-white bg-gradient-to-br from-white to-amber-50/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 group">
+                      <div class="mb-4 flex items-start justify-between gap-3">
+                        <h3 class="font-bold text-slate-900 line-clamp-2 text-lg leading-tight group-hover:text-amber-700 transition-colors">{{ p.titulo }}</h3>
+                        <span class="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-[10px] font-black uppercase text-white shadow-lg transform -rotate-2">Prioridad</span>
+                      </div>
+                      <div class="mb-4 space-y-2">
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                          <i class="fa-solid fa-hashtag text-blue-600"></i>
+                          <span class="font-semibold">{{ p.codigo || '—' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                          <i class="fa-solid fa-layer-group text-emerald-600"></i>
+                          {{ getModalidadDisplay(p.modalidad) }}
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                          <i class="fa-solid fa-clock text-amber-600"></i>
+                          {{ p.horas_planificadas }}h planificadas
+                        </div>
+                      </div>
+                      <p class="text-sm text-slate-700 line-clamp-3 leading-relaxed mb-6">{{ p.descripcion || 'Sin descripción disponible.' }}</p>
+                      <button (click)="inscribirse(p)"
+                              class="w-full rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 transform transition-all duration-300 hover:scale-105 hover:from-amber-600 hover:to-orange-600">
+                        <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i>
+                        Inscribirme ahora
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-template #noVincTpl>
+                <div class="rounded-2xl border-2 border-dashed border-amber-300/80 bg-amber-50/30 p-8 text-center">
+                  <div class="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-amber-100 text-amber-600 mx-auto">
+                    <i class="fa-solid fa-user-graduate"></i>
+                  </div>
+                  <p class="text-sm text-amber-700 font-medium">No hay proyectos vinculados disponibles para tu nivel académico.</p>
+                </div>
+              </ng-template>
+            </div>
+
+            <!-- Libres Mejorado -->
+            <div class="bg-gradient-to-br from-blue-50/50 to-indigo-50/30 rounded-3xl p-6 border border-blue-200/60 shadow-lg">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black text-lg shadow-lg">3</div>
+                <div>
+                  <h2 class="text-2xl font-black text-slate-900">Proyectos Libres</h2>
+                  <p class="text-slate-600 text-sm mt-1">Disponibles para todos los niveles</p>
+                </div>
+                <span class="ml-auto rounded-2xl bg-blue-100 px-3 py-1.5 text-sm font-bold text-blue-700 border border-blue-200">
+                  {{ libresCount() }} disponible{{ libresCount() !== 1 ? 's' : '' }}
+                </span>
+              </div>
+
+              <ng-container *ngIf="libres().length; else noLibTpl">
+                <div class="h-scroll" aria-label="Proyectos libres" role="region">
+                  <div class="flex gap-6 snap-x snap-mandatory overflow-x-auto pb-4 px-2">
+                    <div *ngFor="let p of libres()"
+                         class="snap-start w-80 shrink-0 rounded-2xl border border-white bg-gradient-to-br from-white to-blue-50/50 p-6 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 group">
+                      <div class="mb-4 flex items-start justify-between gap-3">
+                        <h3 class="font-bold text-slate-900 line-clamp-2 text-lg leading-tight group-hover:text-blue-700 transition-colors">{{ p.titulo }}</h3>
+                        <span class="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 px-3 py-1 text-[10px] font-black uppercase text-white shadow-lg transform rotate-2">Libre</span>
+                      </div>
+                      <div class="mb-4 space-y-2">
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                          <i class="fa-solid fa-hashtag text-blue-600"></i>
+                          <span class="font-semibold">{{ p.codigo || '—' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                          <i class="fa-solid fa-layer-group text-emerald-600"></i>
+                          {{ getModalidadDisplay(p.modalidad) }}
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                          <i class="fa-solid fa-clock text-amber-600"></i>
+                          {{ p.horas_planificadas }}h planificadas
+                        </div>
+                      </div>
+                      <p class="text-sm text-slate-700 line-clamp-3 leading-relaxed mb-6">{{ p.descripcion || 'Sin descripción disponible.' }}</p>
+                      <button (click)="inscribirse(p)"
+                              class="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform transition-all duration-300 hover:scale-105 hover:from-blue-600 hover:to-indigo-600">
+                        <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i>
+                        Inscribirme ahora
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-template #noLibTpl>
+                <div class="rounded-2xl border-2 border-dashed border-blue-300/80 bg-blue-50/30 p-8 text-center">
+                  <div class="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-blue-100 text-blue-600 mx-auto">
+                    <i class="fa-solid fa-globe"></i>
+                  </div>
+                  <p class="text-sm text-blue-700 font-medium">No hay proyectos libres disponibles en este momento.</p>
+                </div>
+              </ng-template>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- VISTA: Historial MEJORADO -->
+        <section *ngIf="activeTab()==='historial'" class="space-y-8">
+          <div class="flex items-center gap-4">
+            <div class="rounded-2xl bg-gradient-to-br from-slate-600 to-slate-700 p-3 shadow-lg">
+              <i class="fa-solid fa-history text-white text-lg"></i>
+            </div>
+            <div>
+              <h2 class="text-3xl font-black text-slate-900">Historial de Proyectos</h2>
+              <p class="text-slate-600 text-sm mt-1">Tus proyectos de períodos anteriores</p>
+            </div>
+            <span class="ml-auto rounded-2xl bg-slate-100 px-3 py-1.5 text-sm font-bold text-slate-700 border border-slate-200">
+              {{ historialesCount() }} proyecto{{ historialesCount() !== 1 ? 's' : '' }}
+            </span>
+          </div>
+
+          <ng-container *ngIf="historiales().length; else noHistTpl">
+            <div class="grid gap-6">
+              <div *ngFor="let p of historiales()"
+                   class="overflow-hidden rounded-3xl border border-white/80 bg-gradient-to-br from-white to-slate-50/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.01] group">
+                <div class="flex flex-col md:flex-row">
+                  <div class="md:w-64 md:shrink-0 relative overflow-hidden">
+                    <img [src]="getImageSrc(p)" [alt]="p.titulo || 'Proyecto'"
+                         class="h-48 w-full object-cover md:h-full transition-transform duration-700 group-hover:scale-105" loading="lazy"/>
+                    <div class="absolute top-4 left-4">
+                      <span class="rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 px-3 py-1.5 text-xs font-black text-white shadow-lg transform -rotate-2">
+                        <i class="fa-solid fa-check mr-1"></i>Finalizado
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex-1 p-8">
+                    <div class="mb-4">
+                      <h3 class="text-2xl font-black text-slate-900 mb-3">{{ p.titulo }}</h3>
+                      <div class="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-4">
+                        <span class="inline-flex items-center gap-2 bg-slate-100/80 rounded-xl px-3 py-1.5">
+                          <i class="fa-solid fa-hashtag text-blue-600 text-xs"></i>
+                          <span class="font-semibold">{{ p.codigo || '—' }}</span>
+                        </span>
+                        <span class="inline-flex items-center gap-2 bg-slate-100/80 rounded-xl px-3 py-1.5">
+                          <i class="fa-solid fa-layer-group text-emerald-600 text-xs"></i>
+                          {{ getModalidadDisplay(p.modalidad) }}
+                        </span>
+                        <span class="inline-flex items-center gap-2 bg-slate-100/80 rounded-xl px-3 py-1.5">
+                          <i class="fa-solid fa-clock text-amber-600 text-xs"></i>
+                          {{ p.horas_planificadas }}h planificadas
+                        </span>
+                      </div>
+                      <p class="text-slate-700 leading-relaxed">{{ p.descripcion || 'Sin descripción disponible.' }}</p>
+                    </div>
+
+                    <!-- PROGRESO HISTORIAL MEJORADO -->
+                    <div *ngIf="p.horas_planificadas !== null" class="space-y-3">
+                      <div class="flex items-center justify-between text-sm">
+                        <div class="text-slate-600 font-medium">
+                          Resultado final: {{ (getHorasHechas(p) | number:'1.0-2') }} / {{ getHorasPlan(p) }} h
+                          <span class="text-slate-400 ml-2">({{ getProgresoPct(p) | number:'1.0-0' }}%)</span>
+                        </div>
+                        <div class="font-bold text-lg"
+                             [ngClass]="{
+                               'text-rose-600': getFaltantes(p) > 0,
+                               'text-indigo-600': getOverflow(p) > 0,
+                               'text-emerald-600': getFaltantes(p) === 0 && getOverflow(p) === 0
+                             }">
+                          <ng-container *ngIf="getFaltantes(p) > 0">
+                            <i class="fa-solid fa-xmark mr-1"></i>Faltaron {{ getFaltantes(p) | number:'1.0-2' }} h
+                          </ng-container>
+                          <ng-container *ngIf="getOverflow(p) > 0">
+                            <i class="fa-solid fa-plus mr-1"></i>+{{ getOverflow(p) | number:'1.0-2' }} h extra
+                          </ng-container>
+                          <ng-container *ngIf="getFaltantes(p) === 0 && getOverflow(p) === 0">
+                            <i class="fa-solid fa-trophy mr-1"></i>Objetivo cumplido
+                          </ng-container>
+                        </div>
+                      </div>
+                      <div class="relative h-3 w-full overflow-hidden rounded-2xl bg-slate-200/80 shadow-inner"
+                           [ngClass]="getProgressRailClasses(p)"
+                           role="progressbar"
+                           [attr.aria-valuemin]="0" [attr.aria-valuemax]="100" [attr.aria-valuenow]="getProgresoPct(p)">
+                        <div class="h-full rounded-2xl transition-all duration-1000 ease-out shadow-lg"
+                             [style.width.%]="getProgresoPct(p)"
+                             [ngClass]="getProgressFillClasses(p)"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-template #noHistTpl>
+            <div class="grid place-items-center rounded-3xl border-2 border-dashed border-slate-300/80 bg-white/50 py-20 text-center backdrop-blur-sm">
+              <div class="mb-4 grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400 shadow-lg">
+                <i class="fa-solid fa-history text-2xl"></i>
+              </div>
+              <h3 class="text-xl font-bold text-slate-800 mb-2">Sin historial en este período</h3>
+              <p class="text-slate-600 max-w-md mx-auto">Selecciona otro período académico para visualizar proyectos de períodos anteriores.</p>
+            </div>
+          </ng-template>
+        </section>
+
+      </ng-template>
+    </ng-template>
   </div>
 </div>

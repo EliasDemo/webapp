@@ -1,4 +1,3 @@
-// src/app/features/vm/pages/upcoming-sessions/upcoming-sessions.page.ts
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Component, OnDestroy, computed, inject, signal } from '@angular/core';

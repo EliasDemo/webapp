@@ -9,31 +9,59 @@
   ></ev-event-filters>
 
   <!-- Estado de carga -->
-  <div *ngIf="cargando" class="text-center opacity-80">Cargando eventos...</div>
+  <div *ngIf="cargando" class="text-center opacity-80">
+    Cargando eventos...
+  </div>
+
+  <!-- Mensaje de error -->
+  <div *ngIf="!cargando && error" class="text-center text-red-600 font-medium">
+    {{ error }}
+  </div>
 
   <!-- Lista de cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+  <div
+    *ngIf="!cargando && !error"
+    class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+  >
     <ev-event-card
-      *ngFor="let ev of eventos"
+      *ngFor="let ev of eventos; trackBy: trackByEventoId"
       [evento]="ev"
       (ver)="verEvento($event)"
     ></ev-event-card>
+
+    <!-- Vacío -->
+    <div
+      *ngIf="eventos.length === 0"
+      class="col-span-full text-center opacity-70"
+    >
+      No se encontraron eventos.
+    </div>
   </div>
 
-  <!-- Paginación mínima (opcional) -->
-  <div class="flex items-center justify-center gap-4" *ngIf="total > pageSize">
+  <!-- Paginación mínima -->
+  <div
+    class="flex items-center justify-center gap-4"
+    *ngIf="!cargando && !error && total > pageSize"
+  >
     <button
       class="bg-white text-black px-4 py-2 font-bold brutal-shadow btn disabled:opacity-50"
       [disabled]="page <= 1"
-      (click)="page = page - 1; load()"
+      (click)="prevPage()"
+      type="button"
     >
       ◀ Anterior
     </button>
-    <div>Página <span class="font-bold">{{ page }}</span></div>
+
+    <div class="select-none">
+      Página <span class="font-bold">{{ page }}</span>
+      <ng-container *ngIf="totalPages > 0"> de {{ totalPages }}</ng-container>
+    </div>
+
     <button
       class="bg-white text-black px-4 py-2 font-bold brutal-shadow btn disabled:opacity-50"
-      [disabled]="page * pageSize >= total"
-      (click)="page = page + 1; load()"
+      [disabled]="page >= totalPages"
+      (click)="nextPage()"
+      type="button"
     >
       Siguiente ▶
     </button>

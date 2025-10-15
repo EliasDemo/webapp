@@ -1,0 +1,323 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/10 to-indigo-50/5 py-8" data-page="rolehaspermission-list">
+  <div class="mx-auto max-w-7xl px-4">
+    <!-- Header Premium -->
+    <div class="mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div class="space-y-4">
+        <div class="flex items-center gap-4">
+          <div class="p-3 bg-white rounded-2xl shadow-lg border border-slate-200/60 backdrop-blur-sm group hover:shadow-xl transition-all duration-500 hover:scale-105">
+            <div class="relative">
+              <svg class="w-7 h-7 text-blue-600 transition-transform duration-500 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11zM19 21a7 7 0 10-14 0h14z" />
+              </svg>
+              <div class="absolute -inset-1 bg-blue-100/30 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-700 bg-clip-text text-transparent drop-shadow-sm">
+              Roles & Permisos
+            </h1>
+            <div class="flex items-center gap-3 mt-2">
+              <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200/60 backdrop-blur-sm">
+                <span class="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse"></span>
+                <span class="text-sm font-medium text-blue-700">Guard activo:</span>
+                <span class="font-semibold text-blue-900">{{ guard() }}</span>
+              </div>
+              <div class="text-sm text-slate-500 bg-slate-100/80 px-3 py-1.5 rounded-full border border-slate-200/60">
+                {{ filtered().length }} roles encontrados
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón crear ACTIVADO -->
+      <a
+        [routerLink]="['/ad/roles', 'nuevo']"
+        class="group relative whitespace-nowrap bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600
+              text-white shadow-2xl hover:shadow-3xl transform hover:scale-105 active:scale-95
+              transition-all duration-500 font-semibold border-0 px-8 py-4 rounded-2xl overflow-hidden
+              inline-flex items-center justify-center">
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/10 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <span class="relative flex items-center gap-3">
+          <svg class="w-5 h-5 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Nuevo rol
+          <svg class="w-4 h-4 opacity-60 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+        </span>
+      </a>
+    </div>
+
+    <!-- Filtros Premium -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-6 mb-8 shadow-xl">
+      <div class="flex flex-col lg:flex-row gap-4 items-end">
+        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Guard Select -->
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+              Guard
+            </label>
+            <select class="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-700 bg-white shadow-sm
+                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300
+                          hover:border-slate-400 hover:shadow-md"
+                    [ngModel]="guard()"
+                    (ngModelChange)="onGuardChange($event)">
+              <option [ngValue]="'web'">Web</option>
+              <option [ngValue]="'api'">API</option>
+              <option [ngValue]="'sanctum'">Sanctum</option>
+            </select>
+          </div>
+
+          <!-- Search -->
+          <div class="space-y-2">
+            <label class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              Buscar
+            </label>
+            <div class="relative">
+              <input class="w-full border border-slate-300 rounded-xl px-4 py-3 pl-11 text-slate-700 bg-white shadow-sm
+                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300
+                           hover:border-slate-400 hover:shadow-md"
+                     placeholder="Buscar rol o permiso…"
+                     [ngModel]="q()"
+                     (ngModelChange)="q.set($event)" />
+              <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button (click)="handleSearch()"
+                  class="group flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600
+                         text-white font-semibold shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-indigo-700
+                         hover:shadow-xl hover:scale-105 active:scale-95">
+            <svg class="w-4 h-4 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            Buscar
+          </button>
+          <button (click)="handleClear()"
+                  class="group flex items-center gap-2 px-6 py-3 rounded-xl border border-slate-300 bg-white
+                         text-slate-700 font-semibold shadow-lg transition-all duration-300 hover:bg-slate-50
+                         hover:shadow-xl hover:scale-105 active:scale-95">
+            <svg class="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error()"
+         class="mb-6 rounded-2xl border border-red-200/80 bg-gradient-to-r from-red-50 to-rose-50/60 p-6
+                backdrop-blur-sm shadow-lg">
+      <div class="flex items-center gap-3">
+        <div class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-red-800 font-semibold">Error al cargar roles</h3>
+          <p class="text-red-700 mt-1">{{ error() }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <ng-container *ngIf="!loading(); else loadingTpl">
+      <ng-container *ngIf="filtered().length; else emptyTpl">
+        <!-- Stats Header -->
+        <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div class="flex items-center gap-6">
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 px-6 py-3 shadow-lg">
+              <div class="text-2xl font-bold text-slate-900">{{ filtered().length }}</div>
+              <div class="text-sm text-slate-600 font-medium">Roles activos</div>
+            </div>
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 px-6 py-3 shadow-lg">
+              <div class="text-2xl font-bold text-slate-900">{{ totalUsers() }}</div>
+              <div class="text-sm text-slate-600 font-medium">Usuarios totales</div>
+            </div>
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 px-6 py-3 shadow-lg">
+              <div class="text-2xl font-bold text-slate-900">{{ totalPermissions() }}</div>
+              <div class="text-sm text-slate-600 font-medium">Permisos asignados</div>
+            </div>
+          </div>
+
+          <button *ngIf="hasActiveFilters()"
+                  (click)="handleClear()"
+                  class="group flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-300">
+            <svg class="w-4 h-4 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+            Limpiar filtros
+          </button>
+        </div>
+
+        <!-- Grid de Roles Mejorado -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div *ngFor="let r of filtered(); trackBy: trackById; let i = index"
+               class="group flex flex-col rounded-3xl border border-slate-200/60 bg-white/80 backdrop-blur-sm
+                      shadow-xl transition-all duration-500 hover:shadow-2xl hover:border-blue-300/60
+                      overflow-hidden h-full">
+
+            <!-- Contenido de la card -->
+            <div class="flex-1 p-6">
+              <!-- Header de la card -->
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1 min-w-0">
+                  <h2 class="text-xl font-bold text-slate-900 group-hover:text-blue-700 transition-colors duration-300 truncate">
+                    {{ r.name }}
+                  </h2>
+                  <div class="flex items-center gap-3 mt-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200/60">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                      </svg>
+                      {{ r.guard_name }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Contador de usuarios -->
+                <div class="text-right ml-4">
+                  <div class="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    {{ r.users_count != null ? r.users_count : 0 }}
+                  </div>
+                  <div class="text-xs text-slate-500 mt-1">usuarios</div>
+                </div>
+              </div>
+
+              <!-- Sección de permisos -->
+              <div class="mb-6">
+                <div class="flex items-center gap-2 mb-3">
+                  <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Permisos asignados
+                    <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs font-medium">
+                      {{ r.permissions?.length || 0 }}
+                    </span>
+                  </h3>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                  <ng-container *ngIf="r.permissions?.length; else noPerms">
+                    <span class="group/perm inline-block max-w-full"
+                          *ngFor="let p of r.permissions?.slice(0, 4); let last = last">
+                      <span class="inline-flex items-center gap-1.5 rounded-xl bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700
+                                  border border-green-200/60 transition-all duration-300 hover:bg-green-100 hover:scale-105 hover:shadow-md
+                                  truncate max-w-[200px]"
+                            [title]="p.name">
+                        <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        {{ p.name }}
+                      </span>
+                      <span *ngIf="last && r.permissions!.length > 4"
+                            class="inline-flex items-center rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200/60">
+                        +{{ r.permissions!.length - 4 }} más
+                      </span>
+                    </span>
+                  </ng-container>
+                  <ng-template #noPerms>
+                    <span class="inline-flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-700 border border-amber-200/60">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                      </svg>
+                      Sin permisos asignados
+                    </span>
+                  </ng-template>
+                </div>
+              </div>
+            </div>
+
+            <!-- Acciones FIJAS en la parte inferior -->
+            <div class="p-6 bg-slate-50/50 border-t border-slate-200/60 mt-auto">
+              <div class="flex gap-3">
+                <button
+                  type="button"
+                  (click)="goToView(r, $event)"
+                  class="group/btn flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3
+                        text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white
+                        shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-indigo-700
+                        hover:shadow-xl active:scale-95">
+                  <svg class="w-4 h-4 transition-transform duration-300 group-hover/btn:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                  Ver detalles
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- Loading -->
+    <ng-template #loadingTpl>
+      <div class="flex flex-col items-center justify-center py-20">
+        <div class="relative mb-6">
+          <div class="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
+          <div class="absolute top-0 left-0 w-16 h-16 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+          <div class="absolute top-2 left-2 w-12 h-12 bg-blue-100 rounded-full animate-pulse"></div>
+        </div>
+        <p class="text-lg font-semibold text-slate-700 mb-2">Cargando roles</p>
+        <p class="text-slate-500 text-sm">Obteniendo información de permisos y usuarios...</p>
+        <div class="mt-4 w-48 h-1 bg-slate-200 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse-slow"></div>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Empty -->
+    <ng-template #emptyTpl>
+      <div class="text-center py-20 bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-slate-200/60">
+        <div class="max-w-md mx-auto">
+          <div class="mb-6 relative">
+            <div class="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+              <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4 9 5.567 9 7.5 10.343 11 12 11zM19 21a7 7 0 10-14 0h14z"/>
+              </svg>
+            </div>
+            <div class="absolute -inset-4 bg-blue-100/30 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+          </div>
+          <h3 class="text-2xl font-bold text-slate-900 mb-3">No se encontraron roles</h3>
+          <p class="text-slate-600 mb-8 leading-relaxed">
+            {{ hasActiveFilters() ?
+               'Intenta con otros términos de búsqueda o cambia los filtros aplicados.' :
+               'No hay roles configurados en el sistema para el guard seleccionado.' }}
+          </p>
+          <div class="flex gap-4 justify-center">
+            <button (click)="handleClear()"
+                    class="group flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600
+                           text-white font-semibold shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-indigo-700
+                           hover:shadow-xl hover:scale-105">
+              <svg class="w-4 h-4 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              Limpiar filtros
+            </button>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+</div>

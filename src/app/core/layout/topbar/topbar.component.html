@@ -1,0 +1,266 @@
+<!-- Topbar Mejorado - Diseño Profesional -->
+<nav class="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 border-b border-gray-200/50 dark:border-gray-700/50 backdrop-blur-xl shadow-sm">
+  <div class="mx-auto w-full px-4 lg:px-6 py-3">
+    <div class="flex items-center justify-between gap-4">
+
+      <!-- Lado Izquierdo: Logo y Navegación -->
+      <div class="flex items-center gap-4 lg:gap-6">
+        <!-- Botón Menú Móvil -->
+        <button type="button"
+                class="lg:hidden p-2 rounded-2xl bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50
+                       hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:shadow-md transition-all duration-300"
+                (click)="menuToggle.emit()"
+                aria-label="Abrir menú lateral" aria-controls="app-sidebar-mobile" aria-expanded="false">
+          <i class="fas fa-bars text-gray-700 dark:text-gray-300 text-lg"></i>
+        </button>
+
+        <!-- Logo y Brand -->
+        <a routerLink="/" class="flex items-center gap-3 group" aria-label="Inicio">
+          <div class="relative">
+            <!-- Efecto de resplandor -->
+            <div class="absolute inset-0 rounded-2xl blur-lg bg-gradient-to-br from-blue-500 via-purple-500 to-cyan-500 opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+            <!-- Contenedor del logo -->
+            <div class="relative p-2.5 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-700 border border-blue-400/30 dark:border-blue-600/30 shadow-lg group-hover:shadow-xl transition-all duration-300">
+              <img *ngIf="logoOk(); else logoText"
+                   src="assets/logo.svg"
+                   class="h-6 w-auto block"
+                   alt="Logo"
+                   (error)="onLogoError()">
+            </div>
+          </div>
+          <ng-template #logoText>
+            <div class="flex flex-col">
+              <span class="text-xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400 bg-clip-text text-transparent">
+                AcademicPro
+              </span>
+              <span class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 tracking-widest uppercase mt-0.5">
+                Platform
+              </span>
+            </div>
+          </ng-template>
+        </a>
+
+        <!-- Separador Desktop -->
+        <div class="hidden lg:block w-px h-8 bg-gradient-to-b from-gray-300/50 to-transparent dark:from-gray-600/50"></div>
+
+        <!-- Estado del Sistema -->
+        <div class="hidden md:flex items-center gap-3 px-4 py-2 rounded-2xl border border-gray-200/50 dark:border-gray-700/50
+                    bg-gradient-to-r from-gray-50/80 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50
+                    backdrop-blur-sm shadow-sm">
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></div>
+              <div class="absolute inset-0 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+            </div>
+            <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Sistema</span>
+          </div>
+          <div class="w-px h-4 bg-gray-300/50 dark:bg-gray-600/50"></div>
+          <div class="text-xs font-medium text-gray-600 dark:text-gray-400 capitalize">
+            {{ statusLower() }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Lado Derecho: Acciones de Usuario -->
+      <div class="flex items-center gap-3">
+
+        <!-- Indicadores Rápidos -->
+        <div class="hidden xl:flex items-center gap-4">
+          <!-- Notificaciones -->
+          <button type="button"
+                  class="relative p-2.5 rounded-2xl bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50
+                         hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:shadow-md transition-all duration-300 group"
+                  aria-label="Notificaciones">
+            <i class="fas fa-bell text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 text-lg"></i>
+            <span class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 border-2 border-white dark:border-gray-900
+                        text-xs font-black text-white flex items-center justify-center shadow-lg">
+              3
+            </span>
+          </button>
+
+          <!-- Mensajes -->
+          <button type="button"
+                  class="relative p-2.5 rounded-2xl bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50
+                         hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:shadow-md transition-all duration-300 group"
+                  aria-label="Mensajes">
+            <i class="fas fa-envelope text-gray-600 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 text-lg"></i>
+            <span class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2 border-white dark:border-gray-900
+                        text-xs font-black text-white flex items-center justify-center shadow-lg">
+              7
+            </span>
+          </button>
+        </div>
+
+        <!-- Separador de Acciones -->
+        <div class="hidden xl:block w-px h-8 bg-gradient-to-b from-gray-300/50 to-transparent dark:from-gray-600/50"></div>
+
+        <!-- Menú de Usuario Mejorado -->
+        <div class="relative">
+          <button type="button"
+                  class="flex items-center gap-3 p-2 rounded-2xl border-2 border-transparent
+                         bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
+                         hover:border-blue-300/50 dark:hover:border-blue-600/50 hover:shadow-lg
+                         transition-all duration-300 group"
+                  (click)="toggleMenu()"
+                  aria-haspopup="menu"
+                  [attr.aria-expanded]="open()"
+                  aria-controls="user-menu">
+
+            <!-- Avatar de Usuario -->
+            <div class="relative">
+              <div class="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>
+              <div class="relative">
+                <img *ngIf="photo(); else placeholder"
+                     [src]="photo()!"
+                     class="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-900 shadow-lg"
+                     alt="Foto de perfil">
+                <ng-template #placeholder>
+                  <div class="w-10 h-10 grid place-items-center rounded-full bg-gradient-to-br from-blue-600 to-purple-700
+                              text-white font-bold text-sm border-2 border-white dark:border-gray-900 shadow-lg">
+                    {{ initials() }}
+                  </div>
+                </ng-template>
+              </div>
+              <!-- Indicador de Estado -->
+              <span class="absolute -right-0.5 -bottom-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900 shadow-lg"></span>
+            </div>
+
+            <!-- Información de Usuario -->
+            <div class="hidden lg:block text-left max-w-44">
+              <div class="text-sm font-bold truncate text-gray-900 dark:text-gray-100 leading-tight">
+                {{ name() || 'Usuario' }}
+              </div>
+              <div class="text-xs truncate text-gray-600 dark:text-gray-400 leading-tight">
+                {{ email() || 'usuario@email.com' }}
+              </div>
+            </div>
+
+            <!-- Ícono de Flecha -->
+            <i class="hidden lg:block fas fa-chevron-down text-gray-500 text-xs transition-transform duration-300"
+               [class.rotate-180]="open()"></i>
+          </button>
+
+          <!-- Menú Desplegable Mejorado -->
+          <div *ngIf="open()"
+               id="user-menu"
+               class="absolute right-0 mt-2 w-80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl
+                      border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden z-50
+                      animate-in fade-in-0 zoom-in-95 duration-200"
+               role="menu"
+               aria-label="Menú de usuario">
+
+            <!-- Header del Menú -->
+            <div class="p-5 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-gray-50/50 to-white/30 dark:from-gray-800/50 dark:to-gray-900/30">
+              <div class="flex items-center gap-4">
+                <!-- Avatar Grande -->
+                <div class="relative">
+                  <div class="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 opacity-20 blur-sm"></div>
+                  <div class="relative">
+                    <img *ngIf="photo(); else bigPlaceholder"
+                         [src]="photo()!"
+                         class="w-14 h-14 rounded-full object-cover border-2 border-white dark:border-gray-900 shadow-lg"
+                         alt="Foto de perfil">
+                    <ng-template #bigPlaceholder>
+                      <div class="w-14 h-14 grid place-items-center rounded-full bg-gradient-to-br from-blue-600 to-purple-700
+                                  text-white font-bold text-lg border-2 border-white dark:border-gray-900 shadow-lg">
+                        {{ initials() }}
+                      </div>
+                    </ng-template>
+                  </div>
+                </div>
+
+                <!-- Información Detallada -->
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h3 class="text-base font-extrabold truncate text-gray-900 dark:text-gray-100">
+                      {{ name() || 'Usuario' }}
+                    </h3>
+                    <span class="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wide
+                                bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-sm">
+                      {{ status() || 'Activo' }}
+                    </span>
+                  </div>
+                  <p class="text-sm truncate text-gray-600 dark:text-gray-400 mb-2">
+                    {{ email() || 'usuario@email.com' }}
+                  </p>
+                  <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                    <span class="flex items-center gap-1">
+                      <i class="fas fa-shield-alt text-emerald-500"></i>
+                      Verificado
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <i class="fas fa-clock text-blue-500"></i>
+                      En línea
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Opciones del Menú -->
+            <ul class="py-2" role="none">
+              <li role="none">
+                <a routerLink="/dashboard"
+                   (click)="open.set(false)"
+                   class="flex items-center gap-3 px-5 py-3 text-sm font-semibold
+                          text-gray-700 dark:text-gray-300 hover:bg-blue-50/70 dark:hover:bg-blue-900/30
+                          border-l-4 border-transparent hover:border-blue-500 transition-all duration-200 group"
+                   role="menuitem">
+                  <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <i class="fas fa-tachometer-alt text-blue-600 dark:text-blue-400 text-sm"></i>
+                  </div>
+                  <span class="flex-1">Dashboard Principal</span>
+                  <i class="fas fa-chevron-right text-gray-400 group-hover:text-blue-500 text-xs"></i>
+                </a>
+              </li>
+
+              <li role="none">
+                <a routerLink="/profile"
+                   (click)="open.set(false)"
+                   class="flex items-center gap-3 px-5 py-3 text-sm font-semibold
+                          text-gray-700 dark:text-gray-300 hover:bg-purple-50/70 dark:hover:bg-purple-900/30
+                          border-l-4 border-transparent hover:border-purple-500 transition-all duration-200 group"
+                   role="menuitem">
+                  <div class="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                    <i class="fas fa-user text-purple-600 dark:text-purple-400 text-sm"></i>
+                  </div>
+                  <span class="flex-1">Mi Perfil</span>
+                  <i class="fas fa-chevron-right text-gray-400 group-hover:text-purple-500 text-xs"></i>
+                </a>
+              </li>
+
+              <li role="none">
+                <a routerLink="/settings"
+                   (click)="open.set(false)"
+                   class="flex items-center gap-3 px-5 py-3 text-sm font-semibold
+                          text-gray-700 dark:text-gray-300 hover:bg-cyan-50/70 dark:hover:bg-cyan-900/30
+                          border-l-4 border-transparent hover:border-cyan-500 transition-all duration-200 group"
+                   role="menuitem">
+                  <div class="w-8 h-8 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+                    <i class="fas fa-cog text-cyan-600 dark:text-cyan-400 text-sm"></i>
+                  </div>
+                  <span class="flex-1">{{ 'app.settings' | transloco }}</span>
+                  <i class="fas fa-chevron-right text-gray-400 group-hover:text-cyan-500 text-xs"></i>
+                </a>
+              </li>
+            </ul>
+
+            <!-- Footer del Menú - Cerrar Sesión -->
+            <div class="p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-red-50/60 to-orange-50/40 dark:from-red-900/10 dark:to-orange-900/5">
+              <button type="button"
+                      (click)="logout()"
+                      class="w-full inline-flex items-center justify-center gap-3 px-4 py-3 text-sm font-extrabold
+                             text-white rounded-xl bg-gradient-to-r from-red-600 to-orange-600
+                             hover:from-red-700 hover:to-orange-700 hover:shadow-lg transition-all duration-300 group"
+                      role="menuitem">
+                <i class="fas fa-sign-out-alt text-white group-hover:scale-110 transition-transform duration-300"></i>
+                Cerrar Sesión
+                <i class="fas fa-arrow-right text-white text-xs group-hover:translate-x-1 transition-transform duration-300"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

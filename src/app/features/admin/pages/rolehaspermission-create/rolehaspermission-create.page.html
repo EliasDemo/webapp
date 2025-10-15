@@ -1,0 +1,375 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/5 to-indigo-50/10 py-8" data-page="rolehaspermission-create">
+  <div class="mx-auto max-w-6xl px-4">
+    <!-- Header Premium -->
+    <div class="mb-8 flex items-center justify-between">
+      <div class="space-y-2">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-white rounded-2xl shadow-lg border border-slate-200/60 backdrop-blur-sm group hover:shadow-xl transition-all duration-500 hover:scale-105">
+            <svg class="w-7 h-7 text-blue-600 transition-transform duration-500 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+          </div>
+          <h1 class="text-3xl font-bold bg-gradient-to-r from-slate-900 to-blue-800 bg-clip-text text-transparent drop-shadow-sm">
+            Nuevo Rol & Permisos
+          </h1>
+        </div>
+        <p class="text-slate-600 flex items-center gap-2">
+          <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
+          Creación en 2 pasos: primero el rol, luego los permisos
+        </p>
+      </div>
+
+      <a routerLink="/ad/roles"
+         class="group inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-slate-300 bg-white text-slate-700
+                shadow-lg transition-all duration-300 hover:bg-slate-50 hover:shadow-xl hover:scale-105 hover:-translate-x-1">
+        <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Volver a roles
+      </a>
+    </div>
+
+    <!-- Stepper Premium -->
+    <div class="mb-12 relative">
+      <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-200/60 -translate-y-1/2 -z-10"></div>
+      <div class="flex items-center justify-between">
+        <div class="flex flex-col items-center gap-3">
+          <div [class]="step() === 1 ?
+                        'w-12 h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold flex items-center justify-center shadow-lg shadow-blue-500/30 transition-all duration-500 scale-110' :
+                        'w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-500 flex items-center justify-center shadow-sm transition-all duration-300'">
+            <span class="relative">1</span>
+          </div>
+          <span class="text-sm font-medium" [class]="step() === 1 ? 'text-blue-700 font-semibold' : 'text-slate-500'">
+            Crear Rol
+          </span>
+        </div>
+
+        <div class="flex flex-col items-center gap-3">
+          <div [class]="step() === 2 ?
+                        'w-12 h-12 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold flex items-center justify-center shadow-lg shadow-emerald-500/30 transition-all duration-500 scale-110' :
+                        'w-10 h-10 rounded-xl bg-white border border-slate-300 text-slate-500 flex items-center justify-center shadow-sm transition-all duration-300'">
+            <span class="relative">2</span>
+          </div>
+          <span class="text-sm font-medium" [class]="step() === 2 ? 'text-emerald-700 font-semibold' : 'text-slate-500'">
+            Asignar Permisos
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensaje de error mejorado -->
+    <div *ngIf="error()"
+         class="mb-8 rounded-2xl border border-rose-200/80 bg-gradient-to-r from-rose-50 to-pink-50/60 p-6
+                backdrop-blur-sm shadow-lg animate-fade-in">
+      <div class="flex items-center gap-4">
+        <div class="flex-shrink-0 w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center shadow-inner">
+          <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-rose-800 font-semibold text-lg mb-1">Error</h3>
+          <p class="text-rose-700">{{ error() }}</p>
+        </div>
+        <button (click)="error.set(null)"
+                class="flex-shrink-0 w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center
+                       transition-all duration-300 hover:bg-rose-200 hover:scale-110">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Paso 1: Crear rol con diseño premium -->
+    <form *ngIf="step() === 1"
+          (ngSubmit)="nextToPermissions()"
+          class="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-200/60 p-8 shadow-2xl space-y-8 animate-fade-in-up">
+
+      <div class="space-y-6">
+        <!-- Nombre del rol -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            Nombre del rol
+          </label>
+          <div class="relative">
+            <input class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-slate-700 bg-white shadow-lg
+                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300
+                         hover:border-slate-400 hover:shadow-xl placeholder-slate-400"
+                   placeholder="Ej: EDITOR, SUPERVISOR, ADMIN…"
+                   [ngModel]="name()"
+                   (ngModelChange)="name.set($event)"
+                   name="role_name"
+                   required
+                   minlength="3" />
+            <div class="absolute right-4 top-1/2 transform -translate-y-1/2">
+              <div [class]="name().trim().length >= 3 ?
+                            'w-6 h-6 bg-green-500 rounded-full flex items-center justify-center' :
+                            'w-6 h-6 bg-slate-300 rounded-full'">
+                <svg *ngIf="name().trim().length >= 3" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <p class="text-sm text-slate-500 mt-2 flex items-center gap-2">
+            <span class="w-1 h-1 bg-slate-400 rounded-full"></span>
+            Mínimo 3 caracteres. Usa mayúsculas para mejor legibilidad.
+          </p>
+        </div>
+
+        <!-- Guard -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            Guard de seguridad
+          </label>
+          <select class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-slate-700 bg-white shadow-lg
+                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300
+                         hover:border-slate-400 hover:shadow-xl"
+                  [ngModel]="guard()"
+                  (ngModelChange)="guard.set($event)"
+                  name="guard_name">
+            <option [ngValue]="'web'">Web Application</option>
+            <option [ngValue]="'api'">API</option>
+            <option [ngValue]="'sanctum'">Sanctum</option>
+          </select>
+          <p class="text-sm text-slate-500 mt-2 flex items-center gap-2">
+            <span class="w-1 h-1 bg-slate-400 rounded-full"></span>
+            Define el contexto de seguridad para este rol
+          </p>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex items-center justify-between pt-6 border-t border-slate-200/60">
+        <a routerLink="/ad/roles"
+           class="group inline-flex items-center gap-2 px-6 py-3 rounded-2xl border border-slate-300 bg-white
+                  text-slate-700 font-semibold shadow-lg transition-all duration-300 hover:bg-slate-50
+                  hover:shadow-xl hover:scale-105">
+          <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Cancelar
+        </a>
+
+        <button type="submit"
+                [disabled]="!canNext()"
+                class="group relative inline-flex items-center gap-3 px-8 py-4 rounded-2xl
+                       bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold
+                       shadow-2xl transition-all duration-500 hover:from-blue-700 hover:to-indigo-700
+                       hover:shadow-3xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed
+                       disabled:hover:scale-100 disabled:hover:shadow-2xl overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/10 to-indigo-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <span class="relative flex items-center gap-2">
+            <span *ngIf="!savingRole()">Crear y continuar</span>
+            <span *ngIf="savingRole()">Creando rol...</span>
+            <svg *ngIf="!savingRole()" class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <div *ngIf="savingRole()" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          </span>
+        </button>
+      </div>
+    </form>
+
+    <!-- Paso 2: Asignar permisos con diseño premium -->
+    <div *ngIf="step() === 2" class="space-y-8 animate-fade-in-up">
+      <!-- Toolbar Premium -->
+      <div class="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-200/60 p-6 shadow-2xl">
+        <div class="flex flex-wrap items-center gap-6">
+          <div class="flex items-center gap-4">
+            <div class="bg-blue-50 rounded-2xl px-4 py-2 border border-blue-200/60">
+              <div class="text-2xl font-bold text-blue-700">{{ selected().size }}</div>
+              <div class="text-xs text-blue-600 font-medium">Permisos seleccionados</div>
+            </div>
+            <div class="text-sm text-slate-600">
+              de <span class="font-semibold text-slate-800">{{ perms().length }}</span> disponibles
+            </div>
+          </div>
+
+          <button type="button"
+                  (click)="clearSelection()"
+                  class="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300
+                         bg-white text-slate-700 font-medium shadow-lg transition-all duration-300
+                         hover:bg-slate-50 hover:shadow-xl hover:scale-105">
+            <svg class="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+            Limpiar selección
+          </button>
+
+          <div class="ml-auto flex items-center gap-4">
+            <a routerLink="/ad/roles"
+               class="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300
+                      bg-white text-slate-700 font-semibold shadow-lg transition-all duration-300
+                      hover:bg-slate-50 hover:shadow-xl hover:scale-105">
+              <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Cancelar
+            </a>
+            <button type="button"
+                    (click)="save()"
+                    [disabled]="savingPerms() || selected().size === 0"
+                    class="group relative inline-flex items-center gap-3 px-6 py-2.5 rounded-xl
+                           bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold
+                           shadow-2xl transition-all duration-500 hover:from-emerald-700 hover:to-teal-700
+                           hover:shadow-3xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed
+                           disabled:hover:scale-100 disabled:hover:shadow-2xl overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-white/10 to-teal-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <span class="relative flex items-center gap-2">
+                <svg *ngIf="!savingPerms()" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                <div *ngIf="savingPerms()" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                {{ savingPerms() ? 'Guardando…' : 'Guardar permisos' }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loader Premium -->
+      <div *ngIf="loadingPerms()"
+           class="bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-200/60 p-12 text-center shadow-2xl">
+        <div class="relative inline-block mb-6">
+          <div class="w-16 h-16 border-4 border-blue-200 rounded-2xl"></div>
+          <div class="absolute top-0 left-0 w-16 h-16 border-4 border-blue-600 rounded-2xl border-t-transparent animate-spin"></div>
+          <div class="absolute top-2 left-2 w-12 h-12 bg-blue-100 rounded-xl animate-pulse"></div>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-700 mb-2">Cargando permisos</h3>
+        <p class="text-slate-500">Obteniendo lista de permisos disponibles para el guard <b>{{ guard() }}</b></p>
+        <div class="mt-6 w-64 h-2 bg-slate-200 rounded-full overflow-hidden mx-auto">
+          <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse-slow"></div>
+        </div>
+      </div>
+
+      <!-- Grupos de Permisos Premium -->
+      <ng-container *ngIf="!loadingPerms()">
+        <div *ngFor="let g of grouped(); trackBy: trackByGroup; let i = index"
+             class="group-card bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-200/60
+                    shadow-2xl overflow-hidden transition-all duration-500 hover:shadow-3xl animate-fade-in-up"
+             [style.animation-delay.ms]="i * 100">
+
+          <!-- Header del Grupo -->
+          <div class="group-head bg-gradient-to-r from-slate-50 to-slate-100/60 p-6 border-b border-slate-200/60">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <label class="relative flex items-center cursor-pointer">
+                  <input type="checkbox"
+                         [checked]="isGroupFullySelected(g)"
+                         (change)="toggleGroup(g)"
+                         class="sr-only" />
+                  <div [class]="isGroupFullySelected(g) ?
+                                'w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/30 transition-all duration-300' :
+                                'w-6 h-6 bg-white border-2 border-slate-300 rounded-lg transition-all duration-300'">
+                    <svg *ngIf="isGroupFullySelected(g)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </div>
+                </label>
+                <div>
+                  <div class="font-bold text-slate-900 text-lg capitalize">{{ g.key.replace('.', ' · ') }}</div>
+                  <div class="flex items-center gap-3 mt-1">
+                    <span class="text-sm text-slate-600">{{ g.items.length }} permisos</span>
+                    <span class="text-slate-400">•</span>
+                    <span class="text-sm text-slate-600">
+                      {{ getSelectedCountInGroup(g) }} seleccionados
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-700">
+                  {{ getSelectedCountInGroup(g) }}/{{ g.items.length }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Body del Grupo -->
+          <div class="group-body p-6 bg-gradient-to-br from-white to-slate-50/30">
+            <div class="perm-grid">
+              <label *ngFor="let p of g.items; trackBy: trackByPermId; let j = index"
+                     class="perm-item group/perm relative bg-white border border-slate-200/60 rounded-2xl p-4
+                            transition-all duration-300 hover:border-blue-300 hover:shadow-lg hover:scale-105
+                            cursor-pointer animate-fade-in-up"
+                     [style.animation-delay.ms]="j * 50"
+                     [class.border-blue-300]="isChecked(p.name)"
+                     [class.bg-blue-50]="isChecked(p.name)"
+                     [class.shadow-lg]="isChecked(p.name)">
+
+                <input type="checkbox"
+                       [checked]="isChecked(p.name)"
+                       (change)="togglePerm(p.name)"
+                       class="sr-only" />
+
+                <div class="flex items-center gap-4 w-full">
+                  <div [class]="isChecked(p.name) ?
+                                'w-5 h-5 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/30 transition-all duration-300' :
+                                'w-5 h-5 bg-white border-2 border-slate-300 rounded-lg transition-all duration-300'">
+                    <svg *ngIf="isChecked(p.name)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="perm-name font-mono text-sm text-slate-800 group-hover/perm:text-slate-900 transition-colors duration-300">
+                      {{ p.name }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Indicador de selección -->
+                <div *ngIf="isChecked(p.name)"
+                     class="absolute -top-2 -right-2 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State Premium -->
+        <div *ngIf="grouped().length === 0"
+             class="empty bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-200/60 p-16 text-center shadow-2xl">
+          <div class="max-w-md mx-auto">
+            <div class="mb-6 relative">
+              <div class="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+              </div>
+              <div class="absolute -inset-4 bg-blue-100/30 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"></div>
+            </div>
+            <h3 class="text-2xl font-bold text-slate-900 mb-3">Sin permisos disponibles</h3>
+            <p class="text-slate-600 mb-8 leading-relaxed">
+              No hay permisos configurados para el guard <b>{{ guard() }}</b>.
+              Contacta al administrador del sistema para agregar permisos.
+            </p>
+            <div class="flex gap-4 justify-center">
+              <a routerLink="/ad/roles"
+                 class="group inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600
+                        text-white font-semibold shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-indigo-700
+                        hover:shadow-xl hover:scale-105">
+                <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Volver a roles
+              </a>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

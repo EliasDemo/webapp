@@ -1,0 +1,532 @@
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.login-container {
+  height: 100vh;
+  position: relative;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Fondo completo con imagen - OPTIMIZADO PARA 1536x1024 */
+.background-section {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.background-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Esto hace que la imagen cubra todo el espacio */
+  object-position: center center;
+  min-width: 100%;
+  min-height: 100%;
+
+  /* Para asegurar que mantenga la relación de aspecto */
+  aspect-ratio: 1536 / 1024; /* Relación de tu imagen */
+}
+
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(30, 58, 138, 0.85) 0%,
+    rgba(59, 130, 246, 0.75) 50%,
+    rgba(96, 165, 250, 0.6) 100%
+  );
+  z-index: 2;
+}
+
+.background-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  padding: 2rem;
+}
+
+/* FORMULARIO CENTRADO */
+.form-section {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  width: 100%;
+  max-width: 420px;
+  animation: smoothAppear 0.8s ease-out;
+
+  @media (max-width: 768px) {
+    max-width: 90%;
+  }
+}
+
+@keyframes smoothAppear {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.glass-form {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Header del formulario - LOGO CORREGIDO */
+.form-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo-container {
+  margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.9); /* Fondo blanco para contrastar el logo azul */
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  display: inline-block;
+}
+
+.main-logo {
+  height: 60px;
+  width: auto;
+  /* QUITAMOS EL FILTRO BLANCO - Logo se ve en sus colores originales */
+  display: block;
+}
+
+.welcome-question {
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  opacity: 0.9;
+}
+
+.form-title {
+  color: white;
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Contenido del formulario */
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.12);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    font-size: 1rem;
+    color: white;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+  }
+}
+
+.error-text {
+  color: #fecaca;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Profile card */
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-img {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-name {
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.profile-details {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.profile-role {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+}
+
+/* Botones */
+.submit-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1e3a8a;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+  }
+
+  &:disabled {
+    background: rgba(255, 255, 255, 0.5);
+    color: rgba(30, 58, 138, 0.5);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.button-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.secondary-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+  }
+}
+
+/* Footer */
+.form-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+
+  p {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  .help-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+/* Mejoras responsive */
+@media (max-width: 480px) {
+  .glass-form {
+    padding: 2rem 1.5rem;
+  }
+
+  .form-title {
+    font-size: 1.8rem;
+  }
+
+  .welcome-question {
+    font-size: 1.2rem;
+  }
+
+  .main-logo {
+    height: 50px;
+  }
+
+  .logo-container {
+    padding: 0.4rem;
+  }
+}
+
+/* Contenedor de perfil compacto */
+.user-profile-mini {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.profile-img-small {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.profile-info-mini {
+  flex: 1;
+}
+
+.profile-name {
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.profile-role-badge {
+  background: rgba(74, 144, 226, 0.3);
+  color: #4a90e2;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.profile-escuela {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Contenedor de contraseña con ojito integrado */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .password-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.12);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 0.75rem;
+    padding: 1rem 3rem 1rem 1.25rem;
+    font-size: 1rem;
+    color: white;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+  }
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.password-icon {
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Asegurar que el input-group funcione correctamente */
+.input-group {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Animación de aparición */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mejoras responsive */
+@media (max-width: 480px) {
+  .user-profile-mini {
+    padding: 1rem;
+  }
+
+  .profile-img-small {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .profile-name {
+    font-size: 0.9rem;
+  }
+
+  .profile-role-badge {
+    font-size: 0.7rem;
+  }
+
+  .profile-escuela {
+    font-size: 0.8rem;
+  }
+
+  .password-wrapper .password-input {
+    padding: 0.875rem 2.5rem 0.875rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .toggle-password-btn {
+    right: 0.5rem;
+    padding: 0.375rem;
+  }
+
+  .password-icon {
+    font-size: 1.1rem;
+  }
+}

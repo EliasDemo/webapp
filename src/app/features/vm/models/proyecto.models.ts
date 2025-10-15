@@ -65,6 +65,11 @@ export interface VmSesion {
   hora_fin: string;
   estado: string;
   created_at: string | null;
+
+  // 👇 NUEVOS (opcionales, para edición desde backend)
+  lugar?: string | null;
+  enlace?: string | null;
+  observacion?: string | null;
 }
 
 export type TargetType = 'ep_sede' | 'sede' | 'facultad';
@@ -125,6 +130,22 @@ export interface EventoCreate {
 // Árbol
 export type VmProcesoConSesiones = VmProceso & { sesiones?: VmSesion[] };
 export interface VmProyectoArbol { proyecto: VmProyecto; procesos: VmProcesoConSesiones[]; }
+
+// ───────────────────────────────────────────────────────────────
+// 👇 NUEVO: contextos de edición (para endpoints /edit)
+// ───────────────────────────────────────────────────────────────
+
+/** Proyecto: el contexto de edición usa el mismo shape del árbol */
+export type ProyectoContextoEdicion = VmProyectoArbol;
+
+/** Proceso: el backend devuelve { proceso, sesiones } */
+export interface ProcesoContextoEdicion {
+  proceso: VmProcesoConSesiones;
+  sesiones: VmSesion[];
+}
+
+/** Sesión: alias por claridad, es el mismo recurso de VmSesion */
+export type SesionEditResponse = VmSesion;
 
 // Alumno + inscripción
 export interface ProyectosAlumnoContexto {

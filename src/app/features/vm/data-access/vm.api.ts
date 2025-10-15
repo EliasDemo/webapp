@@ -375,4 +375,55 @@ export class VmApiService {
     // expand=arbol ya incluye procesos y sesiones ordenadas (según tu backend)
     return this.listarProyectosExpand(params, 'arbol', true);
   }
+
+  // ---------- NUEVO: Proyecto (contexto edición) ----------
+obtenerProyectoContextoEdicion(id: Id): Observable<ApiResponse<VmProyectoArbol>> {
+  // GET /vm/proyectos/{proyecto}/edit  → retorna { proyecto, procesos }
+  return this.http.get<ApiResponse<VmProyectoArbol>>(
+    `${this.base}/vm/proyectos/${id}/edit`
+  );
+}
+
+// ---------- NUEVO: Proceso (contexto edición + update/delete por ID) ----------
+obtenerProcesoContextoEdicion(procesoId: Id): Observable<ApiResponse<{ proceso: VmProceso; sesiones: VmSesion[] }>> {
+  // GET /vm/procesos/{proceso}/edit → { proceso, sesiones }
+  return this.http.get<ApiResponse<{ proceso: VmProceso; sesiones: VmSesion[] }>>(
+    `${this.base}/vm/procesos/${procesoId}/edit`
+  );
+}
+
+actualizarProcesoById(procesoId: Id, payload: Partial<ProcesoCreate>): Observable<ApiResponse<VmProceso>> {
+  // PUT /vm/procesos/{proceso}
+  return this.http.put<ApiResponse<VmProceso>>(
+    `${this.base}/vm/procesos/${procesoId}`,
+    payload
+  );
+}
+
+eliminarProcesoById(procesoId: Id): Observable<void> {
+  // DELETE /vm/procesos/{proceso}
+  return this.http.delete<void>(`${this.base}/vm/procesos/${procesoId}`);
+}
+
+// ---------- NUEVO: Sesión (editar por ID) ----------
+obtenerSesionParaEdicion(sesionId: Id): Observable<ApiResponse<VmSesion>> {
+  // GET /vm/sesiones/{sesion}/edit
+  return this.http.get<ApiResponse<VmSesion>>(
+    `${this.base}/vm/sesiones/${sesionId}/edit`
+  );
+}
+
+actualizarSesionById(sesionId: Id, payload: Partial<SesionCreate>): Observable<ApiResponse<VmSesion>> {
+  // PUT /vm/sesiones/{sesion}
+  return this.http.put<ApiResponse<VmSesion>>(
+    `${this.base}/vm/sesiones/${sesionId}`,
+    payload
+  );
+}
+
+eliminarSesionById(sesionId: Id): Observable<void> {
+  // DELETE /vm/sesiones/{sesion}
+  return this.http.delete<void>(`${this.base}/vm/sesiones/${sesionId}`);
+}
+
 }

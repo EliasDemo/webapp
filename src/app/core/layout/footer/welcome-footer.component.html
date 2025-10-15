@@ -1,0 +1,80 @@
+<!-- welcome-footer.component.html -->
+<div class="fixed bottom-6 right-0 z-40 pointer-events-none">
+  <div
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    [attr.aria-hidden]="!visible()"
+    class="pointer-events-auto
+           w-[90vw] sm:w-[70vw] lg:w-[40vw] xl:w-[32vw] max-w-[480px]
+           rounded-l-2xl border border-slate-200/70 dark:border-slate-700/70
+           bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl
+           shadow-2xl shadow-blue-500/10 hover:shadow-2xl hover:shadow-blue-500/20
+           overflow-hidden transform-gpu
+           translate-x-full opacity-0 scale-95
+           transition-all duration-500 ease-out will-change-transform
+           hover:scale-100 hover:-translate-y-1"
+    [ngClass]="{
+      'translate-x-0 opacity-100 scale-100': visible(),
+      'transition-none': reduceMotion()
+    }"
+  >
+    <!-- Barra de estado superior con gradiente dinámico -->
+    <div class="h-1.5 w-full" [ngClass]="getStatusBarClass()"></div>
+
+    <div class="p-4 sm:p-5">
+      <div class="flex items-start gap-4">
+        <!-- Icono dinámico -->
+        <div class="shrink-0 grid place-items-center w-12 h-12 rounded-2xl shadow-lg"
+             [ngClass]="getIconContainerClass()">
+          <i [class]="icon()" class="text-white text-lg"></i>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="min-w-0 flex-1">
+          <p class="text-base sm:text-lg font-extrabold tracking-wide leading-tight"
+             [ngClass]="getTextGradientClass()">
+            {{ text() }}
+          </p>
+          <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+            {{ getSubtitle() }}
+          </p>
+
+          <!-- Botón de acción opcional -->
+          <button *ngIf="action()"
+                  type="button"
+                  (click)="handleAction()"
+                  class="mt-3 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300
+                         bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg
+                         transform hover:scale-105 active:scale-95"
+                  aria-label="Ejecutar acción">
+            {{ action()?.label }}
+            <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Botón de cierre -->
+        <button type="button"
+                class="shrink-0 ml-2 inline-grid place-items-center w-9 h-9 rounded-xl
+                       border border-slate-200/70 dark:border-slate-700/70
+                       bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm
+                       hover:bg-slate-50 dark:hover:bg-gray-700
+                       text-slate-600 dark:text-slate-300 shadow-sm
+                       hover:shadow-md transition-all duration-300
+                       hover:scale-110 active:scale-95"
+                (click)="close()"
+                aria-label="Cerrar aviso">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div *ngIf="visible() && !reduceMotion()"
+           class="mt-4 h-1 bg-slate-200/50 dark:bg-slate-700/50 rounded-full overflow-hidden">
+        <div class="h-full rounded-full transition-all duration-100 ease-linear"
+             [ngClass]="getProgressBarClass()"
+             [style.width.%]="progressWidth()"></div>
+      </div>
+    </div>
+  </div>
+</div>

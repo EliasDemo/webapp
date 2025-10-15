@@ -1,111 +1,61 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, OnDestroy } from '@angular/core';
 import { NgIf } from '@angular/common';
-import {
-  ReactiveFormsModule,
-  FormControl,
-  FormGroup,
-  Validators,
-} from '@angular/forms';
+import { ReactiveFormsModule, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
 
 import { AuthApi } from '../data-access/auth.api';
 import { AlertService } from '../../../shared/ui/alert/alert.service';
+import { FooterToastService } from '../../../core/layout/footer/footer-toast.service';
 
 @Component({
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, TranslocoPipe],
-  template: `
-<div class="min-h-dvh grid place-items-center p-4">
-  <div class="w-full max-w-md rounded-2xl border p-6 bg-white">
-    <h1 class="text-xl font-semibold mb-4">{{ title() }}</h1>
-
-    <!-- Paso 1: username -->
-    <form *ngIf="step() === 1"
-          [formGroup]="lookupForm"
-          (ngSubmit)="submitLookup()"
-          class="space-y-4">
-      <div>
-        <label class="block text-sm mb-1">{{ 'app.language' | transloco }}: {{ lang }}</label>
-        <label class="block text-sm mb-1" for="username">Username</label>
-        <input id="username"
-               class="w-full border rounded px-3 py-2"
-               formControlName="username"
-               autocomplete="username"
-               placeholder="tu.usuario" />
-        <small class="text-red-600" *ngIf="username.invalid && username.touched">Requerido</small>
-      </div>
-      <button type="submit"
-              class="w-full rounded bg-black text-white py-2 disabled:opacity-50"
-              [disabled]="lookupForm.invalid">
-        Continuar
-      </button>
-    </form>
-
-    <!-- Paso 2: password -->
-    <form *ngIf="step() === 2"
-          [formGroup]="loginForm"
-          (ngSubmit)="submitLogin()"
-          class="space-y-4">
-      <div class="flex items-center gap-3">
-        <img *ngIf="profilePhoto()" [src]="profilePhoto()!" class="w-12 h-12 rounded-full object-cover border" />
-        <div>
-          <div class="font-semibold">{{ fullName() }}</div>
-          <div class="text-sm opacity-70">{{ escuela() }}</div>
-          <div class="text-xs opacity-60">Rol: {{ rol() || '—' }}</div>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm mb-1" for="password">Password</label>
-        <input id="password"
-               class="w-full border rounded px-3 py-2"
-               type="password"
-               formControlName="password"
-               autocomplete="current-password"
-               placeholder="••••••••" />
-        <small class="text-red-600" *ngIf="password.invalid && password.touched">Requerido</small>
-      </div>
-
-      <div class="flex gap-2">
-        <button type="button" class="flex-1 rounded border py-2" (click)="back()">Cambiar usuario</button>
-        <button type="submit"
-                class="flex-1 rounded bg-black text-white py-2 disabled:opacity-50"
-                [disabled]="loginForm.invalid">
-          Ingresar
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-  `
+  selector: 'app-login-page',
+  imports: [ReactiveFormsModule, NgIf],
+  templateUrl: './login.page.html',
+  styleUrls: ['./login.page.scss'],
 })
-export class LoginPage {
+export class LoginPage implements OnDestroy {
   private api = inject(AuthApi);
   private alerts = inject(AlertService);
   private router = inject(Router);
+  private footerToast = inject(FooterToastService);
 
-  // Solo para mostrar idioma actual (opcional)
+  // idioma actual (opcional)
   lang: string = document.documentElement.lang || 'es';
 
-  // Paso actual
+  // paso / estado UI
   private _step = signal<1 | 2>(1);
   step = this._step.asReadonly();
+  showPassword = signal(false);
 
-  // ✅ Formularios tipados (para que (ngSubmit) funcione y evitar recarga)
+  // intentos y bloqueo
+  private _failedAttempts = signal(0);
+  private _isLocked = signal(false);
+  private _lockUntil = signal<Date | null>(null);
+
+  failedAttempts = this._failedAttempts.asReadonly();
+  isLocked = this._isLocked.asReadonly();
+  lockUntil = this._lockUntil.asReadonly();
+
+  // error específico de login
+  loginError = signal<string>('');
+
+  // timer de desbloqueo
+  private unlockTimer: ReturnType<typeof setInterval> | null = null;
+
+  // forms
   lookupForm = new FormGroup({
     username: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
   });
-
   loginForm = new FormGroup({
     password: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
   });
 
-  // Getters cómodos
+  // getters convenientes
   get username() { return this.lookupForm.controls.username; }
   get password() { return this.loginForm.controls.password; }
 
-  // Datos para mostrar en paso 2
+  // datos de usuario
   private _fullName = signal<string>('');
   private _profilePhoto = signal<string | null>(null);
   private _escuela = signal<string | null>(null);
@@ -116,48 +66,131 @@ export class LoginPage {
   escuela = this._escuela.asReadonly();
   rol = this._rol.asReadonly();
 
-  title = computed(() => this.step() === 1 ? 'Identifícate' : 'Confirma y escribe tu contraseña');
+  // títulos y timers
+  title = computed(() => this.step() === 1 ? 'Identifícate' : 'Escribe tu contraseña');
+  remainingTime = computed(() => {
+    const until = this.lockUntil();
+    if (!until) return 0;
+    const diff = until.getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / 1000));
+  });
 
+  // ui
+  togglePasswordVisibility() { this.showPassword.update(v => !v); }
+
+  // bloqueo
+  private checkAccountLock() {
+    const until = this.lockUntil();
+    if (until && new Date() < until) {
+      this._isLocked.set(true);
+      this.startUnlockTimer();
+    } else {
+      this._isLocked.set(false);
+      this._lockUntil.set(null);
+    }
+  }
+
+  private startUnlockTimer() {
+    if (this.unlockTimer) clearInterval(this.unlockTimer);
+    this.unlockTimer = setInterval(() => {
+      if (this.remainingTime() <= 0) {
+        this._isLocked.set(false);
+        this._lockUntil.set(null);
+        this._failedAttempts.set(0);
+        if (this.unlockTimer) clearInterval(this.unlockTimer);
+      }
+    }, 1000);
+  }
+
+  // acciones
   submitLookup() {
     if (this.lookupForm.invalid) { this.lookupForm.markAllAsTouched(); return; }
-    const username = this.username.value.trim();
 
+    this.checkAccountLock();
+    if (this.isLocked()) {
+      this.alerts.warn(`Cuenta bloqueada. Espera ${this.remainingTime()} segundos.`);
+      return;
+    }
+
+    const username = this.username.value.trim();
     this.api.lookup({ username }).subscribe({
-      next: res => {
+      next: (res) => {
         this._fullName.set(res.user.full_name);
         this._profilePhoto.set(res.user.profile_photo);
         this._rol.set(res.user.rol_principal);
         this._escuela.set(res.academico?.escuela_profesional ?? null);
         this._step.set(2);
+        this.loginError.set('');
       },
-      error: err => {
-        if (err.status === 404) this.alerts.warn('Usuario no encontrado.');
+      error: (err) => {
+        if (err?.status === 404) this.alerts.warn('Usuario no encontrado.');
         else this.alerts.error('No se pudo verificar el usuario.');
-      }
+      },
     });
   }
 
   back() {
     this.loginForm.reset();
+    this.showPassword.set(false);
+    this.loginError.set('');
     this._step.set(1);
   }
 
   submitLogin() {
     if (this.loginForm.invalid) { this.loginForm.markAllAsTouched(); return; }
-    const payload = {
-      username: this.username.value.trim(),
-      password: this.password.value
-    };
 
+    this.checkAccountLock();
+    if (this.isLocked()) {
+      this.alerts.warn(`Cuenta bloqueada. Espera ${this.remainingTime()} segundos.`);
+      return;
+    }
+
+    const payload = { username: this.username.value.trim(), password: this.password.value };
     this.api.login(payload).subscribe({
       next: () => {
+        this._failedAttempts.set(0);
+        this.loginError.set('');
         this.alerts.success('Bienvenido 👋');
-        this.router.navigateByUrl('/dashboard');
+        this.router.navigateByUrl('/dashboard').then(() => {
+          this.footerToast.showWelcome(5000);
+        });
       },
-      error: err => {
-        if (err.status === 422) this.alerts.warn('Credenciales inválidas.');
-        else this.alerts.error('No se pudo iniciar sesión.');
-      }
+      error: (err) => {
+        if (err?.status === 422) {
+          const newAttempts = this._failedAttempts() + 1;
+          this._failedAttempts.set(newAttempts);
+
+          if (newAttempts >= 3) {
+            const lockTime = new Date(Date.now() + 2 * 60 * 1000); // 2 min
+            this._lockUntil.set(lockTime);
+            this._isLocked.set(true);
+            this.startUnlockTimer();
+
+            this.loginError.set('Demasiados intentos. Cuenta bloqueada por 2 minutos.');
+            this.alerts.warn('Cuenta bloqueada temporalmente.');
+          } else {
+            const remaining = 3 - newAttempts;
+            this.loginError.set(`Contraseña incorrecta. ${remaining} intentos restantes.`);
+          }
+
+          this.password.reset();
+          this.showPassword.set(false);
+        } else {
+          this.loginError.set('Error al iniciar sesión. Intenta nuevamente.');
+          this.alerts.error('No se pudo iniciar sesión.');
+        }
+      },
     });
+  }
+
+  requestPasswordReset() {
+    const username = this.username.value.trim();
+    if (!username) { this.alerts.warn('Ingresa tu usuario para restablecer la contraseña.'); return; }
+    this.alerts.info('Función de restablecimiento en desarrollo…');
+    // this.api.requestPasswordReset({ username }).subscribe(...)
+  }
+
+  ngOnDestroy() {
+    if (this.unlockTimer) clearInterval(this.unlockTimer);
   }
 }

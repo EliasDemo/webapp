@@ -2,6 +2,7 @@
 import { Routes } from '@angular/router';
 import { ShellComponent } from './core/layout/shell/shell.component';
 import { authMatchGuard } from './core/http/auth.guard';
+import { NoAutorizadoPage } from './features/misc/no-autorizado.page';
 
 export const routes: Routes = [
   // Públicas (auth)
@@ -57,6 +58,21 @@ export const routes: Routes = [
         // si exportas default en ev.routes.ts, puedes usar:
         // loadChildren: () => import('./features/events/ev.routes').then(m => m.default),
       },
+
+      {
+        path: 'ad',
+        loadChildren: () => import('./features/admin/ad.routes').then(m => m.AD_ROUTES),
+        // canActivate: [AdminGuard] // opcional
+      },
+
+        {
+        path: 'h',
+        loadChildren: () =>
+          import('./features/hours/h.routes').then(m => m.H_ROUTES),
+      },
+
+
+        { path: 'no-autorizado', component: NoAutorizadoPage },
 
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
