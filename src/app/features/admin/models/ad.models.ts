@@ -1,7 +1,4 @@
-// ─────────────────────────────────────────────────────────────
-// Tipos base (puedes reutilizar los de eventos si ya existen)
-// ─────────────────────────────────────────────────────────────
-
+// Tipos base
 export type ApiResponse<T> = { ok: boolean; data: T; meta?: any };
 export type Page<T> = { items?: T[]; total?: number; page?: number; per_page?: number };
 
@@ -21,15 +18,15 @@ export interface AdRole {
   id: number;
   name: string;
   guard_name: string;
-  users_count?: number;               // si el BE lo expone con withCount
-  permissions?: AdPermission[];       // si el BE hace ->with('permissions')
+  users_count?: number;
+  permissions?: AdPermission[];
   created_at?: string;
   updated_at?: string;
 }
 
 export interface RoleFilter {
-  guard?: string;  // p.ej. 'api'
-  search?: string; // si decides filtrar por nombre en el BE
+  guard?: string;
+  search?: string;
   page?: number;
 }
 
@@ -44,10 +41,10 @@ export interface RoleRenamePayload {
 }
 
 export interface AssignPermissionsPayload {
-  permissions: string[]; // nombres de permisos
+  permissions: string[];
 }
 
-// (Opcional) si expones /roles/{id}/users
+// (Opcional)
 export interface UserLite {
   id: number;
   name: string;
@@ -61,7 +58,7 @@ export interface UserLite {
 export interface AdImagen {
   id: number;
   url?: string | null;
-  url_publica?: string | null; // fallback por si el Resource la expone así
+  url_publica?: string | null;
   path?: string | null;
   titulo?: 'LOGO' | 'PORTADA' | string;
   visibilidad?: 'PUBLICA' | 'RESTRINGIDA' | string;
@@ -69,15 +66,102 @@ export interface AdImagen {
   updated_at?: string;
 }
 
-
 export interface Universidad {
   id: number;
   codigo: string;
   nombre: string;
-  tipo_gestion: string;          // p.ej. 'PUBLICO' | 'PRIVADO'
-  estado_licenciamiento: string; // p.ej. 'NINGUNO' | 'LICENCIADA' | ...
+  tipo_gestion: string;
+  estado_licenciamiento: string;
   logo?: AdImagen | null;
   portada?: AdImagen | null;
   created_at?: string;
   updated_at?: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// ACADÉMICO - Tipos
+// ─────────────────────────────────────────────────────────────
+
+export interface Facultad {
+  id: number;
+  codigo: string;
+  nombre: string;
+  universidad_id: number;
+  meta?: { created_at?: string; updated_at?: string };
+}
+
+export interface FacultadLite {
+  id: number;
+  codigo: string;
+  nombre: string;
+}
+
+export interface FacultadCreatePayload {
+  universidad_id: number;
+  codigo: string;
+  nombre: string;
+}
+
+export interface Sede {
+  id: number;
+  nombre: string;
+  es_principal: boolean;
+  esta_suspendida: boolean;
+  universidad_id?: number;
+  meta?: { created_at?: string; updated_at?: string };
+}
+
+export interface SedeCreatePayload {
+  universidad_id: number;
+  nombre: string;
+  es_principal?: boolean;
+  esta_suspendida?: boolean;
+}
+
+export interface SedeRefWithPivot {
+  id: number;
+  nombre: string;
+  pivot?: {
+    vigente_desde?: string | null;
+    vigente_hasta?: string | null;
+    created_at?: string;
+    updated_at?: string;
+  };
+}
+
+export interface EscuelaProfesional {
+  id: number;
+  codigo: string;
+  nombre: string;
+  facultad_id: number;
+
+  // (Opcional) si el BE carga 'facultad'
+  facultad?: FacultadLite;
+
+  // Sedes a las que está vinculada (cuando el BE carga 'sedes')
+  sedes?: SedeRefWithPivot[];
+
+  meta?: { created_at?: string; updated_at?: string };
+}
+
+export interface EscuelaProfesionalCreatePayload {
+  facultad_id: number;
+  codigo: string;
+  nombre: string;
+}
+
+/**
+ * Payload para la tabla ep_sede (vinculación EP <-> Sede)
+ * vigente_desde / vigente_hasta en formato ISO YYYY-MM-DD (o null)
+ */
+export interface EpSedePayload {
+  sede_id: number;
+  vigente_desde?: string | null;
+  vigente_hasta?: string | null;
+}
+
+/** Tipo híbrido para UI: inyecta vigencias precomputadas */
+export interface EscuelaProfesionalWithVig extends EscuelaProfesional {
+  _vigente_desde?: string | null;
+  _vigente_hasta?: string | null;
 }

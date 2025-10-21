@@ -1,0 +1,148 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 py-8">
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <!-- HEADER -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-white rounded-2xl shadow-lg border border-slate-200/60 backdrop-blur-sm">
+          <svg class="w-8 h-8 text-[#003B5C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold bg-gradient-to-r from-[#003B5C] to-[#4A7729] bg-clip-text text-transparent">
+            Crear Nueva Facultad
+          </h1>
+          <p class="text-slate-600 mt-2">Registre una nueva facultad en el catálogo académico</p>
+        </div>
+      </div>
+
+      <button (click)="volver()"
+              class="group inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold shadow transition-all duration-300 hover:bg-slate-50 hover:shadow-md hover:scale-105 active:scale-95">
+        <svg class="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Volver
+      </button>
+    </div>
+
+    <!-- ERROR -->
+    <div *ngIf="error()"
+         class="mb-6 rounded-2xl border border-red-200 bg-red-50/90 backdrop-blur-sm p-6 shadow-lg transform transition-all duration-300 animate-in slide-in-from-top">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <h3 class="text-red-800 font-semibold mb-1">Error al crear facultad</h3>
+          <p class="text-red-700">{{ error() }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORMULARIO -->
+    <form (ngSubmit)="guardar()"
+          class="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-xl p-6 space-y-6 transform transition-all duration-300 hover:shadow-2xl">
+
+      <!-- Universidad ID -->
+      <div class="space-y-2">
+        <label class="block text-sm font-semibold text-slate-700">Universidad ID</label>
+        <div class="relative">
+          <input class="w-full border border-slate-300 rounded-xl px-4 py-3.5 text-slate-600 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#003B5C] focus:border-transparent transition-all duration-200 shadow-sm cursor-not-allowed"
+                 [value]="uniId() ?? ''"
+                 disabled />
+          <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500">Identificador único de la universidad (automático)</p>
+      </div>
+
+      <!-- Campos en grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Código -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Código de Facultad</label>
+          <input class="w-full border border-slate-300 rounded-xl px-4 py-3.5 text-slate-700 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003B5C] focus:border-transparent transition-all duration-200 shadow-sm"
+                 [ngModel]="form().codigo"
+                 (ngModelChange)="set('codigo', $event)"
+                 name="codigo"
+                 placeholder="Ej: FIA, FCE, FCH"
+                 maxlength="10" />
+          <p class="text-xs text-slate-500">Código único (máx. 10 caracteres)</p>
+        </div>
+
+        <!-- Nombre -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Nombre Completo</label>
+          <input class="w-full border border-slate-300 rounded-xl px-4 py-3.5 text-slate-700 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003B5C] focus:border-transparent transition-all duration-200 shadow-sm"
+                 [ngModel]="form().nombre"
+                 (ngModelChange)="set('nombre', $event)"
+                 name="nombre"
+                 placeholder="Facultad de Ingeniería y Arquitectura" />
+          <p class="text-xs text-slate-500">Nombre completo de la facultad</p>
+        </div>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200/60">
+        <button type="button"
+                (click)="volver()"
+                class="group inline-flex items-center justify-center px-6 py-3.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold shadow transition-all duration-300 hover:bg-slate-50 hover:shadow-md hover:scale-105 active:scale-95">
+          <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Cancelar
+        </button>
+        <button type="submit"
+                [disabled]="loading()"
+                class="group inline-flex items-center justify-center px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#003B5C] to-[#4A7729] hover:from-[#003B5C] hover:to-[#5a8a35] text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+          <svg *ngIf="loading()" class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4m8-10h-4M6 12H2m15.364-7.364l-2.828 2.828M7.464 17.536l-2.828 2.828m12.728 0l-2.828-2.828M7.464 6.464L4.636 3.636"/>
+          </svg>
+          <svg *ngIf="!loading()" class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          {{ loading() ? 'Creando Facultad...' : 'Crear Facultad' }}
+        </button>
+      </div>
+    </form>
+
+    <!-- Información adicional -->
+    <div class="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-6 shadow-lg">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-[#003B5C] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <h3 class="text-[#003B5C] font-semibold mb-2">Información importante sobre facultades</h3>
+          <ul class="text-sm text-slate-600 space-y-1">
+            <li>• El código debe ser único en toda la universidad</li>
+            <li>• Use códigos cortos y representativos (ej: FIA, FCE, FCH)</li>
+            <li>• El nombre debe ser completo y descriptivo</li>
+            <li>• Después de crear la facultad, podrá asignar escuelas profesionales</li>
+            <li>• Las facultades organizan académicamente las escuelas profesionales</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ejemplos de códigos -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-blue-50/50 border border-blue-200 rounded-xl p-4 text-center">
+        <div class="text-sm font-semibold text-[#003B5C] mb-1">Ingeniería</div>
+        <div class="text-xs text-slate-600">FIA, FIF, FIC</div>
+      </div>
+      <div class="bg-green-50/50 border border-green-200 rounded-xl p-4 text-center">
+        <div class="text-sm font-semibold text-[#4A7729] mb-1">Ciencias</div>
+        <div class="text-xs text-slate-600">FCE, FCM, FCB</div>
+      </div>
+      <div class="bg-purple-50/50 border border-purple-200 rounded-xl p-4 text-center">
+        <div class="text-sm font-semibold text-purple-700 mb-1">Humanidades</div>
+        <div class="text-xs text-slate-600">FCH, FCD, FCEH</div>
+      </div>
+    </div>
+  </div>
+</div>

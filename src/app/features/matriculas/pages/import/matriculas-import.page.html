@@ -1,0 +1,427 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 pb-16">
+
+  <!-- Header -->
+  <header class="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between gap-4">
+
+        <!-- Título + migas -->
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-xl bg-blue-100 text-blue-700">
+            <i class="fa-solid fa-file-excel text-lg"></i>
+          </div>
+          <div>
+            <nav class="text-xs text-slate-500 mb-1 flex items-center gap-1">
+              <a routerLink="/" class="hover:text-slate-700 font-medium transition-colors">Inicio</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <!-- 👇 prefijo corregido a /m -->
+              <a routerLink="/m" class="hover:text-slate-700 font-medium transition-colors">Matrículas</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <span class="text-blue-600 font-semibold">Importación</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-slate-900">Importar Matrículas</h1>
+            <p class="text-sm text-slate-600 mt-1">Sube tu archivo Excel/CSV para procesar matrículas masivamente</p>
+          </div>
+        </div>
+
+        <!-- Acciones header -->
+        <div class="flex items-center gap-3">
+          <button (click)="descargarPlantilla()"
+            class="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md">
+            <i class="fa-solid fa-file-arrow-down text-blue-600"></i>
+            Descargar Plantilla
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs de navegación del feature -->
+      <div class="mt-4 flex flex-wrap gap-2">
+        <!-- 👇 prefijos corregidos a /m/...  -->
+        <a
+          routerLink="/m/import"
+          routerLinkActive="bg-blue-600 text-white"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+          <i class="fa-solid fa-file-import"></i> Importación
+        </a>
+
+        <a
+          routerLink="/m/manual/buscar"
+          routerLinkActive="bg-blue-600 text-white"
+          class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+          <i class="fa-solid fa-magnifying-glass"></i> Manual · Buscar
+        </a>
+
+        <a
+          routerLink="/m/manual/registrar"
+          routerLinkActive="bg-blue-600 text-white"
+          class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+          <i class="fa-solid fa-user-pen"></i> Manual · Registrar/Editar
+        </a>
+
+        <a
+          routerLink="/m/manual/matricular"
+          routerLinkActive="bg-blue-600 text-white"
+          class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+          <i class="fa-solid fa-graduation-cap"></i> Manual · Matricular
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <main class="max-w-7xl mx-auto px-4 pt-8 space-y-8">
+
+    <!-- Alertas -->
+    <div *ngIf="error()"
+         class="rounded-2xl border border-rose-200 bg-white p-4 shadow-sm animate-fade-in">
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 p-2 rounded-lg bg-rose-100 text-rose-600">
+          <i class="fa-solid fa-circle-exclamation text-sm"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-rose-900 mb-1">Error al procesar</div>
+          <div class="text-sm text-rose-700">{{ error() }}</div>
+
+          <!-- EP-SEDE choices -->
+          <div *ngIf="choices()?.length"
+               class="mt-3 rounded-xl border border-amber-200 bg-amber-50/50 p-3">
+            <div class="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-2">
+              <i class="fa-solid fa-lightbulb text-amber-600"></i>
+              EP-SEDE disponibles para tu usuario:
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button *ngFor="let c of choices()"
+                      type="button"
+                      class="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 shadow-sm hover:bg-amber-50 transition-colors"
+                      (click)="epSedeId.set(c)">
+                <i class="fa-solid fa-building text-amber-600 text-xs"></i>
+                ID {{ c }}
+              </button>
+            </div>
+            <div class="text-xs text-amber-700 mt-2">Haz clic en un ID para seleccionarlo automáticamente y vuelve a importar.</div>
+          </div>
+        </div>
+        <button (click)="error.set(null)"
+                class="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid principal -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+
+      <!-- Panel izquierdo - Formulario -->
+      <div class="xl:col-span-2 space-y-6">
+
+        <!-- Configuración -->
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 rounded-xl bg-blue-100 text-blue-600">
+              <i class="fa-solid fa-gear text-sm"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Configuración de Importación</h2>
+              <p class="text-sm text-slate-600">Define los parámetros para el proceso</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Período -->
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700">
+                Período Académico
+                <span class="text-rose-500 ml-1">*</span>
+              </label>
+              <select
+                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                [ngModel]="selectedPeriodoId() ?? ''"
+                (ngModelChange)="selectedPeriodoId.set($event ? +$event : null)">
+                <option [ngValue]="null">— Selecciona un período —</option>
+                <option *ngFor="let p of periodos()" [ngValue]="p.id">
+                  {{ p.anio }}-{{ p.ciclo }} {{ (p.estado||'')==='EN_CURSO' ? '• En curso' : '' }}
+                </option>
+              </select>
+              <p class="text-xs text-slate-500 mt-1">
+                <i class="fa-solid fa-info-circle text-blue-500 mr-1"></i>
+                Debe ser el período actual activo en el sistema
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Archivo -->
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 rounded-xl bg-emerald-100 text-emerald-600">
+              <i class="fa-solid fa-file-upload text-sm"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Archivo de Datos</h2>
+              <p class="text-sm text-slate-600">Selecciona o arrastra tu archivo Excel/CSV</p>
+            </div>
+          </div>
+
+          <div
+            class="relative rounded-2xl border-2 border-dashed transition-all duration-300 group cursor-pointer"
+            [class.border-slate-300]="!over()"
+            [class.border-emerald-400]="over()"
+            [class.bg-emerald-50]="over()"
+            [class.ring-2]="over()"
+            [class.ring-emerald-200]="over()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)">
+
+            <div class="p-8 text-center">
+              <div class="mx-auto w-16 h-16 mb-4 rounded-2xl bg-emerald-100 text-emerald-600 grid place-items-center group-hover:scale-110 transition-transform duration-300">
+                <i class="fa-solid fa-file-excel text-2xl"></i>
+              </div>
+
+              <div class="space-y-2 mb-4">
+                <div class="text-lg font-semibold text-slate-700">
+                  {{ archivo() ? 'Archivo seleccionado' : 'Arrastra tu archivo aquí' }}
+                </div>
+                <div class="text-sm text-slate-500">
+                  {{ archivo() ? 'Todo listo para importar' : 'o selecciona desde tu dispositivo' }}
+                </div>
+              </div>
+
+              <label class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors cursor-pointer shadow-md hover:shadow-lg">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                {{ archivo() ? 'Cambiar archivo' : 'Buscar archivo' }}
+                <input type="file" class="hidden" accept=".xlsx,.xls,.csv" (change)="onFileChange($event)" />
+              </label>
+
+              <div *ngIf="archivo()" class="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-file-excel text-emerald-600 text-lg"></i>
+                    <div>
+                      <div class="font-semibold text-slate-900 text-sm">{{ archivoNombre() }}</div>
+                      <div class="text-xs text-slate-500">{{ archivoPesoKB() }} KB • Listo para importar</div>
+                    </div>
+                  </div>
+                  <button (click)="archivo.set(null)"
+                          class="text-slate-400 hover:text-rose-500 transition-colors">
+                    <i class="fa-solid fa-trash text-sm"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="mt-4 text-xs text-slate-500">
+                Formatos soportados: .xlsx, .xls, .csv (máx. 20MB)
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Acciones -->
+        <div class="flex flex-wrap gap-4 pt-4">
+          <button
+            (click)="importar()"
+            [disabled]="loading() || !archivo() || !selectedPeriodoId()"
+            class="inline-flex items-center gap-3 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-md">
+            <i class="fa-solid fa-play" [class.hidden]="loading()"></i>
+            <i *ngIf="loading()" class="fa-solid fa-circle-notch animate-spin"></i>
+            {{ loading() ? 'Procesando...' : 'Iniciar Importación' }}
+          </button>
+
+          <button
+            (click)="limpiar()"
+            [disabled]="loading()"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-all duration-200">
+            <i class="fa-solid fa-broom"></i>
+            Limpiar Todo
+          </button>
+
+          <button
+            (click)="exportarCSV()"
+            [disabled]="!rows().length"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-all duration-200 ml-auto">
+            <i class="fa-solid fa-file-export"></i>
+            Exportar Resultados
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel derecho - Info y resumen -->
+      <div class="space-y-6">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 rounded-xl bg-purple-100 text-purple-600">
+              <i class="fa-solid fa-circle-info text-sm"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Guía Rápida</h3>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-blue-50/50 border border-blue-100">
+              <i class="fa-solid fa-table-columns text-blue-600 mt-0.5 text-sm"></i>
+              <div class="text-sm">
+                <div class="font-semibold text-blue-900">Encabezados requeridos</div>
+                <div class="text-blue-700 mt-1 text-xs">
+                  código estudiante, documento, correo, ciclo, grupo, modalidad estudio, modo contrato, fecha matrícula
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-emerald-50/50 border border-emerald-100">
+              <i class="fa-solid fa-calendar-check text-emerald-600 mt-0.5 text-sm"></i>
+              <div class="text-sm">
+                <div class="font-semibold text-emerald-900">Período correcto</div>
+                <div class="text-emerald-700 mt-1 text-xs">
+                  Asegúrate de seleccionar el período académico actual y activo
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50/50 border border-slate-200">
+              <i class="fa-solid fa-key text-slate-600 mt-0.5 text-sm"></i>
+              <div class="text-sm">
+                <div class="font-semibold text-slate-900">EP‑SEDE</div>
+                <div class="text-slate-700 mt-1 text-xs">
+                  Si gestionas múltiples sedes, el backend te mostrará opciones para elegir.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section *ngIf="summary()" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 rounded-xl bg-green-100 text-green-600">
+              <i class="fa-solid fa-chart-bar text-sm"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Resumen del Proceso</h3>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="text-center p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="text-2xl font-black text-slate-900">{{ summary()!.processed }}</div>
+              <div class="text-xs font-medium text-slate-600 mt-1">Total Procesadas</div>
+            </div>
+            <div class="text-center p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+              <div class="text-2xl font-black text-emerald-700">{{ totalOk() }}</div>
+              <div class="text-xs font-medium text-emerald-700 mt-1">Éxitos</div>
+            </div>
+            <div class="text-center p-4 rounded-xl bg-rose-50 border border-rose-200">
+              <div class="text-2xl font-black text-rose-700">{{ totalError() }}</div>
+              <div class="text-xs font-medium text-rose-700 mt-1">Errores</div>
+            </div>
+            <div class="text-center p-4 rounded-xl bg-blue-50 border border-blue-200">
+              <div class="text-sm font-black text-blue-700">{{ summary()!.created_matriculas }}/{{ summary()!.updated_matriculas }}</div>
+              <div class="text-xs font-medium text-blue-700 mt-1">Matrículas C/A</div>
+            </div>
+          </div>
+
+          <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="text-center">
+                <div class="font-semibold text-slate-900">+{{ summary()!.created_users }}</div>
+                <div class="text-slate-600">Usuarios nuevos</div>
+              </div>
+              <div class="text-center">
+                <div class="font-semibold text-slate-900">+{{ summary()!.created_expedientes }}</div>
+                <div class="text-slate-600">Expedientes nuevos</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <section *ngIf="rows().length" class="rounded-2xl border border-slate-200 bg-white shadow-lg">
+      <div class="p-6 border-b border-slate-200">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="p-2 rounded-xl bg-slate-100 text-slate-600">
+              <i class="fa-solid fa-table-list text-sm"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Detalle del Resultado</h2>
+              <p class="text-sm text-slate-600">Revisa el estado de cada registro procesado</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 text-sm">
+            <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+              {{ totalOk() }} correctos
+            </span>
+            <span class="px-3 py-1 rounded-full bg-rose-100 text-rose-700 font-medium">
+              {{ totalError() }} con errores
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Fila</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Estado</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Estudiante</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Documento</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Ciclo/Grupo</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Mensaje</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              <tr *ngFor="let r of rows(); trackBy: trackRow"
+                  class="hover:bg-slate-50/50 transition-colors">
+                <td class="px-4 py-3 font-mono text-slate-600 text-xs">{{ r.row }}</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+                        [ngClass]="chipStatusClass(r.status)">
+                    <i class="fa-solid fa-circle text-[6px]"></i>
+                    {{ r.status === 'ok' ? 'Correcto' : 'Error' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="font-medium text-slate-900">{{ r.data?.estudiante || '—' }}</div>
+                  <div class="text-xs text-slate-500">{{ r.data?.codigo_estudiante || '—' }}</div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="text-slate-900">{{ r.data?.documento || '—' }}</div>
+                  <div class="text-xs text-slate-500">{{ r.data?.correo_institucional || '—' }}</div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="text-slate-900">{{ r.data?.ciclo || '—' }} - {{ r.data?.grupo || '—' }}</div>
+                  <div class="text-xs text-slate-500">{{ r.data?.modalidad_estudio || '—' }}</div>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="text-slate-900 text-xs leading-relaxed">{{ r.message }}</div>
+                  <div *ngIf="r.ids as ids; else noIds" class="text-xs text-slate-500 mt-1">
+                    U:{{ ids.user_id ?? '—' }} • E:{{ ids.expediente_id ?? '—' }} • M:{{ ids.matricula_id ?? '—' }}
+                  </div>
+                  <ng-template #noIds>—</ng-template>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loader -->
+    <div *ngIf="loading()" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 grid place-items-center">
+      <div class="text-center">
+        <div class="relative">
+          <div class="w-16 h-16 rounded-full border-4 border-slate-200"></div>
+          <div class="absolute inset-0 w-16 h-16 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+        </div>
+        <div class="mt-4 text-lg font-semibold text-slate-900">Procesando archivo</div>
+        <div class="text-sm text-slate-600 mt-2">Esto puede tomar unos momentos...</div>
+        <div class="text-xs text-slate-500 mt-4 animate-pulse">
+          <i class="fa-solid fa-circle-info mr-1"></i>
+          No cierres esta ventana durante el proceso
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>

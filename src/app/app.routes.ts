@@ -71,6 +71,13 @@ export const routes: Routes = [
           import('./features/hours/h.routes').then(m => m.H_ROUTES),
       },
 
+      {
+        path: 'm',
+        loadChildren: () =>
+          import('./features/matriculas/m.routes').then(m => m.M_ROUTES),
+      },
+
+
 
         { path: 'no-autorizado', component: NoAutorizadoPage },
 

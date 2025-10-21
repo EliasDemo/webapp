@@ -1,8 +1,7 @@
-// src/app/features/admin/ad.routes.ts
 import { Routes } from '@angular/router';
 
 export const AD_ROUTES: Routes = [
-  // redirige al listado de roles
+  // redirect por defecto
   { path: '', pathMatch: 'full', redirectTo: 'roles' },
 
   // ─────────────────────────────────────────────
@@ -10,7 +9,6 @@ export const AD_ROUTES: Routes = [
   // ─────────────────────────────────────────────
   {
     path: 'roles',
-    // canActivate: [AdminGuard], // opcional si tienes guard en FE
     children: [
       {
         path: '',
@@ -20,78 +18,94 @@ export const AD_ROUTES: Routes = [
             .then(m => m.RoleHasPermissionListPage),
         data: { feature: 'admin', level: 'roles-list' }
       },
-
-      //  ⚠️ Rutas específicas SIEMPRE antes de :id
-       {
-         path: 'nuevo',
-         title: 'Crear rol',
-         loadComponent: () =>
-           import('./pages/rolehaspermission-create/rolehaspermission-create.page')
-             .then(m => m.RoleHasPermissionCreatePage),
-         data: { feature: 'admin', level: 'roles-create' }
-       },
-      // {
-      //   path: ':id/asignar-permisos',
-      //   title: 'Asignar permisos al rol',
-      //   loadComponent: () =>
-      //     import('./pages/role-assign-permissions/role-assign-permissions.page')
-      //       .then(m => m.RoleAssignPermissionsPage),
-      //   data: { feature: 'admin', level: 'roles-assign-perms' }
-      // },
-      // {
-      //   path: ':id/editar',
-      //   title: 'Editar rol',
-      //   loadComponent: () =>
-      //     import('./pages/role-edit/role-edit.page')
-      //       .then(m => m.RoleEditPage),
-      //   data: { feature: 'admin', level: 'roles-edit' }
-      // },
-
-      // Detalle del rol (después de las específicas)
-       {
+      {
+        path: 'nuevo',
+        title: 'Crear rol',
+        loadComponent: () =>
+          import('./pages/rolehaspermission-create/rolehaspermission-create.page')
+            .then(m => m.RoleHasPermissionCreatePage),
+        data: { feature: 'admin', level: 'roles-create' }
+      },
+      {
         path: ':id',
         title: 'Detalle del rol',
         loadComponent: () =>
           import('./pages/rolehaspermission-show/rolehaspermission-show.page')
-            .then(m => m.RoleHasPermissionShowPage), // 👈 OJO: nombre correcto del componente
+            .then(m => m.RoleHasPermissionShowPage),
         data: { feature: 'admin', level: 'roles-view' },
       },
     ],
   },
 
-  {
-  path: 'universidad',
-  title: 'Universidad',
-  loadComponent: () =>
-    import('./pages/universidad/universidad.page')
-      .then(m => m.UniversidadPage),
-  data: { feature: 'admin', level: 'universidad' }
-},
-
-
   // ─────────────────────────────────────────────
-  // PERMISOS (solo lectura en tu BE)
+  // UNIVERSIDAD
   // ─────────────────────────────────────────────
   {
-    path: 'permisos',
+    path: 'universidad',
+    title: 'Universidad',
+    loadComponent: () =>
+      import('./pages/universidad/universidad.page')
+        .then(m => m.UniversidadPage),
+    data: { feature: 'admin', level: 'universidad' }
+  },
+
+  // ─────────────────────────────────────────────
+  // SEDES UNIVERSITARIAS + catálogo académico
+  // ─────────────────────────────────────────────
+  {
+    path: 'sedes',
     children: [
-      // {
-      //   path: '',
-      //   title: 'Permisos',
-      //   loadComponent: () =>
-      //     import('./pages/permission-list/permission-list.page')
-      //       .then(m => m.PermissionListPage),
-      //   data: { feature: 'admin', level: 'perm-list' }
-      // },
-      // {
-      //   path: ':id',
-      //   title: 'Detalle del permiso',
-      //   loadComponent: () =>
-      //     import('./pages/permission-view/permission-view.page')
-      //       .then(m => m.PermissionViewPage),
-      //   data: { feature: 'admin', level: 'perm-view' }
-      // },
+      {
+        path: '',
+        title: 'Sedes Universitarias',
+        loadComponent: () =>
+          import('./pages/sedes-list/sedes-list.page')
+            .then(m => m.SedesListPage),
+        data: { feature: 'admin', level: 'sedes-list' }
+      },
+      {
+        path: 'nueva',
+        title: 'Crear Sede',
+        loadComponent: () =>
+          import('./pages/sedes-create/sedes-create.page')
+            .then(m => m.SedeCreatePage),
+        data: { feature: 'admin', level: 'sedes-create' }
+      },
+      {
+        path: ':id',
+        title: 'Detalle de la Sede',
+        loadComponent: () =>
+          import('./pages/sede-detail/sede-detail.page')
+            .then(m => m.SedeDetailPage),
+        data: { feature: 'admin', level: 'sedes-view' }
+      },
+      {
+        path: ':id/asignar-ep',
+        title: 'Asignar Escuela a Sede',
+        loadComponent: () =>
+          import('./pages/assign-ep-sede/assign-ep-sede.page')
+            .then(m => m.AssignEpSedePage),
+        data: { feature: 'admin', level: 'sedes-assign-ep' }
+      },
     ],
+  },
+
+  // creación directa de catálogo
+  {
+    path: 'facultades/nueva',
+    title: 'Crear Facultad',
+    loadComponent: () =>
+      import('./pages/facultad-create/facultad-create.page')
+        .then(m => m.FacultadCreatePage),
+    data: { feature: 'admin', level: 'facultades-create' }
+  },
+  {
+    path: 'escuelas-profesionales/nueva',
+    title: 'Crear Escuela Profesional',
+    loadComponent: () =>
+      import('./pages/ep-create/ep-create.page')
+        .then(m => m.EpCreatePage),
+    data: { feature: 'admin', level: 'ep-create' }
   },
 
   // catch-all

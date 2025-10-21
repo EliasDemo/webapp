@@ -1,4 +1,3 @@
-// src/app/features/mis-proyectos/pages/mp-list/mp-list.page.ts
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -36,13 +35,13 @@ export class MpListPage {
   loading = signal(true);
   error   = signal<string | null>(null);
 
-  // Tabs (dos vistas)
+  // Tabs
   activeTab = signal<'periodo' | 'historial'>('periodo');
 
   // Períodos
   periodos = signal<PeriodoVM[]>([]);
   selectedPeriodoId = signal<number | null>(null);
-  private reqId = 0; // evita race conditions
+  private reqId = 0;
 
   // Datos
   ctx = signal<ProyectosAlumnoData['contexto'] | null>(null);
@@ -71,7 +70,7 @@ export class MpListPage {
     (this.selectedPeriodo()?.estado || '').toUpperCase() === 'EN_CURSO'
   );
 
-  // ======== Helpers estado de proyecto ========
+  // ======== Helpers de proyecto ========
   private isClosed(p?: VmProyecto | null): boolean {
     const e = (p?.estado || '').toUpperCase();
     return e === 'CERRADO' || e === 'CANCELADO' || e === 'FINALIZADO';
@@ -96,26 +95,30 @@ export class MpListPage {
     return m;
   });
 
-  // ======== Listas (ya filtradas por período desde backend; sin duplicados) ========
+  // ======== Listas ========
   inscritos = computed<VmProyecto[]>(() => {
     const ag = (this.agenda() ?? []).map(a => a.proyecto);
     const pend = (this.dataAlumno()?.pendientes ?? []).map(p => p.proyecto);
     const base = this.uniqById([...ag, ...pend]);
-    return base.filter(p => this.isActive(p));
+    return base.filter((p: VmProyecto) => this.isActive(p));
   });
 
   private insIds = computed<Set<number>>(() => new Set(this.inscritos().map(p => p.id)));
 
   vinculados = computed<VmProyecto[]>(() => {
-    const src = this.dataAlumno()?.inscribibles_prioridad ?? [];
+    const src = (
+      this.dataAlumno()?.inscribibles ??
+      (this.dataAlumno() as any)?.inscribibles_prioridad ??
+      []
+    ) as VmProyecto[];
     const ids = this.insIds();
-    return src.filter(p => this.isActive(p) && !ids.has(p.id));
+    return src.filter((p: VmProyecto) => this.isActive(p) && !ids.has(p.id));
   });
 
   libres = computed<VmProyecto[]>(() => {
-    const src = this.dataAlumno()?.libres ?? [];
+    const src = (this.dataAlumno()?.libres ?? []) as VmProyecto[];
     const ids = this.insIds();
-    return src.filter(p => this.isActive(p) && !ids.has(p.id));
+    return src.filter((p: VmProyecto) => this.isActive(p) && !ids.has(p.id));
   });
 
   // KPIs
@@ -124,7 +127,8 @@ export class MpListPage {
   libresCount      = computed(() => this.libres().length);
   historialesCount = computed(() => this.historiales().length);
 
-  nivelObjetivo   = computed(() => this.ctx()?.nivel_objetivo ?? null);
+  // Contexto: ciclo actual y pendiente
+  cicloActual     = computed(() => this.ctx()?.ciclo_actual ?? (this.ctx() as any)?.nivel_objetivo ?? null);
   tienePendiente  = computed(() => this.ctx()?.tiene_pendiente_vinculado ?? false);
 
   constructor() { this.initPeriodosAndLoad(); }
@@ -161,7 +165,7 @@ export class MpListPage {
     this.loadAll();
   }
 
-  // ========= Carga de datos del período seleccionado =========
+  // ========= Carga =========
   private clearStateForReload() {
     this.error.set(null);
     this.dataAlumno.set(null);
@@ -179,7 +183,7 @@ export class MpListPage {
     const thisReq = ++this.reqId;
     const periodoId = this.selectedPeriodoId() ?? undefined;
 
-    // 1) Proyectos alumno (contexto + inscribibles + libres + pendientes)
+    // 1) Proyectos alumno
     this.api.listarProyectosAlumno({ periodo_id: periodoId }).subscribe({
       next: (res: ApiResponse<ProyectosAlumnoData>) => {
         if (this.reqId !== thisReq) return;
@@ -214,10 +218,10 @@ export class MpListPage {
             let pending = 2;
             const done = () => { if (--pending <= 0 && this.reqId === thisReq) this.loading.set(false); };
 
-            // 3) Horas por proyecto
+            // 3) Horas por proyecto (todas las horas: estado='*')
             this.fetchHorasProyectos(this.selectedPeriodoId() ?? undefined, thisReq, done);
 
-            // 4) Historial por período (API o fallback)
+            // 4) Historial (vinculados históricos + libres cerrados)
             this.fetchHistorial(this.selectedPeriodoId() ?? undefined, thisReq, done);
           }
         });
@@ -227,12 +231,11 @@ export class MpListPage {
 
   // ======== Horas por proyecto ========
   private fetchHorasProyectos(periodoId: number | undefined, thisReq: number, onDone: () => void) {
-    // Contamos TODAS las horas registradas (aprobadas o no): estado='*'
     this.horasApi.obtenerMiReporteHoras({
       tipo: 'vm_proyecto',
       periodo_id: periodoId,
       estado: '*',
-      per_page: 1, // el resumen no depende de la paginación; minimiza payload
+      per_page: 1,
     }).subscribe({
       next: (r) => {
         if (this.reqId !== thisReq) return;
@@ -241,7 +244,6 @@ export class MpListPage {
           const map = new Map<number, number>();
           for (const it of ok.data.resumen?.por_vinculo ?? []) {
             if (it.tipo === 'vm_proyecto') {
-              // Usa horas y, si no viene, cae a minutos/60
               const horas = typeof it.horas === 'number'
                 ? it.horas
                 : (typeof (it as any).minutos === 'number' ? (it as any).minutos / 60 : 0);
@@ -258,27 +260,25 @@ export class MpListPage {
     });
   }
 
-  // ======== Historial por período ========
-  private fetchHistorial(periodoId: number | undefined, thisReq: number, onDone: () => void) {
-    const hasApi = typeof (this.api as any).listarHistorialAlumno === 'function';
+  // ======== Historial (ACTUALIZADO) ========
+  private fetchHistorial(_periodoId: number | undefined, thisReq: number, onDone: () => void) {
+    try {
+      if (this.reqId !== thisReq) return;
 
-    if (hasApi) {
-      (this.api as any).listarHistorialAlumno({ periodo_id: periodoId }).subscribe({
-        next: (r: any) => {
-          if (this.reqId !== thisReq) return;
-          if (r?.ok === true) {
-            this.historiales.set(r.data ?? []);
-          } else {
-            this.historiales.set(this.buildFallbackHistorial());
-          }
-        },
-        error: () => {
-          if (this.reqId === thisReq) this.historiales.set(this.buildFallbackHistorial());
-        },
-        complete: onDone
-      });
-    } else {
+      // Después (filtramos cerrados)
+      const vincHistAll = (this.dataAlumno()?.vinculados_historicos ?? []) as VmProyecto[];
+      const vincHistCerrados = vincHistAll.filter((p: VmProyecto) => this.isClosed(p));
+      const libresCerrados = (this.dataAlumno()?.libres ?? []).filter((p: VmProyecto) => this.isClosed(p));
+      const merged = this.uniqById([...vincHistCerrados, ...libresCerrados]);
+
+
+      const pidSel = this.selectedPeriodoId();
+      const filtered = merged.filter((p: VmProyecto) => (pidSel == null) ? true : (p as any)?.periodo_id === pidSel);
+
+      this.historiales.set(filtered);
+    } catch {
       this.historiales.set(this.buildFallbackHistorial());
+    } finally {
       onDone();
     }
   }
@@ -290,7 +290,7 @@ export class MpListPage {
     const ag = (this.agenda() ?? []).map(a => a.proyecto);
     const pend = (this.dataAlumno()?.pendientes ?? []).map(p => p.proyecto);
     const base = this.uniqById([...ag, ...pend]);
-    return base.filter(p => {
+    return base.filter((p: VmProyecto) => {
       if (!this.isClosed(p)) return false;
       const pid = periodMap.get(p.id) ?? (p as any)?.periodo_id ?? null;
       return periodId == null ? true : pid === periodId;
@@ -306,7 +306,7 @@ export class MpListPage {
     const plan = this.getHorasPlan(p);
     if (plan <= 0) return 0;
     return Math.max(0, Math.min(100, +((this.getHorasHechas(p) / plan) * 100).toFixed(1)));
-  }
+    }
   getProgressRailClasses(p: VmProyecto): string {
     const falt = this.getFaltantes(p);
     const e = (p.estado || '').toUpperCase();

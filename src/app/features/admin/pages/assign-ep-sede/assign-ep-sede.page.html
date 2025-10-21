@@ -1,0 +1,231 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 py-8">
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+
+    <!-- HEADER -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-white rounded-2xl shadow-lg border border-slate-200/60 backdrop-blur-sm">
+          <svg class="w-8 h-8 text-[#003B5C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold bg-gradient-to-r from-[#003B5C] to-[#4A7729] bg-clip-text text-transparent">
+            Asignar Escuela Profesional
+          </h1>
+          <p class="text-slate-600 mt-2">
+            <span class="font-semibold text-[#003B5C]">{{ sede()?.nombre || ('Sede ' + sedeId) }}</span>
+          </p>
+        </div>
+      </div>
+
+      <button (click)="volver()"
+              class="group inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold shadow transition-all duration-300 hover:bg-slate-50 hover:shadow-md hover:scale-105 active:scale-95">
+        <svg class="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Volver
+      </button>
+    </div>
+
+    <!-- ERROR -->
+    <div *ngIf="error()"
+         class="mb-6 rounded-2xl border border-red-200 bg-red-50/90 backdrop-blur-sm p-6 shadow-lg transform transition-all duration-300 animate-in slide-in-from-top">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <h3 class="text-red-800 font-semibold mb-1">Error en la asignación</h3>
+          <p class="text-red-700">{{ error() }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-xl p-6 space-y-6 transform transition-all duration-300">
+
+      <!-- FILTROS -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Buscar EP -->
+        <div class="lg:col-span-2 space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Buscar Escuela Profesional</label>
+          <div class="flex gap-3">
+            <div class="flex-1 relative">
+              <input class="w-full border border-slate-300 rounded-xl px-4 py-3.5 text-slate-700 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003B5C] focus:border-transparent transition-all duration-200 shadow-sm"
+                     [ngModel]="q()"
+                     (ngModelChange)="q.set($event)"
+                     placeholder="Buscar por nombre o código..." />
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </div>
+            </div>
+            <button (click)="buscar()"
+                    [disabled]="loading()"
+                    class="group inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#003B5C] to-[#4A7729] hover:from-[#003B5C] hover:to-[#5a8a35] text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+              <svg *ngIf="loading()" class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4m8-10h-4M6 12H2m15.364-7.364l-2.828 2.828M7.464 17.536l-2.828 2.828m12.728 0l-2.828-2.828M7.464 6.464L4.636 3.636"/>
+              </svg>
+              <svg *ngIf="!loading()" class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              {{ loading() ? 'Buscando...' : 'Buscar' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtro por Facultad -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Filtrar por Facultad</label>
+          <div class="relative">
+            <select class="w-full border border-slate-300 rounded-xl px-4 py-3.5 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#003B5C] focus:border-transparent transition-all duration-200 shadow-sm appearance-none"
+                    [ngModel]="facFilterId()"
+                    (ngModelChange)="onFacFilterChange($event)">
+              <option [ngValue]="null">— Todas las facultades —</option>
+              <option *ngFor="let f of facs(); trackBy: trackByFac" [ngValue]="f.id">
+                {{ f.nombre }} ({{ f.codigo }})
+              </option>
+            </select>
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTADOS -->
+      <div *ngIf="resultadosFiltrados().length"
+           class="max-h-80 overflow-auto border border-slate-200 rounded-xl shadow-inner bg-slate-50/50 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+        <div *ngFor="let ep of resultadosFiltrados(); trackBy: trackByEp; let last = last"
+             (click)="seleccionar(ep)"
+             class="px-4 py-4 cursor-pointer transition-all duration-200 border-b last:border-b-0 border-slate-100 hover:bg-white hover:shadow-sm group"
+             [class.bg-blue-50]="selectedId() === ep.id"
+             [class.border-l-4]="selectedId() === ep.id"
+             [class.border-l-[#003B5C]]="selectedId() === ep.id">
+          <div class="flex items-center justify-between">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="p-2 bg-white rounded-lg border border-slate-200 shadow-sm group-hover:scale-110 transition-transform duration-200">
+                  <svg class="w-4 h-4 text-[#003B5C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="font-semibold text-slate-900 group-hover:text-[#003B5C] transition-colors duration-200 truncate">
+                    {{ ep.nombre }}
+                  </div>
+                  <div class="text-xs text-slate-500 flex items-center gap-3 mt-1">
+                    <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded-full font-medium">
+                      {{ ep.codigo }}
+                    </span>
+                    <span>Facultad ID: {{ ep.facultad_id }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-medium text-slate-600 bg-white px-2.5 py-1 rounded-full border border-slate-200 shadow-sm">
+                ID {{ ep.id }}
+              </span>
+              <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse" [class.bg-blue-500]="selectedId() === ep.id"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIN RESULTADOS -->
+      <div *ngIf="resultados().length === 0 && q()"
+           class="text-center py-12 bg-slate-50/80 rounded-xl border border-slate-200">
+        <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="text-slate-600 font-medium mb-1">No se encontraron escuelas profesionales</p>
+        <p class="text-slate-500 text-sm">Intente con otros términos de búsqueda</p>
+      </div>
+
+      <!-- SELECCIÓN ACTUAL -->
+      <div *ngIf="selectedId()"
+           class="p-4 bg-gradient-to-r from-[#003B5C]/5 to-[#4A7729]/5 rounded-xl border border-[#003B5C]/20 transform transition-all duration-300 animate-in slide-in-from-bottom">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-white rounded-lg border border-[#003B5C]/20 shadow-sm">
+              <svg class="w-5 h-5 text-[#003B5C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-[#003B5C]">Escuela Profesional seleccionada:</div>
+              <div class="text-lg font-bold text-slate-900">{{ selectedName() }}</div>
+              <div class="text-xs text-slate-600 mt-1">ID {{ selectedId() }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIGENCIAS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-slate-50/80 rounded-xl border border-slate-200/60">
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Vigente desde</label>
+          <input class="w-full border border-slate-300 rounded-xl px-4 py-3.5 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#003B5C] focus:border-transparent transition-all duration-200 shadow-sm"
+                 type="date"
+                 [ngModel]="desde()"
+                 (ngModelChange)="desde.set($event)" />
+          <p class="text-xs text-slate-500">Fecha de inicio de vigencia (opcional)</p>
+        </div>
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Vigente hasta</label>
+          <input class="w-full border border-slate-300 rounded-xl px-4 py-3.5 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#003B5C] focus:border-transparent transition-all duration-200 shadow-sm"
+                 type="date"
+                 [ngModel]="hasta()"
+                 (ngModelChange)="hasta.set($event)" />
+          <p class="text-xs text-slate-500">Fecha de fin de vigencia (opcional)</p>
+        </div>
+      </div>
+
+      <!-- BOTONES DE ACCIÓN -->
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200/60">
+        <button (click)="volver()"
+                class="group inline-flex items-center justify-center px-6 py-3.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold shadow transition-all duration-300 hover:bg-slate-50 hover:shadow-md hover:scale-105 active:scale-95">
+          <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Cancelar
+        </button>
+        <button (click)="guardar()"
+                [disabled]="loading() || !selectedId()"
+                class="group inline-flex items-center justify-center px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#003B5C] to-[#4A7729] hover:from-[#003B5C] hover:to-[#5a8a35] text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+          <svg *ngIf="loading()" class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4m8-10h-4M6 12H2m15.364-7.364l-2.828 2.828M7.464 17.536l-2.828 2.828m12.728 0l-2.828-2.828M7.464 6.464L4.636 3.636"/>
+          </svg>
+          <svg *ngIf="!loading()" class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          {{ loading() ? 'Asignando...' : 'Asignar Escuela Profesional' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- INFORMACIÓN ADICIONAL -->
+    <div class="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-6 shadow-lg">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-[#003B5C] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <h3 class="text-[#003B5C] font-semibold mb-2">Información sobre asignaciones</h3>
+          <ul class="text-sm text-slate-600 space-y-1">
+            <li>• Busque y seleccione una escuela profesional para asignarla a esta sede</li>
+            <li>• Puede filtrar los resultados por facultad específica</li>
+            <li>• Las fechas de vigencia son opcionales para definir periodos específicos</li>
+            <li>• Una escuela profesional puede estar asignada a múltiples sedes</li>
+            <li>• Las asignaciones pueden ser modificadas posteriormente</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

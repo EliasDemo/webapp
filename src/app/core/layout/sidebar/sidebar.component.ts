@@ -190,7 +190,42 @@ export class SidebarComponent {
 
       // Para varios roles (cualquiera):
       // roles: ['ADMINISTRADOR','COORDINADOR'], roleAny: true
+    },
+
+    {
+      route: '/ad/sedes',
+      label: 'Sedes Universitarias',
+      icon: 'fas fa-map-marker-alt text-base',
+      activeClass: 'bg-blue-50/80 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300',
+      indicatorClass: 'bg-gradient-to-b from-blue-500 to-cyan-500',
+      iconActiveClass: 'bg-blue-500/20 shadow-md',
+      iconActiveColor: 'text-blue-600 dark:text-blue-400',
+      textActiveColor: 'text-blue-700 dark:text-blue-300',
+
+      // Exact false porque tendrá subrutas (detalle, crear, etc.)
+      exact: false,
+
+      // Visible solo para ADMINISTRADOR
+      roles: 'ADMINISTRADOR',
+
+      // (Opcional) para múltiples roles con acceso
+      // roles: ['ADMINISTRADOR', 'COORDINADOR'], roleAny: true
+    },
+
+    {
+      route: '/m/import',
+      label: 'Matrículas · Registro',
+      icon: 'fas fa-file-excel text-base',
+      activeClass: 'bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300',
+      indicatorClass: 'bg-gradient-to-b from-emerald-500 to-green-500',
+      iconActiveClass: 'bg-emerald-500/20 shadow-md',
+      iconActiveColor: 'text-emerald-600 dark:text-emerald-400',
+      textActiveColor: 'text-emerald-700 dark:text-emerald-300',
+      exact: false,
     }
+
+
+
 
 
 

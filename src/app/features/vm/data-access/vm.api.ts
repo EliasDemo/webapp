@@ -178,7 +178,7 @@ export class VmApiService {
     );
   }
 
-  // ---------- Registros (demo) ----------
+  // ---------- Registros ----------
   crearRegistro(sesionId: Id, payload: RegistroCreate): Observable<ApiResponse<Registro>> {
     return this.http.post<ApiResponse<Registro>>(`${this.base}/vm/sesiones/${sesionId}/registros`, payload);
   }
@@ -212,12 +212,12 @@ export class VmApiService {
   checkInQr(sesionId: Id, payload: { token: string; lat?: number; lng?: number }): Observable<ApiResponse<{ asistencia: any; ventana_fin: string }>> {
     return this.http.post<ApiResponse<{ asistencia: any; ventana_fin: string }>>(`${this.base}/vm/sesiones/${sesionId}/check-in/qr`, payload);
   }
-  /** Mantengo este método tal cual lo tenías (compatibilidad) */
+  /** Compatibilidad */
   checkInManual(sesionId: Id, payload: { identificador: string }): Observable<ApiResponse<{ asistencia: any }>> {
     return this.http.post<ApiResponse<{ asistencia: any }>>(`${this.base}/vm/sesiones/${sesionId}/check-in/manual`, payload);
   }
 
-  /** 👇 NUEVO: check-in MANUAL por CÓDIGO (usa { codigo } en el body) */
+  /** Check-in MANUAL por CÓDIGO */
   checkInManualPorCodigo(
     sesionId: Id,
     codigo: string
@@ -228,12 +228,12 @@ export class VmApiService {
     );
   }
 
-  /** Listado normal (útil fuera del poll) */
+  /** Listado normal */
   listarAsistenciasSesion(sesionId: Id): Observable<ApiResponse<ListadoAsistenciaRow[]>> {
     return this.http.get<ApiResponse<ListadoAsistenciaRow[]>>(`${this.base}/vm/sesiones/${sesionId}/asistencias`);
   }
 
-  /** 👇 NUEVO: Listar PARTICIPANTES de la sesión con estado_calculado */
+  /** Listar PARTICIPANTES de la sesión con estado_calculado */
   listarParticipantesSesion(
     sesionId: Id
   ): Observable<ApiResponse<ParticipantesResponse>> {
@@ -242,7 +242,7 @@ export class VmApiService {
     );
   }
 
-  /** 👇 NUEVO: Registrar ASISTENCIA FUERA DE HORA (justificada) */
+  /** Registrar ASISTENCIA FUERA DE HORA (justificada) */
   checkInFueraDeHora(
     sesionId: Id,
     payload: JustificarAsistenciaPayload
@@ -253,7 +253,7 @@ export class VmApiService {
     );
   }
 
-  /** 👇 NUEVO: Poll condicional con ETag/If-None-Match para evitar re-render si no hubo cambios */
+  /** Poll condicional con ETag/If-None-Match */
   listarAsistenciasSesionPoll(
     sesionId: Id,
     etag?: string
@@ -287,7 +287,6 @@ export class VmApiService {
         ),
         catchError((err: HttpErrorResponse) => {
           if (err.status === 304) {
-            // No cambió nada → no tocar UI
             return of<PollResult<ReadonlyArray<ListadoAsistenciaRow>>>({
               ok: true as const,
               notModified: true as const,
@@ -319,7 +318,7 @@ export class VmApiService {
     return this.http.get<ApiResponse<StaffAgendaResponse>>(`${this.base}/vm/staff/agenda`, { params: p });
   }
 
-  // ---------- NUEVO: /vm/sesiones (Proyecto + Proceso + Sesiones agrupadas) ----------
+  // ---------- /vm/sesiones (agrupadas) ----------
   listarSesiones(params?: {
     periodo_id?: Id;
     nivel?: number;
@@ -360,7 +359,7 @@ export class VmApiService {
     return this.http.get<ApiResponse<ProyectoIndexPage>>(`${this.base}/vm/proyectos`, { params: p });
   }
 
-  /** Atajo: pide el index en formato árbol (mismo shape que /vm/proyectos/{id}) */
+  /** Atajo: formato árbol */
   listarProyectosArbol(
     params?: {
       q?: string;
@@ -372,58 +371,37 @@ export class VmApiService {
       tipo?: 'LIBRE' | 'VINCULADO';
     }
   ): Observable<ApiResponse<ProyectoIndexPage>> {
-    // expand=arbol ya incluye procesos y sesiones ordenadas (según tu backend)
     return this.listarProyectosExpand(params, 'arbol', true);
   }
 
-  // ---------- NUEVO: Proyecto (contexto edición) ----------
-obtenerProyectoContextoEdicion(id: Id): Observable<ApiResponse<VmProyectoArbol>> {
-  // GET /vm/proyectos/{proyecto}/edit  → retorna { proyecto, procesos }
-  return this.http.get<ApiResponse<VmProyectoArbol>>(
-    `${this.base}/vm/proyectos/${id}/edit`
-  );
-}
+  // ---------- Contextos de edición ----------
+  obtenerProyectoContextoEdicion(id: Id): Observable<ApiResponse<VmProyectoArbol>> {
+    return this.http.get<ApiResponse<VmProyectoArbol>>(`${this.base}/vm/proyectos/${id}/edit`);
+  }
 
-// ---------- NUEVO: Proceso (contexto edición + update/delete por ID) ----------
-obtenerProcesoContextoEdicion(procesoId: Id): Observable<ApiResponse<{ proceso: VmProceso; sesiones: VmSesion[] }>> {
-  // GET /vm/procesos/{proceso}/edit → { proceso, sesiones }
-  return this.http.get<ApiResponse<{ proceso: VmProceso; sesiones: VmSesion[] }>>(
-    `${this.base}/vm/procesos/${procesoId}/edit`
-  );
-}
+  obtenerProcesoContextoEdicion(procesoId: Id): Observable<ApiResponse<{ proceso: VmProceso; sesiones: VmSesion[] }>> {
+    return this.http.get<ApiResponse<{ proceso: VmProceso; sesiones: VmSesion[] }>>(
+      `${this.base}/vm/procesos/${procesoId}/edit`
+    );
+  }
 
-actualizarProcesoById(procesoId: Id, payload: Partial<ProcesoCreate>): Observable<ApiResponse<VmProceso>> {
-  // PUT /vm/procesos/{proceso}
-  return this.http.put<ApiResponse<VmProceso>>(
-    `${this.base}/vm/procesos/${procesoId}`,
-    payload
-  );
-}
+  actualizarProcesoById(procesoId: Id, payload: Partial<ProcesoCreate>): Observable<ApiResponse<VmProceso>> {
+    return this.http.put<ApiResponse<VmProceso>>(`${this.base}/vm/procesos/${procesoId}`, payload);
+  }
 
-eliminarProcesoById(procesoId: Id): Observable<void> {
-  // DELETE /vm/procesos/{proceso}
-  return this.http.delete<void>(`${this.base}/vm/procesos/${procesoId}`);
-}
+  eliminarProcesoById(procesoId: Id): Observable<void> {
+    return this.http.delete<void>(`${this.base}/vm/procesos/${procesoId}`);
+  }
 
-// ---------- NUEVO: Sesión (editar por ID) ----------
-obtenerSesionParaEdicion(sesionId: Id): Observable<ApiResponse<VmSesion>> {
-  // GET /vm/sesiones/{sesion}/edit
-  return this.http.get<ApiResponse<VmSesion>>(
-    `${this.base}/vm/sesiones/${sesionId}/edit`
-  );
-}
+  obtenerSesionParaEdicion(sesionId: Id): Observable<ApiResponse<VmSesion>> {
+    return this.http.get<ApiResponse<VmSesion>>(`${this.base}/vm/sesiones/${sesionId}/edit`);
+  }
 
-actualizarSesionById(sesionId: Id, payload: Partial<SesionCreate>): Observable<ApiResponse<VmSesion>> {
-  // PUT /vm/sesiones/{sesion}
-  return this.http.put<ApiResponse<VmSesion>>(
-    `${this.base}/vm/sesiones/${sesionId}`,
-    payload
-  );
-}
+  actualizarSesionById(sesionId: Id, payload: Partial<SesionCreate>): Observable<ApiResponse<VmSesion>> {
+    return this.http.put<ApiResponse<VmSesion>>(`${this.base}/vm/sesiones/${sesionId}`, payload);
+  }
 
-eliminarSesionById(sesionId: Id): Observable<void> {
-  // DELETE /vm/sesiones/{sesion}
-  return this.http.delete<void>(`${this.base}/vm/sesiones/${sesionId}`);
-}
-
+  eliminarSesionById(sesionId: Id): Observable<void> {
+    return this.http.delete<void>(`${this.base}/vm/sesiones/${sesionId}`);
+  }
 }

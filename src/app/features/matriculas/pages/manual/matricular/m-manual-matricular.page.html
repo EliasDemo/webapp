@@ -1,0 +1,132 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 pb-16">
+  <!-- Header -->
+  <header class="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-xl bg-blue-100 text-blue-700">
+            <i class="fa-solid fa-graduation-cap text-lg"></i>
+          </div>
+          <div>
+            <nav class="text-xs text-slate-500 mb-1 flex items-center gap-1">
+              <a routerLink="/" class="hover:text-slate-700 font-medium transition-colors">Inicio</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <a routerLink="/m" class="hover:text-slate-700 font-medium transition-colors">Matrículas</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <span class="text-blue-600 font-semibold">Manual · Matricular</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-slate-900">Matricular / Anular</h1>
+            <p class="text-sm text-slate-600 mt-1">Crea o actualiza la matrícula del período indicado</p>
+          </div>
+        </div>
+        <a routerLink="/m/manual/buscar" class="text-sm text-blue-700 hover:underline">← Volver a búsqueda</a>
+      </div>
+
+      <!-- Tabs -->
+      <div class="mt-4 flex flex-wrap gap-2">
+        <a routerLink="/m/import" routerLinkActive="bg-blue-600 text-white"
+           [routerLinkActiveOptions]="{ exact: true }"
+           class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+          <i class="fa-solid fa-file-import"></i> Importación
+        </a>
+        <a routerLink="/m/manual/buscar" routerLinkActive="bg-blue-600 text-white"
+           class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+          <i class="fa-solid fa-magnifying-glass"></i> Manual · Buscar
+        </a>
+        <a routerLink="/m/manual/registrar" routerLinkActive="bg-blue-600 text-white"
+           class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+          <i class="fa-solid fa-user-pen"></i> Manual · Registrar/Editar
+        </a>
+        <a routerLink="/m/manual/matricular" routerLinkActive="bg-blue-600 text-white"
+           class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors">
+          <i class="fa-solid fa-graduation-cap"></i> Manual · Matricular
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <main class="max-w-7xl mx-auto px-4 pt-8 space-y-8">
+    <section class="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+      <!-- Encabezado alumno + precarga por código -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+        <div class="space-y-2">
+          <label class="text-xs font-semibold text-slate-600">Período Académico</label>
+          <select class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  [ngModel]="form().periodo_id || ''" (ngModelChange)="patch({periodo_id: +$event})">
+            <option [ngValue]="0">— Período —</option>
+            <option *ngFor="let p of periodos()" [ngValue]="p.id">
+              {{ p.anio }}-{{ p.ciclo }} {{ (p.estado||'')==='EN_CURSO' ? '• En curso' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-xs font-semibold text-slate-600">Código estudiante</label>
+          <input class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                 placeholder="Código estudiante"
+                 [ngModel]="form().codigo_estudiante || ''"
+                 (ngModelChange)="patch({codigo_estudiante: $event||null})"
+                 (keyup.enter)="cargarPorCodigo()"
+                 (blur)="cargarPorCodigo()" />
+          <p class="text-xs text-slate-500">Escribe el código y presiona <b>Enter</b> o sal del campo para precargar.</p>
+        </div>
+      </div>
+
+      <div *ngIf="alumnoCard()" class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+        <div class="font-semibold">{{ alumnoCard()?.nombre || '—' }}</div>
+        <div class="text-xs">Código: <b>{{ alumnoCard()?.codigo }}</b> • Documento: <b>{{ alumnoCard()?.doc }}</b></div>
+      </div>
+
+      <!-- Datos de matrícula -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <input class="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Ciclo"
+               [ngModel]="form().ciclo || ''" (ngModelChange)="patch({ciclo: $event||null})" />
+        <input class="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Grupo"
+               [ngModel]="form().grupo || ''" (ngModelChange)="patch({grupo: $event||null})" />
+
+        <select class="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                [ngModel]="form().modalidad_estudio || ''" (ngModelChange)="patch({modalidad_estudio: $event||null})">
+          <option value="">— Modalidad —</option>
+          <option>PRESENCIAL</option>
+          <option>SEMIPRESENCIAL</option>
+          <option>VIRTUAL</option>
+        </select>
+
+        <select class="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                [ngModel]="form().modo_contrato || ''" (ngModelChange)="patch({modo_contrato: $event||null})">
+          <option value="">— Modo de contrato —</option>
+          <option>REGULAR</option>
+          <option>CONVENIO</option>
+          <option>BECA</option>
+          <option>OTRO</option>
+        </select>
+
+        <input type="date" class="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+               [ngModel]="form().fecha_matricula || ''" (ngModelChange)="patch({fecha_matricula: $event||null})" />
+      </div>
+
+      <div class="pt-2 flex gap-3">
+        <button (click)="enviar()" [disabled]="loading()"
+                class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white">
+          <i *ngIf="!loading()" class="fa-solid fa-check"></i>
+          <i *ngIf="loading()" class="fa-solid fa-circle-notch animate-spin"></i>
+          Guardar matrícula
+        </button>
+
+        <button (click)="anular()" [disabled]="loading()"
+                class="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-5 py-2.5 text-sm font-semibold text-rose-700">
+          <i class="fa-solid fa-ban"></i>
+          Anular matrícula
+        </button>
+      </div>
+
+      <div *ngIf="okMsg()" class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+        {{ okMsg() }}
+      </div>
+      <div *ngIf="error()" class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        {{ error() }}
+      </div>
+    </section>
+  </main>
+</div>

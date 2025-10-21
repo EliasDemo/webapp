@@ -1,0 +1,347 @@
+<!-- src/app/features/matriculas/pages/manual/registrar/m-manual-registrar.page.html -->
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 pb-28">
+  <!-- Header -->
+  <header class="border-b border-slate-200 bg-white/90 backdrop-blur-sm sticky top-0 z-20 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md">
+            <i class="fa-solid fa-user-pen text-lg"></i>
+          </div>
+          <div>
+            <nav class="text-xs text-slate-500 mb-1 flex items-center gap-1">
+              <a routerLink="/" class="hover:text-slate-700 font-medium transition-colors duration-200">Inicio</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <a routerLink="/m" class="hover:text-slate-700 font-medium transition-colors duration-200">Matrículas</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <span class="text-blue-600 font-semibold">Registro Manual</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Gestión de Estudiante</h1>
+            <p class="text-sm text-slate-600 mt-1">Registro y actualización de datos académicos y personales</p>
+          </div>
+        </div>
+
+        <a routerLink="/m/manual/buscar"
+           class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm">
+          <i class="fa-solid fa-arrow-left text-xs"></i>
+          Volver a búsqueda
+        </a>
+      </div>
+
+      <!-- Tabs -->
+      <div class="mt-6 flex flex-wrap gap-2">
+        <a routerLink="/m/import" routerLinkActive="bg-blue-600 text-white shadow-md"
+           [routerLinkActiveOptions]="{ exact: true }"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all duration-200 hover:shadow-sm">
+          <i class="fa-solid fa-file-import"></i> Importación Masiva
+        </a>
+        <a routerLink="/m/manual/buscar" routerLinkActive="bg-blue-600 text-white shadow-md"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all duration-200 hover:shadow-sm">
+          <i class="fa-solid fa-magnifying-glass"></i> Buscar Estudiantes
+        </a>
+        <a routerLink="/m/manual/registrar" routerLinkActive="bg-blue-600 text-white shadow-md"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all duration-200 hover:shadow-sm">
+          <i class="fa-solid fa-user-pen"></i> Registrar/Editar
+        </a>
+        <a routerLink="/m/manual/matricular" routerLinkActive="bg-blue-600 text-white shadow-md"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all duration-200 hover:shadow-sm">
+          <i class="fa-solid fa-graduation-cap"></i> Gestionar Matrícula
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <main class="max-w-6xl mx-auto px-4 pt-8 space-y-8">
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <!-- Encabezado -->
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+        <div class="p-2 rounded-xl bg-blue-100 text-blue-600">
+          <i class="fa-solid fa-id-card text-lg"></i>
+        </div>
+        <div class="flex-1">
+          <h2 class="text-xl font-bold text-slate-900">Datos del Estudiante</h2>
+          <p class="text-sm text-slate-600">Completa la información académica y personal</p>
+        </div>
+        <div class="text-xs">
+          <span class="px-2 py-1 rounded-full"
+                [class.bg-emerald-100]="!isDirty()"
+                [class.text-emerald-700]="!isDirty()"
+                [class.bg-amber-100]="isDirty()"
+                [class.text-amber-700]="isDirty()">
+            {{ isDirty() ? 'Cambios sin guardar' : 'Sin cambios' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Top: Código + Tarjeta alumno -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+        <div class="lg:col-span-1 space-y-3">
+          <label class="block text-sm font-semibold text-slate-700">
+            Código del Estudiante <span class="text-rose-500">*</span>
+          </label>
+          <div class="relative">
+            <input class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-10 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+                   placeholder="Ingresa el código"
+                   [ngModel]="form().codigo_estudiante || ''"
+                   (ngModelChange)="onCodigoChanged($event)" />
+            <button (click)="cargarPorCodigo()"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+          </div>
+          <p class="text-xs text-slate-500 flex items-center gap-1">
+            <i class="fa-solid fa-lightbulb text-amber-500"></i>
+            Se buscará automáticamente al escribir (≥ 3 caracteres)
+          </p>
+        </div>
+
+        <div class="lg:col-span-3">
+          <div *ngIf="alumnoCard()"
+               class="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100/50 p-4 h-full animate-fade-in">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-white text-blue-600 shadow-sm">
+                  <i class="fa-solid fa-user text-sm"></i>
+                </div>
+                <div>
+                  <div class="font-semibold text-blue-900 text-lg">{{ alumnoCard()?.nombre || '—' }}</div>
+                  <div class="text-sm text-blue-700 mt-1">
+                    <span class="font-medium">Código:</span> {{ alumnoCard()?.codigo || '—' }} •
+                    <span class="font-medium">Documento:</span> {{ alumnoCard()?.doc || '—' }}
+                  </div>
+                </div>
+              </div>
+              <a *ngIf="loadedExpedienteId()" (click)="irAMatricular()"
+                 class="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700">
+                <i class="fa-solid fa-graduation-cap"></i> Ir a Matricular
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formularios -->
+      <div class="space-y-8">
+        <!-- Expediente -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 rounded-lg bg-blue-100 text-blue-600">
+              <i class="fa-solid fa-graduation-cap text-sm"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-900">Expediente Académico</h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Grupo</label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     placeholder="Ej: A, B, C..."
+                     [ngModel]="form().grupo || ''"
+                     (ngModelChange)="patch({grupo: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Correo Institucional</label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     placeholder="usuario@institucion.edu"
+                     [ngModel]="form().correo_institucional || ''"
+                     (ngModelChange)="patch({correo_institucional: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Ciclo</label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     placeholder="Ej: 2024-1"
+                     [ngModel]="form().ciclo || ''"
+                     (ngModelChange)="patch({ciclo: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Estado del Expediente</label>
+              <select class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                      [ngModel]="form().estado || ''"
+                      (ngModelChange)="patch({estado: $event||undefined})">
+                <option value="">— Selecciona estado —</option>
+                <option value="ACTIVO">ACTIVO</option>
+                <option value="SUSPENDIDO">SUSPENDIDO</option>
+                <option value="EGRESADO">EGRESADO</option>
+                <option value="CESADO">CESADO</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personales -->
+        <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-5">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 rounded-lg bg-green-100 text-green-600">
+              <i class="fa-solid fa-user-circle text-sm"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-900">Datos Personales</h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Nombres <span class="text-rose-500">*</span></label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     [class.border-rose-300]="requiredMissing().includes('Nombres')"
+                     placeholder="Nombres del estudiante"
+                     [ngModel]="form().first_name || ''"
+                     (ngModelChange)="patch({first_name: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Apellidos <span class="text-rose-500">*</span></label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     [class.border-rose-300]="requiredMissing().includes('Apellidos')"
+                     placeholder="Apellidos del estudiante"
+                     [ngModel]="form().last_name || ''"
+                     (ngModelChange)="patch({last_name: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Nombre Completo (opcional)</label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     placeholder="Nombre completo"
+                     [ngModel]="form().estudiante || ''"
+                     (ngModelChange)="patch({estudiante: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Documento <span class="text-rose-500">*</span></label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     [class.border-rose-300]="requiredMissing().includes('Documento')"
+                     placeholder="Número de documento"
+                     [ngModel]="form().documento || ''"
+                     (ngModelChange)="patch({documento: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Correo electrónico</label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     placeholder="correo@ejemplo.com"
+                     [ngModel]="form().email || ''"
+                     (ngModelChange)="patch({email: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Celular</label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     placeholder="Número de celular"
+                     [ngModel]="form().celular || ''"
+                     (ngModelChange)="patch({celular: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">País</label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     placeholder="País de residencia"
+                     [ngModel]="form().pais || ''"
+                     (ngModelChange)="patch({pais: $event||null})" />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-slate-700">Religión</label>
+              <input class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     placeholder="Religión (opcional)"
+                     [ngModel]="form().religion || ''"
+                     (ngModelChange)="patch({religion: $event||null})" />
+            </div>
+
+            <div class="space-y-2 md:col-span-2">
+              <label class="block text-sm font-medium text-slate-700">Fecha de nacimiento</label>
+              <input type="date"
+                     class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                     [ngModel]="form().fecha_nacimiento || ''"
+                     (ngModelChange)="patch({fecha_nacimiento: $event||null})" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alertas -->
+      <div class="space-y-3 mt-6">
+        <div *ngIf="okMsg()"
+             class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>
+            <div class="flex-1">
+              <div class="font-semibold">Operación exitosa</div>
+              <div class="text-sm mt-1">{{ okMsg() }}</div>
+            </div>
+            <button (click)="okMsg.set(null)" class="text-emerald-400 hover:text-emerald-600">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="error()"
+             class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-rose-600 text-lg"></i>
+            <div class="flex-1">
+              <div class="font-semibold">Error</div>
+              <div class="text-sm mt-1">{{ error() }}</div>
+
+              <!-- EP-SEDE chips -->
+              <div *ngIf="choices?.length" class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <div class="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-2">
+                  <i class="fa-solid fa-lightbulb text-amber-600"></i>
+                  EP‑SEDE disponibles:
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button *ngFor="let c of choices"
+                          type="button"
+                          class="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 shadow-sm hover:bg-amber-50"
+                          (click)="seleccionarEpSede(c)">
+                    <i class="fa-solid fa-building text-amber-600 text-xs"></i>
+                    ID {{ c }}
+                  </button>
+                </div>
+                <div class="text-xs text-amber-700 mt-2">
+                  Haz clic para seleccionar y vuelve a guardar.
+                </div>
+              </div>
+            </div>
+            <button (click)="error.set(null)" class="text-rose-400 hover:text-rose-600">
+              <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Barra de acciones sticky inferior -->
+  <div class="fixed bottom-0 inset-x-0 border-t border-slate-200 bg-white/90 backdrop-blur-sm z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div class="text-xs text-slate-600">
+        <span *ngIf="requiredMissing().length" class="text-rose-600 font-medium">
+          Faltan: {{ requiredMissing().join(', ') }}
+        </span>
+        <span *ngIf="!requiredMissing().length">Todo listo para guardar.</span>
+      </div>
+      <div class="ml-auto flex items-center gap-3">
+        <button (click)="limpiarFormulario()"
+                class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <i class="fa-solid fa-broom"></i> Limpiar
+        </button>
+
+        <button (click)="irAMatricular()"
+                class="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                [disabled]="!form().codigo_estudiante">
+          <i class="fa-solid fa-graduation-cap"></i> Ir a Matricular
+        </button>
+
+        <button (click)="enviar()"
+                [disabled]="loading() || requiredMissing().length > 0"
+                class="inline-flex items-center gap-3 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+          <i class="fa-solid fa-floppy-disk" [class.hidden]="loading()"></i>
+          <i *ngIf="loading()" class="fa-solid fa-circle-notch animate-spin"></i>
+          {{ loading() ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

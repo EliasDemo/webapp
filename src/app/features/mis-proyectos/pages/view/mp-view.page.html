@@ -1,409 +1,317 @@
-<!-- HERO SECTION (versión más profesional y sobria) -->
-<section class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-900 to-violet-900">
-  <!-- decorativos suaves -->
-  <div class="absolute inset-0 opacity-15 pointer-events-none">
-    <div class="absolute -top-16 -left-10 h-64 w-64 rounded-full bg-blue-400 blur-3xl"></div>
-    <div class="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-fuchsia-500 blur-3xl"></div>
-    <div class="absolute top-1/3 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full bg-cyan-400 blur-3xl opacity-40"></div>
-  </div>
+<!-- ENCABEZADO / HERO LIMPIO -->
+<section class="bg-white border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Migas -->
+    <nav class="text-xs text-slate-500 mb-2" aria-label="Breadcrumb">
+      <a [routerLink]="['/mp']" class="hover:text-slate-700 font-medium">Mis proyectos</a>
+      <span class="mx-2 text-slate-400">/</span>
+      <span class="text-slate-600 font-semibold">Detalle</span>
+    </nav>
 
-  <!-- Triángulo superior (atenuado) -->
-  <div class="relative">
-    <svg viewBox="0 0 1925 375" aria-hidden="true" class="opacity-60">
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M0.0021713 0L0.000976562 375.003L1925 0H0.0021713Z" fill="url(#gradient1)"></path>
-      <defs>
-        <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#3B82F6" />
-          <stop offset="100%" stop-color="#8B5CF6" />
-        </linearGradient>
-      </defs>
-    </svg>
-  </div>
-
-  <div class="relative z-10 max-w-7xl mx-auto px-4 pb-10 pt-4">
-    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-      <div class="text-white">
-        <!-- badge -->
-        <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 shadow-sm supports-[backdrop-filter]:backdrop-blur">
-          <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <p class="text-xs tracking-widest uppercase font-semibold text-white/90">Proyecto activo</p>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <!-- Columna izquierda -->
+      <div class="lg:col-span-7">
+        <div class="flex flex-wrap items-center gap-3 mb-2">
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+            {{ proyecto()?.titulo || 'Proyecto' }}
+          </h1>
+          <span
+            class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border"
+            [class]="headerEstadoBadge()"
+            aria-label="Estado del proyecto"
+          >
+            <i class="fa-solid fa-circle text-[7px] opacity-80"></i>
+            {{ proyecto()?.estado || '—' }}
+          </span>
         </div>
 
-        <!-- título -->
-        <h1 class="mt-3 text-4xl sm:text-6xl font-extrabold bg-gradient-to-r from-white via-sky-100 to-cyan-100 bg-clip-text text-transparent leading-tight">
-          {{ proyecto()?.titulo || 'Proyecto' }}
-        </h1>
+        <!-- Chips clave -->
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <span class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <i class="fa-solid fa-hashtag text-sky-600"></i> {{ proyecto()?.codigo || '—' }}
+          </span>
+          <span class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <i class="fa-solid fa-shapes text-violet-600"></i> {{ proyecto()?.tipo || '—' }}
+          </span>
+          <span class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <i class="fa-solid fa-layer-group text-cyan-600"></i> {{ proyecto()?.modalidad || '—' }}
+          </span>
+          <span class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <i class="fa-solid fa-calendar text-amber-600"></i> Período: {{ proyecto()?.periodo_id }}
+          </span>
+          <span class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <i class="fa-solid fa-graduation-cap text-emerald-600"></i> Nivel: {{ proyecto()?.nivel ?? '—' }}
+          </span>
+        </div>
 
-        <!-- metadatos -->
-        <div class="mt-6 flex flex-wrap items-center gap-4 text-blue-100">
-          <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-2 supports-[backdrop-filter]:backdrop-blur">
-            <div class="grid place-items-center h-9 w-9 rounded-lg bg-blue-500/20">
-              <i class="fa-solid fa-hashtag text-blue-300"></i>
-            </div>
-            <div class="min-w-[8rem]">
-              <div class="text-[11px] uppercase tracking-wider text-blue-200/80">Código</div>
-              <div class="text-sm font-semibold">{{ proyecto()?.codigo || '—' }}</div>
-            </div>
+        <!-- KPIs -->
+        <div class="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div class="rounded-xl border border-slate-200 bg-white p-4">
+            <div class="text-xs font-medium text-slate-500">Sesiones totales</div>
+            <div class="mt-1 text-2xl font-black text-slate-900">{{ totalSesiones() }}</div>
           </div>
-
-          <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-2 supports-[backdrop-filter]:backdrop-blur">
-            <div class="grid place-items-center h-9 w-9 rounded-lg bg-purple-500/20">
-              <i class="fa-solid fa-shapes text-purple-300"></i>
-            </div>
-            <div class="min-w-[8rem]">
-              <div class="text-[11px] uppercase tracking-wider text-blue-200/80">Tipo</div>
-              <div class="text-sm font-semibold">{{ proyecto()?.tipo }}</div>
-            </div>
+          <div class="rounded-xl border border-slate-200 bg-white p-4">
+            <div class="text-xs font-medium text-slate-500">Próximas</div>
+            <div class="mt-1 text-2xl font-black text-slate-900">{{ totalProximas() }}</div>
           </div>
-
-          <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-2 supports-[backdrop-filter]:backdrop-blur">
-            <div class="grid place-items-center h-9 w-9 rounded-lg bg-cyan-500/20">
-              <i class="fa-solid fa-layer-group text-cyan-300"></i>
-            </div>
-            <div class="min-w-[8rem]">
-              <div class="text-[11px] uppercase tracking-wider text-blue-200/80">Modalidad</div>
-              <div class="text-sm font-semibold">{{ proyecto()?.modalidad }}</div>
-            </div>
+          <div class="rounded-xl border border-slate-200 bg-white p-4">
+            <div class="text-xs font-medium text-slate-500">Horas planificadas</div>
+            <div class="mt-1 text-2xl font-black text-slate-900">{{ proyecto()?.horas_planificadas ?? 0 }}h</div>
           </div>
         </div>
       </div>
 
-      <!-- estado & volver -->
-      <div class="flex flex-col items-stretch gap-3 w-full max-w-xs lg:items-end">
-        <div class="flex flex-col items-start lg:items-end">
-          <span class="mb-1 text-xs font-medium text-blue-200/80">Estado del proyecto</span>
-          <span class="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-4 py-2 text-sm font-semibold shadow-sm supports-[backdrop-filter]:backdrop-blur transition-transform motion-safe:hover:scale-[1.02]"
-                [ngClass]="headerEstadoBadge()">
-            <i class="fa-solid fa-circle text-[8px] opacity-80"></i>
-            {{ proyecto()?.estado }}
-          </span>
+      <!-- Columna derecha: portada + CTA volver -->
+      <div class="lg:col-span-5">
+        <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          <ng-container *ngIf="portadaUrl(); else noCoverHero">
+            <img [src]="portadaUrl()!" alt="Portada del proyecto" class="w-full h-56 object-cover">
+          </ng-container>
+          <ng-template #noCoverHero>
+            <div class="h-56 grid place-items-center bg-slate-50 text-slate-400">
+              <div class="text-center">
+                <i class="fa-solid fa-image text-3xl mb-1"></i>
+                <div class="text-sm font-medium">Sin portada</div>
+              </div>
+            </div>
+          </ng-template>
+          <div class="p-4 flex items-center justify-between gap-3">
+            <div class="text-xs text-slate-500">ID: <span class="font-semibold text-slate-700">{{ proyecto()?.id }}</span></div>
+            <a [routerLink]="['/mp']"
+               class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <i class="fa-solid fa-arrow-left"></i> Volver al listado
+            </a>
+          </div>
         </div>
-        <a [routerLink]="['/mp']"
-           class="group inline-flex items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-5 py-3 font-semibold text-white shadow-sm supports-[backdrop-filter]:backdrop-blur transition-all motion-safe:hover:translate-x-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
-          <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-0.5"></i>
-          Volver al listado
-          <i class="fa-solid fa-list text-xs transition-transform group-hover:scale-110"></i>
-        </a>
       </div>
     </div>
   </div>
 
-  <!-- Triángulo inferior (invertido y atenuado) -->
-  <div class="relative rotate-180 opacity-60">
-    <svg viewBox="0 0 1925 375" aria-hidden="true">
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M0.0021713 0L0.000976562 375.003L1925 0H0.0021713Z" fill="url(#gradient2)"></path>
-      <defs>
-        <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#8B5CF6" />
-          <stop offset="100%" stop-color="#3B82F6" />
-        </linearGradient>
-      </defs>
-    </svg>
+  <!-- Sub‑nav sticky -->
+  <div class="sticky top-0 z-20 bg-white/85 backdrop-blur border-t border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex items-center gap-2 py-2">
+        <button (click)="scrollTo('resumen')" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 border border-transparent">Resumen</button>
+        <button (click)="scrollTo('procesos')" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 border border-transparent">Procesos</button>
+        <button (click)="scrollTo('galeria')" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 border border-transparent">Galería</button>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- CONTENIDO PRINCIPAL -->
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-purple-50/10">
-  <div class="max-w-7xl mx-auto px-4 py-10">
+<!-- CUERPO -->
+<main class="bg-slate-50/50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-8">
 
+    <!-- LOADING / ERROR WRAPPER -->
     <ng-container *ngIf="!loading(); else loadingTpl">
       <ng-container *ngIf="!error() && proyecto(); else errorTpl">
 
-        <!-- RESUMEN + PORTADA -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          <!-- tarjeta resumen -->
-          <div class="lg:col-span-2 relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="absolute -top-8 -right-8 h-28 w-28 rounded-full bg-blue-100/60"></div>
-            <div class="absolute -bottom-10 -left-10 h-24 w-24 rounded-full bg-violet-100/50"></div>
-
-            <div class="relative p-6 sm:p-8">
-              <div class="mb-6 flex items-center gap-3">
-                <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm">
-                  <i class="fa-solid fa-circle-info"></i>
-                </div>
-                <div>
-                  <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Resumen del proyecto</h2>
-                  <p class="mt-0.5 text-sm text-slate-500">Información general y detalles principales</p>
-                </div>
+        <!-- RESUMEN -->
+        <section id="resumen" class="scroll-mt-20">
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-4 flex items-center gap-3">
+              <div class="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-white">
+                <i class="fa-solid fa-circle-info"></i>
               </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                <div class="space-y-3 sm:space-y-4">
-                  <div class="flex items-center justify-between rounded-xl border border-blue-200/60 bg-gradient-to-r from-blue-50 to-blue-100/40 px-4 py-3">
-                    <span class="text-sm font-medium text-blue-700">Código</span>
-                    <span class="rounded-full border border-blue-200 bg-white px-3 py-1 text-sm font-semibold text-slate-900">{{ proyecto()?.codigo || '—' }}</span>
-                  </div>
-                  <div class="flex items-center justify-between rounded-xl border border-purple-200/60 bg-gradient-to-r from-purple-50 to-purple-100/40 px-4 py-3">
-                    <span class="text-sm font-medium text-purple-700">Tipo</span>
-                    <span class="rounded-full border border-purple-200 bg-white px-3 py-1 text-sm font-semibold text-slate-900">{{ proyecto()?.tipo }}</span>
-                  </div>
-                  <div class="flex items-center justify-between rounded-xl border border-cyan-200/60 bg-gradient-to-r from-cyan-50 to-cyan-100/40 px-4 py-3">
-                    <span class="text-sm font-medium text-cyan-700">Modalidad</span>
-                    <span class="rounded-full border border-cyan-200 bg-white px-3 py-1 text-sm font-semibold text-slate-900">{{ proyecto()?.modalidad }}</span>
-                  </div>
-                </div>
-
-                <div class="space-y-3 sm:space-y-4">
-                  <div class="flex items-center justify-between rounded-xl border border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-emerald-100/40 px-4 py-3">
-                    <span class="text-sm font-medium text-emerald-700">Nivel</span>
-                    <span class="rounded-full border border-emerald-200 bg-white px-3 py-1 text-sm font-semibold text-slate-900">{{ proyecto()?.nivel ?? '—' }}</span>
-                  </div>
-                  <div class="flex items-center justify-between rounded-xl border border-orange-200/60 bg-gradient-to-r from-orange-50 to-orange-100/40 px-4 py-3">
-                    <span class="text-sm font-medium text-orange-700">Período</span>
-                    <span class="rounded-full border border-orange-200 bg-white px-3 py-1 text-sm font-semibold text-slate-900">{{ proyecto()?.periodo_id }}</span>
-                  </div>
-                  <div class="flex items-center justify-between rounded-xl border border-amber-200/60 bg-gradient-to-r from-amber-50 to-amber-100/40 px-4 py-3">
-                    <span class="text-sm font-medium text-amber-700">Horas planificadas</span>
-                    <span class="rounded-full border border-amber-200 bg-white px-3 py-1 text-sm font-semibold text-amber-700">{{ proyecto()?.horas_planificadas }} h</span>
-                  </div>
-                  <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100/40 px-4 py-3">
-                    <span class="text-sm font-medium text-slate-700">Mín. participante</span>
-                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-semibold text-slate-900">{{ proyecto()?.horas_minimas_participante ?? '—' }}</span>
-                  </div>
-                </div>
+              <div>
+                <h2 class="text-xl font-bold text-slate-900">Resumen</h2>
+                <p class="text-sm text-slate-500">Información general del proyecto</p>
               </div>
             </div>
-          </div>
 
-          <!-- tarjeta portada -->
-          <div class="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-cyan-100/60"></div>
-            <div class="relative p-6 sm:p-8">
-              <div class="mb-6 flex items-center gap-3">
-                <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-sm">
-                  <i class="fa-solid fa-image"></i>
-                </div>
-                <div>
-                  <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Portada</h2>
-                  <p class="mt-0.5 text-sm text-slate-500">Imagen principal del proyecto</p>
-                </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Código</span>
+                <b class="text-sm font-semibold text-slate-900">{{ proyecto()?.codigo || '—' }}</b>
               </div>
-
-              <div *ngIf="portadaUrl(); else noCover" class="group relative">
-                <div class="relative overflow-hidden rounded-xl border border-slate-200">
-                  <img [src]="portadaUrl()!" class="h-64 w-full object-cover transition-transform duration-700 ease-out motion-safe:group-hover:scale-[1.02]" alt="Portada del proyecto" />
-                  <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-                </div>
-                <div class="mt-3 text-center">
-                  <button type="button" class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    Ver imagen completa
-                  </button>
-                </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Tipo</span>
+                <b class="text-sm font-semibold text-slate-900">{{ proyecto()?.tipo }}</b>
               </div>
-
-              <ng-template #noCover>
-                <div class="flex h-64 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-slate-100 text-slate-400">
-                  <i class="fa-solid fa-image mb-2 text-3xl opacity-60"></i>
-                  <span class="text-sm font-medium">Sin imagen de portada</span>
-                  <span class="mt-1 text-xs text-slate-500">Agrega una imagen para mejorar la presentación</span>
-                </div>
-              </ng-template>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Modalidad</span>
+                <b class="text-sm font-semibold text-slate-900">{{ proyecto()?.modalidad }}</b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Nivel</span>
+                <b class="text-sm font-semibold text-slate-900">{{ proyecto()?.nivel ?? '—' }}</b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Período</span>
+                <b class="text-sm font-semibold text-slate-900">{{ proyecto()?.periodo_id }}</b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Horas planificadas</span>
+                <b class="text-sm font-semibold text-slate-900">{{ proyecto()?.horas_planificadas }} h</b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Mín. participante</span>
+                <b class="text-sm font-semibold text-slate-900">{{ proyecto()?.horas_minimas_participante ?? '—' }}</b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">EP‑Sede</span>
+                <b class="text-sm font-semibold text-slate-900">{{ proyecto()?.ep_sede_id }}</b>
+              </div>
             </div>
           </div>
         </section>
 
-        <!-- GALERÍA -->
-        <section class="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm mb-8">
-          <div class="absolute -top-10 -left-10 h-24 w-24 rounded-full bg-purple-100/60"></div>
-          <div class="absolute -bottom-10 -right-10 h-24 w-24 rounded-full bg-pink-100/50"></div>
-
-          <div class="relative p-6 sm:p-8">
-            <div class="mb-6 flex items-center justify-between gap-4">
+        <!-- PROCESOS -->
+        <section id="procesos" class="mt-8 scroll-mt-20">
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-sm">
-                  <i class="fa-solid fa-images"></i>
+                <div class="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-white">
+                  <i class="fa-solid fa-diagram-project"></i>
                 </div>
                 <div>
-                  <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Galería del proyecto</h2>
-                  <p class="mt-0.5 text-sm text-slate-500">Colección visual completa</p>
+                  <h2 class="text-xl font-bold text-slate-900">Procesos & sesiones</h2>
+                  <p class="text-sm text-slate-500">Organización de actividades</p>
                 </div>
               </div>
-              <span class="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 px-3 py-1 text-xs font-bold text-white shadow-sm" aria-label="Total de imágenes">
-                {{ galeria().length }} imagen(es)
-              </span>
+              <div class="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <i class="fa-solid fa-calendar-check text-slate-700"></i>
+                <div class="text-right">
+                  <div class="text-sm font-bold text-slate-900">{{ totalSesiones() }} sesiones</div>
+                  <div class="text-xs font-semibold text-slate-600">{{ totalProximas() }} próximas</div>
+                </div>
+              </div>
             </div>
 
-            <ng-container *ngIf="galeria().length; else noImgs">
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-                <div *ngFor="let img of galeria(); let i = index" class="group relative">
-                  <div class="relative overflow-hidden rounded-xl border border-slate-200">
-                    <img [src]="img.url || ''" class="h-32 w-full object-cover transition-transform duration-700 ease-out motion-safe:group-hover:scale-[1.04]" alt="Imagen {{ i + 1 }}" />
-                    <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-                    <div class="absolute top-2 left-2 rounded-full border border-white/30 bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">#{{ i + 1 }}</div>
-                    <div class="absolute inset-x-2 bottom-2 grid place-items-center">
-                      <span class="inline-flex translate-y-2 items-center rounded-full border border-white/30 bg-black/60 px-3 py-1 text-[11px] font-medium text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">Ver #{{ i + 1 }}</span>
+            <ng-container *ngIf="procesos()?.length; else noProc">
+              <div class="space-y-5">
+                <article *ngFor="let p of procesos(); let i = index" class="rounded-xl border border-slate-200 bg-white">
+                  <header class="px-4 py-3 border-b border-slate-200">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <h3 class="text-lg font-bold text-slate-900 truncate">{{ p.nombre }}</h3>
+                        <p class="text-xs text-slate-500" *ngIf="p.descripcion">{{ p.descripcion }}</p>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold text-white bg-slate-900">{{ p.tipo_registro }}</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold border" [class]="estadoChipClass(p.estado)">{{ p.estado }}</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold border border-slate-200 text-slate-700 bg-slate-50">
+                          <i class="fa-solid fa-clock text-amber-600 mr-1"></i>{{ p.horas_asignadas || 0 }}h
+                        </span>
+                        <span *ngIf="p.sesiones?.length" class="px-3 py-1 rounded-full text-xs font-semibold border border-slate-200 text-slate-700 bg-slate-50">
+                          <i class="fa-solid fa-calendar text-sky-600 mr-1"></i>{{ p.sesiones?.length }} ses.
+                        </span>
+                        <span *ngIf="p.sesiones?.length" class="px-3 py-1 rounded-full text-xs font-semibold border border-slate-200 text-slate-700 bg-slate-50">
+                          <i class="fa-solid fa-chart-bar text-emerald-600 mr-1"></i>{{ totalHorasSesiones(i) }}h
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </header>
 
-                <!-- ver todo -->
-                <button type="button" (click)="verGaleriaCompleta()" class="group relative grid h-32 place-items-center rounded-xl border-2 border-dashed border-slate-300 text-slate-400 transition-colors hover:border-purple-400 hover:text-purple-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
-                  <i class="fa-solid fa-expand text-xl transition-transform group-hover:scale-110"></i>
-                  <span class="mt-1 text-xs font-semibold">Ver todo</span>
-                </button>
+                  <!-- Sesiones en timeline simple -->
+                  <div class="px-4 py-4">
+                    <ng-container *ngIf="p.sesiones?.length; else noSes">
+                      <ol class="relative ms-3 border-s border-slate-200">
+                        <li *ngFor="let s of p.sesiones; trackBy: trackBySesion" class="ms-6 py-3">
+                          <span class="absolute -left-[5px] mt-2 h-2 w-2 rounded-full" [class]="dotClass(relativoSesion(s))"></span>
+                          <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div class="min-w-0">
+                              <div class="flex items-center gap-2 text-sm">
+                                <span class="font-semibold text-slate-900">{{ s.fecha }}</span>
+                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-800">
+                                  <i class="fa-solid fa-clock text-sky-600"></i>{{ horaRange(s) }}
+                                </span>
+                                <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                                  <i class="fa-solid fa-hourglass-half text-amber-600"></i>{{ sesionHoras(s) }} h
+                                </span>
+                              </div>
+                              <div class="mt-1 flex flex-wrap items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border" [class]="estadoChipClass(s.estado)">{{ s.estado }}</span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white"
+                                      [class]="{'bg-blue-600': sesionRelativa(s)==='ACTUAL', 'bg-indigo-600': sesionRelativa(s)==='PROXIMA', 'bg-slate-600': sesionRelativa(s)==='PASADA'}">
+                                  {{ sesionRelativa(s) }}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              [disabled]="!puedeRegistrar(s)"
+                              [routerLink]="['/mis-proyectos/sesiones', s.id, 'register-qr']"
+                              [title]="puedeRegistrar(s) ? 'Registrar asistencia ahora' : 'Sesión fuera de horario'"
+                              class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold shadow-sm"
+                              [class]="puedeRegistrar(s)
+                                ? 'border-amber-500 bg-amber-500 text-white hover:bg-amber-600'
+                                : 'cursor-not-allowed border-slate-300 bg-slate-200 text-slate-500'">
+                              <i class="fa-solid fa-qrcode"></i> Registrar
+                            </button>
+                          </div>
+                        </li>
+                      </ol>
+                    </ng-container>
+
+                    <ng-template #noSes>
+                      <div class="rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-500">
+                        <i class="fa-solid fa-calendar-plus text-xl mb-1"></i>
+                        <div class="text-sm font-medium">Sin sesiones programadas</div>
+                      </div>
+                    </ng-template>
+                  </div>
+                </article>
               </div>
             </ng-container>
 
-            <ng-template #noImgs>
-              <div class="grid place-items-center rounded-xl border-2 border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-white py-14 text-center">
-                <div class="grid h-16 w-16 place-items-center rounded-2xl bg-slate-100 text-slate-400 mb-4">
-                  <i class="fa-solid fa-images text-2xl"></i>
-                </div>
-                <h3 class="text-lg font-bold text-slate-800 mb-1">Galería vacía</h3>
-                <p class="max-w-md text-sm text-slate-500 mb-5">Aún no hay imágenes en la galería. Las imágenes aparecerán aquí cuando sean agregadas al proyecto.</p>
-                <button type="button" class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:from-purple-700 hover:to-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500">
-                  <i class="fa-solid fa-plus"></i>
-                  Agregar imágenes
+            <ng-template #noProc>
+              <div class="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500">
+                <i class="fa-solid fa-inbox text-2xl mb-2"></i>
+                <div class="font-medium">Aún no hay procesos</div>
+                <button (click)="recargarProcesos()"
+                        class="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  <i class="fa-solid fa-rotate"></i> Recargar
                 </button>
               </div>
             </ng-template>
           </div>
         </section>
 
-        <!-- PROCESOS Y SESIONES -->
-        <section class="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div class="absolute -top-14 -right-14 h-40 w-40 rounded-full bg-emerald-100/50"></div>
-          <div class="absolute -bottom-14 -left-14 h-36 w-36 rounded-full bg-emerald-50/60"></div>
-
-          <div class="relative p-6 sm:p-8">
-            <div class="mb-6 flex items-center justify-between gap-4">
+        <!-- GALERÍA -->
+        <section id="galeria" class="mt-8 scroll-mt-20">
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <div class="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm">
-                  <i class="fa-solid fa-diagram-project"></i>
+                <div class="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-white">
+                  <i class="fa-solid fa-images"></i>
                 </div>
                 <div>
-                  <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Procesos y sesiones</h2>
-                  <p class="mt-0.5 text-sm text-slate-500">Gestión de actividades programadas</p>
+                  <h2 class="text-xl font-bold text-slate-900">Galería</h2>
+                  <p class="text-sm text-slate-500">Imágenes del proyecto</p>
                 </div>
               </div>
-
-              <!-- mini dashboard -->
-              <div class="inline-flex items-center gap-3 rounded-xl border border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-emerald-100/50 px-4 py-2 shadow-sm">
-                <i class="fa-solid fa-calendar-check text-emerald-600"></i>
-                <div class="text-right">
-                  <div class="text-base font-bold text-slate-900">{{ totalSesiones() }} sesiones</div>
-                  <div class="text-sm font-semibold text-emerald-700">{{ totalProximas() }} próximas</div>
-                </div>
-              </div>
+              <span class="rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-white">
+                {{ galeria().length }} imagen(es)
+              </span>
             </div>
 
-            <ng-container *ngIf="procesos().length; else noProc">
-              <div class="space-y-6">
-                <div *ngFor="let p of procesos(); let pi = index" class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/60 p-6 shadow-sm">
-                  <div class="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-emerald-400 to-emerald-600"></div>
+            <ng-container *ngIf="galeria().length; else noImgs">
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <figure *ngFor="let img of galeria(); let i = index" class="group relative overflow-hidden rounded-xl border border-slate-200">
+                  <img [src]="img.url || ''" alt="Imagen {{ i+1 }}"
+                       class="h-32 w-full object-cover transition-transform group-hover:scale-[1.03]">
+                  <figcaption class="absolute bottom-2 left-2 rounded-md bg-black/50 px-2 py-0.5 text-[11px] font-medium text-white">
+                    #{{ i+1 }}
+                  </figcaption>
+                </figure>
 
-                  <div class="relative lg:flex lg:items-start lg:justify-between lg:gap-6">
-                    <div class="flex-1">
-                      <div class="mb-4 flex flex-wrap items-center gap-3">
-                        <h3 class="text-xl font-bold text-slate-900 transition-colors group-hover:text-emerald-700">{{ p.nombre }}</h3>
-                        <div class="flex items-center gap-2">
-                          <span class="px-3 py-1 rounded-full text-xs font-semibold shadow-sm border" [ngClass]="estadoChipClass(p.estado)">
-                            <i class="fa-solid fa-circle text-[7px] opacity-80 mr-1"></i>{{ p.estado }}
-                          </span>
-                          <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-sm">{{ p.tipo_registro }}</span>
-                        </div>
-                      </div>
-
-                      <div class="mb-4 flex flex-wrap items-center gap-3">
-                        <div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                          <span class="grid h-7 w-7 place-items-center rounded-lg bg-orange-100"><i class="fa-solid fa-clock text-orange-600 text-[13px]"></i></span>
-                          <div>
-                            <div class="text-[11px] text-slate-500">Horas asignadas</div>
-                            <div class="text-sm font-bold text-slate-900">{{ p.horas_asignadas || 0 }}h</div>
-                          </div>
-                        </div>
-
-                        <div *ngIf="p.sesiones?.length" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                          <span class="grid h-7 w-7 place-items-center rounded-lg bg-purple-100"><i class="fa-solid fa-calendar text-purple-600 text-[13px]"></i></span>
-                          <div>
-                            <div class="text-[11px] text-slate-500">Total sesiones</div>
-                            <div class="text-sm font-bold text-slate-900">{{ p.sesiones?.length }}</div>
-                          </div>
-                        </div>
-
-                        <div *ngIf="p.sesiones?.length" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                          <span class="grid h-7 w-7 place-items-center rounded-lg bg-emerald-100"><i class="fa-solid fa-chart-bar text-emerald-600 text-[13px]"></i></span>
-                          <div>
-                            <div class="text-[11px] text-slate-500">Horas totales</div>
-                            <div class="text-sm font-bold text-slate-900">{{ totalHorasSesiones(pi) }}h</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <p class="text-sm text-slate-700" *ngIf="p.descripcion">{{ p.descripcion }}</p>
-                    </div>
-                  </div>
-
-                  <!-- sesiones -->
-                  <div class="mt-6">
-                    <div class="mb-4 flex items-center justify-between">
-                      <h4 class="flex items-center gap-2 text-base font-bold text-slate-900"><i class="fa-solid fa-calendar-day text-emerald-600"></i>Sesiones programadas</h4>
-                      <span class="rounded-full bg-gradient-to-r from-slate-600 to-slate-700 px-3 py-1 text-xs font-bold text-white shadow-sm">{{ p.sesiones?.length || 0 }} sesión(es)</span>
-                    </div>
-
-                    <div *ngIf="p.sesiones?.length; else noSes" class="space-y-3">
-                      <div *ngFor="let s of p.sesiones; trackBy: trackBySesion" class="group/sesion flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm transition-colors hover:border-emerald-200">
-                        <div class="flex-1">
-                          <div class="mb-2 flex flex-wrap items-center gap-3">
-                            <div class="flex items-center gap-2">
-                              <span class="relative inline-flex h-3 w-3 rounded-full shadow-inner" [ngClass]="dotClass(relativoSesion(s))"></span>
-                              <span class="text-base font-semibold text-slate-900">{{ s.fecha }}</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                              <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-900"><i class="fa-solid fa-clock text-sky-600 text-[11px]"></i>{{ horaRange(s) }}</span>
-                              <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-amber-700"><i class="fa-solid fa-hourglass-half text-amber-600 text-[11px]"></i>{{ sesionHoras(s) }} h</span>
-                            </div>
-                          </div>
-
-                          <div class="flex flex-wrap items-center gap-2">
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold shadow-sm border" [ngClass]="estadoChipClass(s.estado)">{{ s.estado }}</span>
-                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold text-white bg-gradient-to-r from-blue-600 to-cyan-600 shadow-sm">{{ sesionRelativa(s) }}</span>
-                            <span *ngIf="sesionRelativa(s) === 'PASADA'" class="px-2.5 py-1 rounded-full text-[11px] font-bold text-white bg-gradient-to-r from-rose-600 to-rose-700 shadow-sm"><i class="fa-solid fa-xmark text-[10px] mr-1"></i>Faltó</span>
-                            <span *ngIf="sesionRelativa(s) === 'PASADA'" class="px-2.5 py-1 rounded-full text-[11px] font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-700 shadow-sm"><i class="fa-solid fa-check text-[10px] mr-1"></i>Asistió</span>
-                          </div>
-                        </div>
-
-                        <div class="flex flex-col sm:flex-row gap-2">
-                          <button [disabled]="!puedeRegistrar(s)" [routerLink]="['/mis-proyectos/sesiones', s.id, 'register-qr']" [title]="puedeRegistrar(s) ? 'Registrar asistencia ahora' : 'Sesión fuera de horario'" class="inline-flex items-center gap-2 rounded-xl border-2 px-4 py-2 text-sm font-bold shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-                                  [ngClass]="puedeRegistrar(s)
-                                    ? 'border-amber-500 bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700'
-                                    : 'cursor-not-allowed border-slate-300 bg-gradient-to-r from-slate-400 to-slate-500 text-white'">
-                            <i class="fa-solid fa-qrcode text-xs"></i>
-                            Registrar
-                            <i class="fa-solid fa-arrow-right text-[10px] transition-transform group-hover/sesion:translate-x-0.5"></i>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <ng-template #noSes>
-                      <div class="grid place-items-center rounded-xl border-2 border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-white py-10 text-center">
-                        <div class="mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400">
-                          <i class="fa-solid fa-calendar-plus text-xl"></i>
-                        </div>
-                        <h4 class="mb-1 text-base font-bold text-slate-800">Sin sesiones programadas</h4>
-                        <p class="max-w-sm text-sm text-slate-500">Este proceso aún no tiene sesiones activas.</p>
-                      </div>
-                    </ng-template>
-                  </div>
-                </div>
+                <!-- Ver todo -->
+                <button type="button"
+                        (click)="verGaleriaCompleta()"
+                        class="grid h-32 place-items-center rounded-xl border-2 border-dashed border-slate-300 text-slate-500 hover:text-slate-700 hover:border-slate-400">
+                  <i class="fa-solid fa-expand text-xl"></i>
+                  <span class="text-xs font-semibold mt-1">Ver todo</span>
+                </button>
               </div>
             </ng-container>
 
-            <ng-template #noProc>
-              <div class="grid place-items-center rounded-2xl border-2 border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-white py-16 text-center">
-                <div class="mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-slate-100 text-slate-400">
-                  <i class="fa-solid fa-inbox text-2xl"></i>
-                </div>
-                <h3 class="mb-2 text-xl font-bold text-slate-800">Sin procesos activos</h3>
-                <p class="mx-auto mb-5 max-w-md text-sm text-slate-500">Los procesos organizan las sesiones y actividades del proyecto. Aparecerán aquí cuando estén disponibles.</p>
-                <div class="flex justify-center gap-3">
-                  <button (click)="recargarProcesos()" class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:from-blue-700 hover:to-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                    <i class="fa-solid fa-rotate"></i>
-                    Recargar
-                  </button>
-                </div>
+            <ng-template #noImgs>
+              <div class="grid place-items-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500">
+                <i class="fa-solid fa-images text-2xl mb-2"></i>
+                <div class="font-medium">Galería vacía</div>
+                <div class="text-xs">Cuando se suban imágenes, aparecerán aquí.</div>
               </div>
             </ng-template>
           </div>
@@ -413,39 +321,34 @@
 
     <!-- LOADING -->
     <ng-template #loadingTpl>
-      <div class="flex flex-col items-center justify-center py-24" role="status" aria-live="polite">
+      <div class="grid place-items-center py-20 text-center">
         <div class="relative">
-          <div class="h-16 w-16 rounded-full border-4 border-slate-200"></div>
-          <div class="absolute inset-0 h-16 w-16 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent"></div>
+          <div class="h-14 w-14 rounded-full border-4 border-slate-200"></div>
+          <div class="absolute inset-0 h-14 w-14 animate-spin rounded-full border-4 border-slate-900 border-t-transparent"></div>
         </div>
-        <p class="mt-5 text-lg font-semibold text-slate-700">Cargando proyecto…</p>
-        <p class="mt-1 text-sm text-slate-500">Preparando toda la información</p>
+        <p class="mt-4 text-sm font-semibold text-slate-700">Cargando proyecto…</p>
       </div>
     </ng-template>
 
     <!-- ERROR -->
     <ng-template #errorTpl>
-      <div class="relative mx-auto max-w-2xl overflow-hidden rounded-2xl border border-rose-200 bg-white p-10 text-center shadow-sm">
-        <div class="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-rose-100/60"></div>
-        <div class="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-rose-50/60"></div>
-        <div class="relative">
-          <div class="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-rose-100 text-rose-600">
-            <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
-          </div>
-          <h3 class="mb-2 text-xl font-bold text-slate-900">Error al cargar el proyecto</h3>
-          <p class="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 text-base font-semibold text-rose-700">{{ error() }}</p>
-          <div class="flex justify-center gap-3">
-            <a [routerLink]="['/mp']" class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:from-blue-700 hover:to-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-              <i class="fa-solid fa-arrow-left"></i>
-              Volver al listado
-            </a>
-            <button (click)="recargarPagina()" class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
-              <i class="fa-solid fa-rotate"></i>
-              Reintentar
-            </button>
-          </div>
+      <div class="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm">
+        <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-xl bg-rose-100 text-rose-600">
+          <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900">No se pudo cargar el proyecto</h3>
+        <p class="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">
+          {{ error() }}
+        </p>
+        <div class="mt-4 flex justify-center gap-3">
+          <a [routerLink]="['/mp']" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+            <i class="fa-solid fa-arrow-left"></i> Volver
+          </a>
+          <button (click)="recargarPagina()" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <i class="fa-solid fa-rotate"></i> Reintentar
+          </button>
         </div>
       </div>
     </ng-template>
   </div>
-</div>
+</main>

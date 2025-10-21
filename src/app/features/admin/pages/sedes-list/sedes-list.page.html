@@ -1,0 +1,236 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 py-8" data-page="sedes-list">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+    <!-- HEADER -->
+    <div class="mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-white rounded-2xl shadow-lg border border-slate-200/60 backdrop-blur-sm">
+          <svg class="w-8 h-8 text-[#003B5C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 17l4-4 4 4m0-8l-4 4-4-4"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-[#003B5C] via-[#003B5C] to-[#4A7729] bg-clip-text text-transparent">
+            Sedes Universitarias
+          </h1>
+          <div class="flex items-center gap-3 mt-2">
+            <div class="text-sm text-slate-600 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-slate-200/60 shadow-sm">
+              {{ filtered().length }} sedes encontradas
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        <button (click)="goToCreate()"
+                class="group inline-flex items-center justify-center bg-gradient-to-r from-[#003B5C] to-[#4A7729] hover:from-[#003B5C] hover:to-[#5a8a35] text-white font-semibold px-6 py-3.5 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95">
+          <svg class="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Nueva sede
+        </button>
+      </div>
+    </div>
+
+    <!-- FILTRO -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-6 mb-8 shadow-lg">
+      <div class="flex flex-col sm:flex-row gap-4 items-end">
+        <div class="flex-1 w-full">
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Buscar sede</label>
+          <input class="w-full border border-slate-300 rounded-xl px-4 py-3.5 text-slate-700 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#003B5C] focus:border-transparent transition-all duration-200 shadow-sm"
+                 placeholder="Buscar por nombre..."
+                 [ngModel]="q()"
+                 (ngModelChange)="q.set($event)" />
+        </div>
+
+        <div class="flex gap-3 w-full sm:w-auto">
+          <button (click)="handleSearch()"
+                  class="group flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#003B5C] to-[#4A7729] hover:from-[#003B5C] hover:to-[#5a8a35] text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95">
+            <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            Buscar
+          </button>
+          <button (click)="handleClear()"
+                  class="group flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold shadow transition-all duration-300 hover:bg-slate-50 hover:shadow-md hover:scale-105 active:scale-95">
+            <svg class="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+            Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ERROR -->
+    <div *ngIf="error()" class="mb-6 rounded-2xl border border-red-200 bg-red-50/90 backdrop-blur-sm p-6 shadow-lg transform transition-all duration-300 animate-in slide-in-from-top">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <h3 class="text-red-800 font-semibold mb-1">Error al cargar sedes</h3>
+          <p class="text-red-700">{{ error() }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENIDO -->
+    <ng-container *ngIf="!loading(); else loadingTpl">
+      <ng-container *ngIf="filtered().length; else emptyTpl">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+          <div *ngFor="let s of filtered(); trackBy: trackById"
+               class="group flex flex-col rounded-3xl border border-slate-200 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:border-[#003B5C]/20 h-full animate-in slide-in-from-bottom">
+
+            <div class="flex-1 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-slate-900 truncate group-hover:text-[#003B5C] transition-colors duration-300">{{ s.nombre }}</h2>
+                <span *ngIf="s.es_principal"
+                      class="flex-shrink-0 text-xs font-medium px-3 py-1.5 bg-gradient-to-r from-[#003B5C]/10 to-[#4A7729]/10 text-[#003B5C] rounded-full border border-[#003B5C]/20 shadow-sm">
+                  Principal
+                </span>
+              </div>
+
+              <div class="mb-4">
+                <span [class]="s.esta_suspendida ? 'bg-red-100 text-red-700 border-red-200' : 'bg-green-100 text-green-700 border-green-200'"
+                      class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border shadow-sm transition-all duration-300">
+                  <span [class]="s.esta_suspendida ? 'bg-red-400' : 'bg-green-400'"
+                        class="w-2 h-2 rounded-full mr-2 animate-pulse"></span>
+                  {{ s.esta_suspendida ? 'Suspendida' : 'Activa' }}
+                </span>
+              </div>
+
+              <div class="mt-6 flex items-center justify-between gap-2">
+                <button (click)="goToView(s, $event)"
+                        class="group/btn inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#003B5C] to-[#4A7729] hover:from-[#003B5C] hover:to-[#5a8a35] text-white text-sm font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95">
+                  <span>Ver detalles</span>
+                  <svg class="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+                <button (click)="goToAssign(s)"
+                        class="group/btn inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-sm font-semibold shadow transition-all duration-300 hover:bg-slate-50 hover:shadow-md hover:scale-105 active:scale-95">
+                  <svg class="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                  </svg>
+                  Asignar EP
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CATÁLOGO ACADÉMICO (footer) -->
+        <div class="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Facultades -->
+          <div class="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-500">
+            <div class="flex items-center justify-between p-6 border-b border-slate-200/60">
+              <h3 class="text-lg font-semibold text-slate-900">Facultades (catálogo)</h3>
+              <button (click)="goToCreateFac()"
+                      class="group inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium shadow transition-all duration-300 hover:bg-slate-50 hover:shadow-md hover:scale-105">
+                <svg class="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Crear facultad
+              </button>
+            </div>
+            <div class="p-6 max-h-96 overflow-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
+              <div *ngFor="let f of facs(); trackBy: trackByFac; let last = last"
+                   class="flex items-center justify-between py-3 border-b last:border-b-0 border-slate-100/80 hover:bg-slate-50/80 rounded-lg px-3 transition-all duration-200">
+                <div class="font-medium text-slate-800 truncate flex items-center gap-2">
+                  <svg class="w-4 h-4 text-[#003B5C] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                  </svg>
+                  {{ f.nombre }}
+                </div>
+                <div class="text-xs text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full font-medium min-w-8 text-center shadow-sm">
+                  {{ conteoEpsPorFac().get(f.id) ?? 0 }} EP
+                </div>
+              </div>
+              <div *ngIf="!facs().length" class="text-center text-slate-500 py-8">
+                <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+                <p class="text-sm">No hay facultades registradas</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Escuelas Profesionales -->
+          <div class="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-500">
+            <div class="flex items-center justify-between p-6 border-b border-slate-200/60">
+              <h3 class="text-lg font-semibold text-slate-900">Escuelas Profesionales (catálogo)</h3>
+              <button (click)="goToCreateEp()"
+                      class="group inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-medium shadow transition-all duration-300 hover:bg-slate-50 hover:shadow-md hover:scale-105">
+                <svg class="w-4 h-4 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Crear EP
+              </button>
+            </div>
+            <div class="p-6 space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Filtrar por facultad</label>
+                <select class="w-full border border-slate-300 rounded-xl px-4 py-3.5 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#003B5C] focus:border-transparent transition-all duration-200 shadow-sm"
+                        [ngModel]="facFilterId()"
+                        (ngModelChange)="onFacFilterChange($event)">
+                  <option [ngValue]="null">— Todas las facultades —</option>
+                  <option *ngFor="let f of facs(); trackBy: trackByFac" [ngValue]="f.id">
+                    {{ f.nombre }} ({{ f.codigo }})
+                  </option>
+                </select>
+              </div>
+
+              <div class="max-h-96 overflow-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 divide-y divide-slate-100/80">
+                <div *ngFor="let e of escuelasFiltradas(); trackBy: trackByEp"
+                     class="py-3 flex items-center justify-between hover:bg-slate-50/80 rounded-lg px-3 transition-all duration-200 group/item">
+                  <div class="min-w-0 flex-1">
+                    <div class="font-medium text-slate-900 truncate group-hover/item:text-[#003B5C] transition-colors duration-200">{{ e.nombre }}</div>
+                    <div class="text-xs text-slate-500 truncate mt-1">Código: {{ e.codigo }}</div>
+                  </div>
+                  <span class="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full flex-shrink-0 ml-3 shadow-sm transition-colors duration-200 group-hover/item:bg-[#003B5C]/10 group-hover/item:text-[#003B5C]">
+                    ID {{ e.id }}
+                  </span>
+                </div>
+                <div *ngIf="!escuelasFiltradas().length" class="text-center text-slate-500 py-8">
+                  <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                  </svg>
+                  <p class="text-sm">No hay escuelas para mostrar</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- Loading -->
+    <ng-template #loadingTpl>
+      <div class="flex flex-col items-center justify-center py-20 bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-slate-200">
+        <div class="w-14 h-14 border-4 border-[#003B5C]/20 border-t-[#003B5C] rounded-full animate-spin mb-5"></div>
+        <p class="text-lg font-semibold text-slate-700 mb-2">Cargando sedes...</p>
+        <p class="text-slate-500 text-sm">Por favor espere un momento</p>
+      </div>
+    </ng-template>
+
+    <!-- Empty -->
+    <ng-template #emptyTpl>
+      <div class="text-center py-20 bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-slate-200 transform transition-all duration-500 animate-in fade-in">
+        <svg class="w-24 h-24 mx-auto text-slate-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+        <h3 class="text-2xl font-bold text-slate-900 mb-3">No hay sedes registradas</h3>
+        <p class="text-slate-600 mb-8 max-w-md mx-auto">Aún no se ha creado ninguna sede universitaria. Comience creando la primera sede.</p>
+        <button (click)="goToCreate()"
+                class="group inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r from-[#003B5C] to-[#4A7729] hover:from-[#003B5C] hover:to-[#5a8a35] text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95">
+          <svg class="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Crear primera sede
+        </button>
+      </div>
+    </ng-template>
+
+  </div>
+</div>

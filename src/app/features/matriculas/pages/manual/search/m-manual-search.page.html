@@ -1,0 +1,274 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 pb-16">
+  <!-- Header Mejorado -->
+  <header class="border-b border-slate-200 bg-white/90 backdrop-blur-sm sticky top-0 z-20 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md">
+            <i class="fa-solid fa-user-graduate text-lg"></i>
+          </div>
+          <div>
+            <nav class="text-xs text-slate-500 mb-1 flex items-center gap-1">
+              <a routerLink="/" class="hover:text-slate-700 font-medium transition-colors duration-200">Inicio</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <a routerLink="/m" class="hover:text-slate-700 font-medium transition-colors duration-200">Matrículas</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <span class="text-blue-600 font-semibold">Búsqueda Manual</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Búsqueda de Estudiantes</h1>
+            <p class="text-sm text-slate-600 mt-1">Localiza estudiantes por código, documento o correo electrónico</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs Mejoradas -->
+      <div class="mt-6 flex flex-wrap gap-2">
+        <a routerLink="/m/import" routerLinkActive="bg-blue-600 text-white shadow-md"
+           [routerLinkActiveOptions]="{ exact: true }"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all duration-200 hover:shadow-sm">
+          <i class="fa-solid fa-file-import"></i>
+          Importación Masiva
+        </a>
+        <a routerLink="/m/manual/buscar" routerLinkActive="bg-blue-600 text-white shadow-md"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all duration-200 hover:shadow-sm">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          Buscar Estudiantes
+        </a>
+        <a routerLink="/m/manual/registrar" routerLinkActive="bg-blue-600 text-white shadow-md"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all duration-200 hover:shadow-sm">
+          <i class="fa-solid fa-user-pen"></i>
+          Registrar/Editar
+        </a>
+        <a routerLink="/m/manual/matricular" routerLinkActive="bg-blue-600 text-white shadow-md"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border border-blue-200 text-blue-700 hover:bg-blue-50 transition-all duration-200 hover:shadow-sm">
+          <i class="fa-solid fa-graduation-cap"></i>
+          Gestionar Matrícula
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Body Mejorado -->
+  <main class="max-w-6xl mx-auto px-4 pt-8 space-y-8">
+
+    <!-- Tarjeta de Búsqueda Mejorada -->
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="p-2 rounded-xl bg-blue-100 text-blue-600">
+          <i class="fa-solid fa-search text-lg"></i>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Criterios de Búsqueda</h2>
+          <p class="text-sm text-slate-600">Utiliza al menos uno de los siguientes campos</p>
+        </div>
+      </div>
+
+      <!-- Grid de Filtros Mejorado -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Código del Estudiante</label>
+          <div class="relative">
+            <input class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+                   placeholder="Ej: 20240001"
+                   [ngModel]="codigo()"
+                   (ngModelChange)="codigo.set($event)" />
+            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+              <i class="fa-solid fa-id-card text-sm"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Documento de Identidad</label>
+          <div class="relative">
+            <input class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+                   placeholder="Número de documento"
+                   [ngModel]="documento()"
+                   (ngModelChange)="documento.set($event)" />
+            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+              <i class="fa-solid fa-address-card text-sm"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Correo Electrónico</label>
+          <div class="relative">
+            <input class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm"
+                   placeholder="usuario@ejemplo.com"
+                   [ngModel]="email()"
+                   (ngModelChange)="email.set($event)" />
+            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+              <i class="fa-solid fa-envelope text-sm"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones de Búsqueda Mejoradas -->
+      <div class="flex flex-wrap gap-4 mt-6 pt-6 border-t border-slate-100">
+        <button (click)="buscar()"
+                [disabled]="loading() || (!codigo() && !documento() && !email())"
+                class="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3.5 text-sm font-semibold text-white hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-md">
+          <i class="fa-solid fa-magnifying-glass" [class.hidden]="loading()"></i>
+          <i *ngIf="loading()" class="fa-solid fa-circle-notch animate-spin"></i>
+          {{ loading() ? 'Buscando...' : 'Buscar Estudiante' }}
+        </button>
+
+        <button (click)="limpiar()"
+                class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm">
+          <i class="fa-solid fa-broom"></i>
+          Limpiar Búsqueda
+        </button>
+      </div>
+
+      <!-- Mensaje de Error Mejorado -->
+      <div *ngIf="error()"
+           class="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 animate-fade-in">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-circle-exclamation text-rose-600 text-lg"></i>
+          <div class="flex-1">
+            <div class="font-semibold">Búsqueda sin resultados</div>
+            <div class="text-sm mt-1">{{ error() }}</div>
+          </div>
+          <button (click)="error.set(null)"
+                  class="text-rose-400 hover:text-rose-600 transition-colors duration-200">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resultados de Búsqueda Mejorados -->
+    <section *ngIf="data()" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm animate-fade-in">
+
+      <!-- Encabezado del Resultado -->
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-xl bg-emerald-100 text-emerald-600">
+            <i class="fa-solid fa-user-check text-lg"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">Estudiante Encontrado</h2>
+            <p class="text-sm text-slate-600">Información académica y personal del estudiante</p>
+          </div>
+        </div>
+        <div class="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+          Resultados encontrados
+        </div>
+      </div>
+
+      <!-- Información Principal del Estudiante -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+
+        <!-- Tarjeta de Información Personal -->
+        <div class="lg:col-span-3">
+          <div class="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100/50 p-4">
+            <div class="flex items-start justify-between">
+              <div class="flex items-start gap-3">
+                <div class="p-2 rounded-lg bg-white text-blue-600 shadow-sm mt-1">
+                  <i class="fa-solid fa-user text-sm"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-blue-900 text-lg">
+                    {{ data().user?.first_name }} {{ data().user?.last_name }}
+                  </div>
+                  <div class="text-sm text-blue-700 mt-2 space-y-1">
+                    <div class="flex items-center gap-2">
+                      <i class="fa-solid fa-id-card text-xs w-4"></i>
+                      <span><b>Código:</b> {{ data().expediente?.codigo_estudiante || '—' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <i class="fa-solid fa-address-card text-xs w-4"></i>
+                      <span><b>Documento:</b> {{ data().user?.doc_numero || '—' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <i class="fa-solid fa-building text-xs w-4"></i>
+                      <span><b>EP‑SEDE:</b> {{ data().expediente?.ep_sede_id || '—' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2" *ngIf="data().user?.email">
+                      <i class="fa-solid fa-envelope text-xs w-4"></i>
+                      <span><b>Email:</b> {{ data().user?.email }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="space-y-3">
+          <button (click)="irRegistrar()"
+                  class="w-full inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm">
+            <i class="fa-solid fa-user-pen text-blue-600"></i>
+            Editar Datos
+          </button>
+          <button (click)="irMatricular()"
+                  class="w-full inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl">
+            <i class="fa-solid fa-graduation-cap"></i>
+            Gestionar Matrícula
+          </button>
+        </div>
+      </div>
+
+      <!-- Historial de Matrículas Mejorado -->
+      <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-5">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="p-2 rounded-lg bg-purple-100 text-purple-600">
+            <i class="fa-solid fa-history text-sm"></i>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900">Historial de Matrículas</h3>
+          <span class="text-xs px-2 py-1 rounded-full bg-slate-200 text-slate-700 font-medium">
+            {{ data().matriculas?.length || 0 }} registros
+          </span>
+        </div>
+
+        <div *ngIf="data().matriculas?.length; else sinMatriculas"
+             class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Período</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Ciclo/Grupo</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Modalidad</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Modo</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-700 text-xs uppercase tracking-wider">Fecha</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              <tr *ngFor="let m of data().matriculas"
+                  class="hover:bg-slate-50/50 transition-colors duration-150">
+                <td class="px-4 py-3 font-medium text-slate-900">{{ m.periodo_id || '—' }}</td>
+                <td class="px-4 py-3">
+                  <span class="font-medium text-slate-900">{{ m.ciclo || '—' }}</span>
+                  <span class="text-slate-400 mx-1">/</span>
+                  <span class="text-slate-700">{{ m.grupo || '—' }}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium bg-blue-100 text-blue-700">
+                    {{ m.modalidad_estudio || '—' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-slate-700">{{ m.modo_contrato || '—' }}</span>
+                </td>
+                <td class="px-4 py-3 text-slate-600">
+                  {{ m.fecha_matricula || '—' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ng-template #sinMatriculas>
+          <div class="text-center py-8 text-slate-500">
+            <i class="fa-solid fa-inbox text-3xl text-slate-300 mb-3"></i>
+            <div class="font-medium text-slate-700">No se encontraron matrículas</div>
+            <div class="text-sm mt-1">Este estudiante no tiene matrículas registradas en el sistema</div>
+          </div>
+        </ng-template>
+      </div>
+    </section>
+  </main>
+</div>
