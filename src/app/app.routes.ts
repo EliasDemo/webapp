@@ -77,6 +77,15 @@ export const routes: Routes = [
           import('./features/matriculas/m.routes').then(m => m.M_ROUTES),
       },
 
+      {
+        path: 'r',
+        loadChildren: () =>
+          import('./features/reportes/rp.routes').then(m => m.RP_ROUTES),
+        // Si exportas default:
+        // loadChildren: () => import('./features/reportes/rp.routes').then(m => m.default),
+      },
+
+
 
 
         { path: 'no-autorizado', component: NoAutorizadoPage },

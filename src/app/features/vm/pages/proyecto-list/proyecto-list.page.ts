@@ -8,11 +8,12 @@ import { VmApiService } from '../../data-access/vm.api';
 import { VmProyecto, isApiOk, TipoProyecto } from '../../models/proyecto.models';
 import { ProyectoCardComponent } from '../../components/proyecto-card/proyecto-card.component';
 
-// 👇 NEW
+// Lookups
 import { LookupsApiService } from '../../lookups/lookups.api';
 
 type PeriodoOpt = { id: number; anio: number; ciclo: string; estado?: string };
 type TipoFiltro = 'ALL' | TipoProyecto;
+type PeriodoSel = number | 'ALL' | 'CURRENT' | null;
 
 @Component({
   standalone: true,
@@ -22,42 +23,86 @@ type TipoFiltro = 'ALL' | TipoProyecto;
 })
 export class ProyectoListPage {
   private api = inject(VmApiService);
-  private lookups = inject(LookupsApiService); // 👈 NEW
+  private lookups = inject(LookupsApiService);
 
-  // estado
+  // Estado
   loading = signal(true);
   items = signal<VmProyecto[]>([]);
   q = signal('');
 
-  // Lookups de periodos y selección
+  // Lookup de periodos
   periodos = signal<PeriodoOpt[]>([]);
-  selectedPeriodoId = signal<number | 'ALL' | null>(null);
-  defaultPeriodoId = signal<number | null>(null); // periodo "actual" detectado
+  defaultPeriodoId = signal<number | null>(null); // id del EN_CURSO (o fallback)
+  selectedPeriodoId = signal<PeriodoSel>(null);   // 'CURRENT' | 'ALL' | id | null
 
-  // Filtro por tipo
-  tipo = signal<TipoFiltro>('ALL'); // 'ALL' | 'LIBRE' | 'VINCULADO'
+  // Filtro tipo
+  tipo = signal<TipoFiltro>('ALL');
 
   constructor() {
     this.loadPeriodosYPrimeraCarga();
   }
 
-  // Lista filtrada en memoria (además del filtro en servidor para periodo/tipo)
+  // ===== Helpers de periodos (agrupación, orden, normalización) =====
+
+  /** Periodo (objeto) por id */
+  private findPeriodoById = (id?: number | null) =>
+    (id ? this.periodos().find(p => p.id === id) ?? null : null);
+
+  /** Periodo actual (objeto) */
+  defaultPeriodo = computed(() => this.findPeriodoById(this.defaultPeriodoId()));
+
+  /** Periodos ordenados desc: año (desc), ciclo (2,1) */
+  orderedPeriodos = computed(() => {
+    return [...this.periodos()].sort((a, b) => {
+      if (a.anio !== b.anio) return b.anio - a.anio;
+      const ca = Number(a.ciclo), cb = Number(b.ciclo);
+      return cb - ca; // 2 primero
+    });
+  });
+
+  /** Agrupa por año para el <optgroup> */
+  periodoGroups = computed(() => {
+    const groups: Array<{ anio: number; items: PeriodoOpt[] }> = [];
+    const byYear = new Map<number, PeriodoOpt[]>();
+    for (const p of this.orderedPeriodos()) {
+      const list = byYear.get(p.anio) ?? [];
+      list.push(p);
+      byYear.set(p.anio, list);
+    }
+    for (const [anio, items] of byYear.entries()) {
+      groups.push({ anio, items });
+    }
+    // ordenar grupos por año desc
+    groups.sort((a, b) => b.anio - a.anio);
+    return groups;
+  });
+
+  /** Id numérico normalizado a partir de la selección (CURRENT→default, ALL→undefined) */
+  private normalizedPeriodoId(): number | undefined {
+    const sel = this.selectedPeriodoId();
+    if (sel === 'ALL' || sel === null) return undefined;
+    if (sel === 'CURRENT') return this.defaultPeriodoId() ?? undefined;
+    return Number(sel) || undefined;
+  }
+
+  isAllSelected(): boolean {
+    return this.selectedPeriodoId() === 'ALL';
+  }
+
+  // ===== Lista filtrada (cliente) =====
   filtered = computed(() => {
     let r = this.items();
 
-    // Filtro por periodo (defensivo si el backend no filtrara)
-    const sel = this.selectedPeriodoId();
-    if (sel && sel !== 'ALL') {
-      r = r.filter(p => p.periodo_id === sel);
+    const selId = this.normalizedPeriodoId();
+    if (typeof selId === 'number') {
+      r = r.filter(p => p.periodo_id === selId);
     }
 
-    // Filtro por tipo (en cliente por si el backend aún no lo soporta)
     const t = this.tipo();
     if (t !== 'ALL') {
       r = r.filter(p => p.tipo === t);
     }
 
-    // Search
     const term = this.q().toLowerCase();
     if (term) {
       r = r.filter(p =>
@@ -69,30 +114,36 @@ export class ProyectoListPage {
   });
 
   hasActiveFilters = computed(() => {
-    const sel = this.selectedPeriodoId();
-    return !!this.q()
-      || (this.tipo() !== 'ALL')
-      || (!!sel && sel !== this.defaultPeriodoId());
+    const normSel = this.normalizedPeriodoId();
+    const defaultId = this.defaultPeriodoId() ?? undefined;
+    const isPeriodoDirty =
+      (normSel !== undefined && normSel !== defaultId) ||
+      (normSel === undefined && defaultId !== undefined && this.selectedPeriodoId() !== 'CURRENT');
+
+    return !!this.q() || (this.tipo() !== 'ALL') || isPeriodoDirty;
   });
 
-  // acciones UI
+  // ===== Acciones UI =====
   async handleSearch() {
-    const sel = this.selectedPeriodoId();
-    const tipo = this.tipo();
-    await this.fetchData(this.q(), sel === 'ALL' ? undefined : (sel as number), tipo === 'ALL' ? undefined : tipo);
+    const periodoId = this.normalizedPeriodoId();
+    await this.fetchData(this.q(), periodoId, this.tipo());
   }
 
   async handleClear() {
     this.q.set('');
     this.tipo.set('ALL');
-    this.selectedPeriodoId.set(this.defaultPeriodoId()); // vuelve al periodo "actual"
+    this.selectedPeriodoId.set('CURRENT'); // vuelve a "Periodo actual"
     await this.fetchData(undefined, this.defaultPeriodoId() ?? undefined, undefined);
   }
 
   onPeriodoChange(v: any) {
-    // <select> devuelve string; lo normalizamos
-    if (v === 'ALL') this.selectedPeriodoId.set('ALL');
-    else this.selectedPeriodoId.set(Number(v) || null);
+    if (v === 'ALL') {
+      this.selectedPeriodoId.set('ALL');
+    } else if (v === 'CURRENT') {
+      this.selectedPeriodoId.set('CURRENT');
+    } else {
+      this.selectedPeriodoId.set(Number(v) || null);
+    }
   }
 
   onTipoChange(v: any) {
@@ -107,14 +158,32 @@ export class ProyectoListPage {
     this.items.set(this.items().filter(x => x.id !== id));
   }
 
-  // data
+  // Navegar al periodo anterior / siguiente según el orden
+  async stepPeriodo(dir: -1 | 1) {
+    const list = this.orderedPeriodos();
+    const currentId = this.normalizedPeriodoId() ?? this.defaultPeriodoId() ?? null;
+    if (!currentId) return;
+
+    const idx = list.findIndex(p => p.id === currentId);
+    if (idx < 0) return;
+
+    const next = list[idx + dir];
+    if (!next) return;
+
+    this.selectedPeriodoId.set(next.id);
+    await this.fetchData(this.q(), next.id, this.tipo());
+  }
+
+  // ===== Data =====
   private async loadPeriodosYPrimeraCarga() {
     try {
-      // 1) Traer periodos activos y detectar "actual"
-      const periodos = await firstValueFrom(this.lookups.fetchPeriodos('', true, 50));
+      // 👉 Trae **todos** los periodos (no solo activos)
+      const periodos = await firstValueFrom(this.lookups.fetchPeriodos('', false, 500));
+      // Ordenamos igual que la vista
+      periodos.sort((a, b) => (b.anio - a.anio) || (Number(b.ciclo) - Number(a.ciclo)));
       this.periodos.set(periodos);
 
-      // Heurística: preferir EN_CURSO; si no, PLANIFICADO; si no, el primero
+      // Detecta "actual": EN_CURSO; si no hay, usa PLANIFICADO; si no, el más reciente
       const actual =
         periodos.find(p => p.estado === 'EN_CURSO')
         ?? periodos.find(p => p.estado === 'PLANIFICADO')
@@ -122,22 +191,31 @@ export class ProyectoListPage {
 
       const actualId = actual?.id ?? null;
       this.defaultPeriodoId.set(actualId);
-      this.selectedPeriodoId.set(actualId); // 👈 por defecto periodo actual
 
-      // 2) Primera carga con periodo actual
+      // Selección visual por defecto: "Periodo actual"
+      this.selectedPeriodoId.set('CURRENT');
+
+      // 1ª carga usando el id numérico del actual (si existe)
       await this.fetchData(undefined, actualId ?? undefined, undefined);
     } finally {
       this.loading.set(false);
     }
   }
 
-  private async fetchData(q?: string, periodoId?: number, tipo?: TipoProyecto) {
+  // 🔧 FIX: aceptar TipoFiltro y filtrar internamente 'ALL'
+  private async fetchData(q?: string, periodoId?: number, tipo?: TipoFiltro) {
     this.loading.set(true);
     try {
       const params: any = {};
       if (q) params.q = q;
       if (typeof periodoId === 'number') params.periodo_id = periodoId;
-      if (tipo) params.tipo = tipo; // 👈 si el backend lo soporta, lo usa
+
+      // Type guard para sólo enviar 'LIBRE' | 'VINCULADO'
+      const isTipoProyecto = (t: any): t is TipoProyecto =>
+        t === 'LIBRE' || t === 'VINCULADO';
+      if (tipo && isTipoProyecto(tipo)) {
+        params.tipo = tipo;
+      }
 
       const res = await firstValueFrom(
         this.api.listarProyectos(Object.keys(params).length ? params : undefined)
@@ -147,5 +225,4 @@ export class ProyectoListPage {
       this.loading.set(false);
     }
   }
-
 }

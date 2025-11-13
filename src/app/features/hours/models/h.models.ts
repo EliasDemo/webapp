@@ -1,5 +1,3 @@
-// h.models.ts
-
 export type Id = number;
 
 /** Parámetros aceptados por /reportes/horas/... */
@@ -124,5 +122,39 @@ export type ReporteHorasFail = {
   message: string;
   meta?: Record<string, unknown>;
 };
+
+export type AvanceProyectoQuery = Partial<{
+  estado: string;   // 'APROBADO' por defecto; usa '*' para todos
+  periodo_id: Id;   // opcional
+}>;
+
+export interface AvanceProyectoItem {
+  id: Id;
+  titulo: string | null;
+  minutos: number;
+  horas: number;
+  horas_planificadas: number | null;
+  minutos_requeridos: number | null;
+  minutos_faltantes: number | null;
+  porcentaje: number | null;   // 0..100 (o null si no hay meta)
+}
+
+export type AvancePorProyectoOk = {
+  ok: true;
+  data: {
+    por_proyecto: AvanceProyectoItem[];
+    total_minutos: number;
+    total_horas: number;
+  };
+};
+
+export type AvancePorProyectoFail = {
+  ok: false;
+  message: string;
+  meta?: Record<string, unknown>;
+};
+
+export type AvancePorProyectoResponse = AvancePorProyectoOk | AvancePorProyectoFail;
+
 
 export type ReporteHorasResponse = ReporteHorasOk | ReporteHorasFail;

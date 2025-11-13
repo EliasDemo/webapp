@@ -9,7 +9,7 @@ export const MP_ROUTES: Routes = [
     data: { feature: 'mis-proyectos', level: 'list' }
   },
 
-  // ✅ Mover esta ruta antes de :id
+  // ✅ Esta ruta va antes de :id
   {
     path: 'sesiones/:sesionId/register-qr',
     title: 'Registrar asistencia (QR)',

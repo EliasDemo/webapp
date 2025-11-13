@@ -1,109 +1,214 @@
 <div class="login-container">
-  <!-- Fondo con imagen -->
-  <div class="background-section">
-    <div class="background-overlay"></div>
-    <img src="assets/peru.jpg" alt="Universidad UPeU" class="background-image" />
+  <div class="login-shell">
+    <!-- Panel institucional / marca -->
+    <aside class="brand-panel">
+      <img
+        src="assets/peru.jpg"
+        alt="Universidad UPeU"
+        class="brand-background"
+      />
+      <div class="brand-overlay"></div>
 
-    <div class="background-content">
-      <div class="welcome-text"></div>
-    </div>
-  </div>
-
-  <!-- Formulario glass CENTRADO -->
-  <div class="form-section">
-    <div class="glass-form">
-      <div class="form-header">
-        <div class="logo-container">
+      <div class="brand-content">
+        <div class="brand-logo-row">
           <img
             src="https://upeu.edu.pe/wp-content/uploads/2022/04/logo-upeu-dark-svg.svg"
             alt="UPeU"
-            class="main-logo"
+            class="brand-logo"
             onerror="this.style.display='none'"
           />
+          <span class="brand-campus">Campus Perú</span>
         </div>
 
-        <h2 class="welcome-question">¿Listo para comenzar?</h2>
-        <h1 class="form-title">{{ title() }}</h1>
+        <h2 class="brand-title">
+          Plataforma de Vinculación con el Medio
+        </h2>
+        <p class="brand-text">
+          Accede a tus proyectos, eventos, registros y certificados en un solo lugar.
+        </p>
+
+        <ul class="brand-highlights">
+          <li>Gestión de proyectos y eventos institucionales</li>
+          <li>Control de asistencia y participación</li>
+          <li>Integración con expedientes académicos</li>
+        </ul>
       </div>
+    </aside>
 
-      <!-- Paso 1: username -->
-      <form *ngIf="step() === 1" [formGroup]="lookupForm" (ngSubmit)="submitLookup()" class="form-content">
-        <div class="input-group">
-          <label for="username">Usuario:</label>
-          <input id="username" formControlName="username" autocomplete="username" placeholder="Tu usuario" />
-          <small class="error-text" *ngIf="username.invalid && username.touched">Requerido</small>
-        </div>
-        <button type="submit" class="submit-btn" [disabled]="lookupForm.invalid">Continuar</button>
-      </form>
-
-      <!-- Paso 2: password -->
-      <form *ngIf="step() === 2" [formGroup]="loginForm" (ngSubmit)="submitLogin()" class="form-content">
-        <!-- Info básica del usuario -->
-        <div class="user-info-simple">
-          <div class="user-avatar" *ngIf="profilePhoto()">
-            <img [src]="profilePhoto()!" alt="Foto de perfil" />
-          </div>
-          <div class="user-details">
-            <div class="user-name">{{ fullName() }}</div>
-            <div class="user-meta">{{ escuela() }} • {{ rol() || 'Usuario' }}</div>
-          </div>
-        </div>
-
-        <!-- Mensaje de bloqueo -->
-        <div *ngIf="isLocked()" class="lock-message">
-          <div class="lock-icon">🔒</div>
-          <div class="lock-text">
-            <strong>Cuenta temporalmente bloqueada</strong>
-            <p>Por seguridad. Tiempo restante: {{ remainingTime() }} segundos</p>
-          </div>
-        </div>
-
-        <!-- Campo de contraseña con ojito -->
-        <div class="input-group">
-          <label for="password">Contraseña</label>
-          <div class="password-wrapper">
-            <input
-              [type]="showPassword() ? 'text' : 'password'"
-              id="password"
-              formControlName="password"
-              autocomplete="current-password"
-              placeholder="Ingresa tu contraseña"
-              class="password-input"
-              [class.error]="loginError()"
-              [disabled]="isLocked()"
+    <!-- Panel de autenticación -->
+    <main class="auth-panel">
+      <div class="auth-card">
+        <header class="form-header">
+          <div class="form-logo">
+            <img
+              src="https://upeu.edu.pe/wp-content/uploads/2022/04/logo-upeu-dark-svg.svg"
+              alt="UPeU"
+              class="main-logo"
+              onerror="this.style.display='none'"
             />
+          </div>
+
+          <p class="welcome-question">¿Listo para comenzar?</p>
+          <h1 class="form-title">{{ title() }}</h1>
+
+          <div class="step-indicator">
+            <div class="step-dot" [class.active]="step() === 1">1</div>
+            <div class="step-line"></div>
+            <div class="step-dot" [class.active]="step() === 2">2</div>
+          </div>
+        </header>
+
+        <!-- Paso 1: username -->
+        <form
+          *ngIf="step() === 1"
+          [formGroup]="lookupForm"
+          (ngSubmit)="submitLookup()"
+          class="form-content"
+        >
+          <div class="input-group">
+            <label for="username">Usuario institucional</label>
+            <input
+              id="username"
+              formControlName="username"
+              autocomplete="username"
+              placeholder="Ej. nombre.apellido"
+            />
+            <small class="error-text" *ngIf="username.invalid && username.touched">
+              Este campo es obligatorio.
+            </small>
+          </div>
+
+          <button
+            type="submit"
+            class="primary-btn"
+            [disabled]="lookupForm.invalid"
+          >
+            Continuar
+          </button>
+        </form>
+
+        <!-- Paso 2: password -->
+        <form
+          *ngIf="step() === 2"
+          [formGroup]="loginForm"
+          (ngSubmit)="submitLogin()"
+          class="form-content"
+        >
+          <!-- Resumen de usuario -->
+          <div class="user-info-simple">
+            <div class="user-avatar" *ngIf="profilePhoto()">
+              <img [src]="profilePhoto()!" alt="Foto de perfil" />
+            </div>
+            <div class="user-avatar placeholder" *ngIf="!profilePhoto()">
+              <span>{{ fullName() ? fullName().charAt(0) : '?' }}</span>
+            </div>
+
+            <div class="user-details">
+              <div class="user-name">{{ fullName() }}</div>
+              <div class="user-meta">
+                <span *ngIf="escuela()">{{ escuela() }} • </span>
+                <span>{{ rol() || 'Usuario' }}</span>
+              </div>
+            </div>
+
             <button
               type="button"
-              class="toggle-password-btn"
-              (click)="togglePasswordVisibility()"
-              [disabled]="isLocked()"
-              tabindex="-1"
+              class="link-button change-user"
+              (click)="back()"
             >
-              <span class="password-icon">{{ showPassword() ? '🔒' : '👁' }}</span>
+              Cambiar usuario
             </button>
           </div>
 
-          <small class="error-text" *ngIf="password.invalid && password.touched">La contraseña es requerida</small>
-          <small class="error-text" *ngIf="loginError() && !isLocked()">{{ loginError() }}</small>
-
-          <div class="password-actions">
-            <a href="#" class="forgot-password" (click)="requestPasswordReset(); $event.preventDefault()">
-              ¿Olvidaste tu contraseña?
-            </a>
+          <!-- Mensaje de bloqueo -->
+          <div *ngIf="isLocked()" class="lock-message">
+            <div class="lock-icon">
+              <span>🔒</span>
+            </div>
+            <div class="lock-text">
+              <strong>Cuenta temporalmente bloqueada</strong>
+              <p>Por seguridad. Tiempo restante: {{ remainingTime() }} segundos.</p>
+            </div>
           </div>
-        </div>
 
-        <div class="button-group">
-          <button type="button" class="secondary-btn" (click)="back()">Cambiar usuario</button>
-          <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isLocked()">
-            {{ isLocked() ? 'Cuenta Bloqueada' : 'Ingresar' }}
-          </button>
-        </div>
-      </form>
+          <!-- Campo de contraseña -->
+          <div class="input-group">
+            <label for="password">Contraseña</label>
+            <div class="password-wrapper">
+              <input
+                [type]="showPassword() ? 'text' : 'password'"
+                id="password"
+                formControlName="password"
+                autocomplete="current-password"
+                placeholder="Ingresa tu contraseña"
+                class="password-input"
+                [class.error]="loginError()"
+                [disabled]="isLocked()"
+              />
 
-      <div class="form-footer">
-        <p>¿Necesitas ayuda? <a href="#" class="help-link">Contáctanos</a></p>
+              <button
+                type="button"
+                class="toggle-password-btn"
+                (click)="togglePasswordVisibility()"
+                [disabled]="isLocked()"
+                tabindex="-1"
+              >
+                <span class="password-icon">
+                  {{ showPassword() ? '🙈' : '👁' }}
+                </span>
+              </button>
+            </div>
+
+            <small
+              class="error-text"
+              *ngIf="password.invalid && password.touched"
+            >
+              La contraseña es requerida.
+            </small>
+            <small
+              class="error-text"
+              *ngIf="loginError() && !isLocked()"
+            >
+              {{ loginError() }}
+            </small>
+
+            <div class="password-actions">
+              <a
+                href="#"
+                class="forgot-password"
+                (click)="requestPasswordReset(); $event.preventDefault()"
+              >
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="back()"
+            >
+              Cambiar usuario
+            </button>
+
+            <button
+              type="submit"
+              class="primary-btn"
+              [disabled]="loginForm.invalid || isLocked()"
+            >
+              {{ isLocked() ? 'Cuenta bloqueada' : 'Ingresar' }}
+            </button>
+          </div>
+        </form>
+
+        <footer class="form-footer">
+          <p>
+            ¿Necesitas ayuda?
+            <a href="#" class="help-link">Contáctanos</a>
+          </p>
+        </footer>
       </div>
-    </div>
+    </main>
   </div>
 </div>

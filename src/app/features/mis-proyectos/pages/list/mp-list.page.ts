@@ -13,7 +13,7 @@ import {
 } from '../../../vm/models/proyecto.models';
 
 import { HorasApiService } from '../../../hours/data-access/h.api';
-import { ReporteHorasOk } from '../../../hours/models/h.models';
+import { ReporteHorasOk } from '../../../hours/models/h.models'; // usado en el fallback del resumen
 import { LookupsApiService } from '../../../vm/lookups/lookups.api';
 
 type PeriodoVM = { id: number; anio: number; ciclo: string; estado?: string };
@@ -49,7 +49,10 @@ export class MpListPage {
   agenda = signal<AlumnoProyectoAgenda[] | null>(null);
 
   // Progreso (horas hechas por proyecto, en HORAS)
-  horasPorProyecto = signal<Map<number, number>>(new Map());
+  horasPorProyecto = signal<Map<number, number>>(new Map<number, number>());
+
+  // IDs de proyectos con horas (>0) para filtrar historial
+  private projectsWithHours = signal<Set<number>>(new Set<number>());
 
   // Historial por período
   historiales = signal<VmProyecto[]>([]);
@@ -70,7 +73,7 @@ export class MpListPage {
     (this.selectedPeriodo()?.estado || '').toUpperCase() === 'EN_CURSO'
   );
 
-  // ======== Helpers de proyecto ========
+  // ======== Helpers ========
   private isClosed(p?: VmProyecto | null): boolean {
     const e = (p?.estado || '').toUpperCase();
     return e === 'CERRADO' || e === 'CANCELADO' || e === 'FINALIZADO';
@@ -84,8 +87,11 @@ export class MpListPage {
     arr.forEach(p => map.set(p.id, p));
     return Array.from(map.values());
   }
+  private sortProjects(list: VmProyecto[]): VmProyecto[] {
+    return [...list].sort((a, b) => (a?.titulo || '').localeCompare(b?.titulo || ''));
+  }
 
-  // Map: proyectoId -> periodo_id (para fallback de historial)
+  // Map: proyectoId -> periodo_id (para fallback)
   agendaPeriodMap = computed(() => {
     const m = new Map<number, number | null>();
     for (const a of (this.agenda() ?? [])) {
@@ -96,11 +102,12 @@ export class MpListPage {
   });
 
   // ======== Listas ========
+  // Inscritos = SOLO desde agenda (participación real)
   inscritos = computed<VmProyecto[]>(() => {
-    const ag = (this.agenda() ?? []).map(a => a.proyecto);
-    const pend = (this.dataAlumno()?.pendientes ?? []).map(p => p.proyecto);
-    const base = this.uniqById([...ag, ...pend]);
-    return base.filter((p: VmProyecto) => this.isActive(p));
+    const base = (this.agenda() ?? [])
+      .map(a => a.proyecto)
+      .filter(p => this.isActive(p));
+    return this.sortProjects(this.uniqById(base));
   });
 
   private insIds = computed<Set<number>>(() => new Set(this.inscritos().map(p => p.id)));
@@ -112,13 +119,15 @@ export class MpListPage {
       []
     ) as VmProyecto[];
     const ids = this.insIds();
-    return src.filter((p: VmProyecto) => this.isActive(p) && !ids.has(p.id));
+    const base = src.filter(p => this.isActive(p) && !ids.has(p.id));
+    return this.sortProjects(this.uniqById(base));
   });
 
   libres = computed<VmProyecto[]>(() => {
     const src = (this.dataAlumno()?.libres ?? []) as VmProyecto[];
     const ids = this.insIds();
-    return src.filter((p: VmProyecto) => this.isActive(p) && !ids.has(p.id));
+    const base = src.filter(p => this.isActive(p) && !ids.has(p.id));
+    return this.sortProjects(this.uniqById(base));
   });
 
   // KPIs
@@ -127,7 +136,7 @@ export class MpListPage {
   libresCount      = computed(() => this.libres().length);
   historialesCount = computed(() => this.historiales().length);
 
-  // Contexto: ciclo actual y pendiente
+  // Contexto
   cicloActual     = computed(() => this.ctx()?.ciclo_actual ?? (this.ctx() as any)?.nivel_objetivo ?? null);
   tienePendiente  = computed(() => this.ctx()?.tiene_pendiente_vinculado ?? false);
 
@@ -170,7 +179,8 @@ export class MpListPage {
     this.error.set(null);
     this.dataAlumno.set(null);
     this.agenda.set(null);
-    this.horasPorProyecto.set(new Map());
+    this.horasPorProyecto.set(new Map<number, number>());
+    this.projectsWithHours.set(new Set<number>());
     this.historiales.set([]);
   }
 
@@ -203,12 +213,14 @@ export class MpListPage {
       complete: () => {
         if (this.reqId !== thisReq) return;
 
-        // 2) Agenda (inscritos del período)
+        // 2) Agenda (inscritos reales del período)
         this.api.obtenerAgendaAlumno({ periodo_id: this.selectedPeriodoId() ?? undefined }).subscribe({
           next: (res) => {
             if (this.reqId !== thisReq) return;
             if ((res as any)?.ok !== true) { this.agenda.set([]); return; }
             this.agenda.set((res as any).data ?? []);
+            // Horas principales desde agenda (minutos validados)
+            this.recomputeHorasFromAgenda();
           },
           error: () => { if (this.reqId === thisReq) this.agenda.set([]); },
           complete: () => {
@@ -218,10 +230,10 @@ export class MpListPage {
             let pending = 2;
             const done = () => { if (--pending <= 0 && this.reqId === thisReq) this.loading.set(false); };
 
-            // 3) Horas por proyecto (todas las horas: estado='*')
+            // 3) Resumen de horas APROBADAS por proyecto (y set de IDs con horas)
             this.fetchHorasProyectos(this.selectedPeriodoId() ?? undefined, thisReq, done);
 
-            // 4) Historial (vinculados históricos + libres cerrados)
+            // 4) Historial limpio y sin confusiones
             this.fetchHistorial(this.selectedPeriodoId() ?? undefined, thisReq, done);
           }
         });
@@ -230,71 +242,155 @@ export class MpListPage {
   }
 
   // ======== Horas por proyecto ========
-  private fetchHorasProyectos(periodoId: number | undefined, thisReq: number, onDone: () => void) {
-    this.horasApi.obtenerMiReporteHoras({
-      tipo: 'vm_proyecto',
-      periodo_id: periodoId,
-      estado: '*',
-      per_page: 1,
-    }).subscribe({
-      next: (r) => {
-        if (this.reqId !== thisReq) return;
-        if ((r as any)?.ok === true) {
-          const ok = r as ReporteHorasOk;
-          const map = new Map<number, number>();
-          for (const it of ok.data.resumen?.por_vinculo ?? []) {
-            if (it.tipo === 'vm_proyecto') {
-              const horas = typeof it.horas === 'number'
-                ? it.horas
-                : (typeof (it as any).minutos === 'number' ? (it as any).minutos / 60 : 0);
-              map.set(Number(it.id), +horas.toFixed(2));
-            }
-          }
-          this.horasPorProyecto.set(map);
-        } else {
-          this.horasPorProyecto.set(new Map());
-        }
-      },
-      error: () => { if (this.reqId === thisReq) this.horasPorProyecto.set(new Map()); },
-      complete: onDone
-    });
+
+  /** Suma minutos validados según agenda (procesos.progreso.min_validados) y actualiza horasPorProyecto.
+   *  ⛔️ No introduce proyectos con 0 h para no bloquear la fusión posterior. */
+  private recomputeHorasFromAgenda(): void {
+    const map = new Map<number, number>();
+    for (const a of (this.agenda() ?? [])) {
+      const minVal = (a?.procesos ?? [])
+        .reduce((acc, pr) => acc + (pr?.progreso?.min_validados ?? 0), 0);
+
+      if (minVal > 0) { // 👈 clave: no registrar ceros
+        map.set(a.proyecto.id, +(minVal / 60).toFixed(2));
+      }
+    }
+    this.horasPorProyecto.set(map);
   }
 
-  // ======== Historial (ACTUALIZADO) ========
+  /** Fusiona horas extra (endpoint) tomando el MAYOR valor entre base y extra. */
+  private mergeHorasIntoState(extra: Map<number, number>): void {
+    const base = new Map(this.horasPorProyecto());
+    for (const [k, vRaw] of extra) {
+      const v = +vRaw.toFixed(2);
+      if (!Number.isFinite(v)) continue;
+
+      const current = base.get(k) ?? 0;
+      if (v > current) {            // 👈 si el endpoint trae más horas, sobreescribe
+        base.set(k, v);
+      }
+    }
+    this.horasPorProyecto.set(base);
+  }
+
+  /**
+   * Obtiene IDs con horas del endpoint /reportes/horas/mias/por-proyecto (si existe).
+   * Fallback: /reportes/horas/mias (resumen.por_vinculo) filtrando tipo 'vm_proyecto'.
+   */
+  private fetchHorasProyectos(periodoId: number | undefined, thisReq: number, onDone: () => void) {
+    const set = new Set<number>();
+    const mapFromAvance = new Map<number, number>();
+
+    const finish = () => {
+      this.projectsWithHours.set(set);
+      // Fusionamos (sin pisar agenda a la baja)
+      this.mergeHorasIntoState(mapFromAvance);
+      onDone();
+    };
+
+    const fallbackResumen = () => {
+      this.horasApi.obtenerMiReporteHoras({
+        tipo: 'vm_proyecto',
+        periodo_id: periodoId,
+        per_page: 1, // solo necesitamos el resumen
+      }).subscribe({
+        next: (r) => {
+          if (this.reqId !== thisReq) return;
+          if ((r as any)?.ok === true) {
+            const ok = r as ReporteHorasOk;
+            for (const it of ok.data.resumen?.por_vinculo ?? []) {
+              if (it.tipo === 'vm_proyecto') {
+                const minutos = typeof (it as any).minutos === 'number'
+                  ? (it as any).minutos
+                  : (typeof it.horas === 'number' ? it.horas * 60 : 0);
+                if (minutos > 0) {
+                  set.add(Number(it.id));
+                  const horas = +(minutos / 60).toFixed(2);
+                  mapFromAvance.set(Number(it.id), horas);
+                }
+              }
+            }
+          }
+        },
+        error: () => { /* ignorar */ },
+        complete: finish,
+      });
+    };
+
+    // Intentamos el nuevo endpoint si existe en el servicio
+    const fn: any = (this.horasApi as any).obtenerMiAvancePorProyecto;
+    if (typeof fn === 'function') {
+      fn.call(this.horasApi, { periodo_id: periodoId, estado: 'APROBADO' }).subscribe({
+        next: (r: any) => {
+          if (this.reqId !== thisReq) return;
+          if (r?.ok === true) {
+            for (const it of (r.data?.por_proyecto ?? [])) {
+              const minutos = Number(it?.minutos ?? 0);
+              if (minutos > 0) {
+                set.add(Number(it.id));
+                mapFromAvance.set(Number(it.id), +(minutos / 60).toFixed(2));
+              }
+            }
+          }
+        },
+        error: () => { /* vamos al fallback */ },
+        complete: () => {
+          if (set.size === 0) {
+            // No hubo nada en el nuevo endpoint → fallback
+            fallbackResumen();
+          } else {
+            finish();
+          }
+        }
+      });
+    } else {
+      // No existe el método nuevo en el servicio → fallback directo
+      fallbackResumen();
+    }
+  }
+
+  // ======== Historial (CLARO Y SIN DUPLICADOS) ========
+  /**
+   * Muestra SOLO proyectos del período seleccionado a los que el alumno SÍ se inscribió
+   * y que están cerrados. Preferimos AGENDA; si no hay, usamos vinculados_historicos
+   * filtrados por IDs que TENGAN HORAS (>0).
+   */
   private fetchHistorial(_periodoId: number | undefined, thisReq: number, onDone: () => void) {
     try {
       if (this.reqId !== thisReq) return;
 
-      // Después (filtramos cerrados)
-      const vincHistAll = (this.dataAlumno()?.vinculados_historicos ?? []) as VmProyecto[];
-      const vincHistCerrados = vincHistAll.filter((p: VmProyecto) => this.isClosed(p));
-      const libresCerrados = (this.dataAlumno()?.libres ?? []).filter((p: VmProyecto) => this.isClosed(p));
-      const merged = this.uniqById([...vincHistCerrados, ...libresCerrados]);
-
-
       const pidSel = this.selectedPeriodoId();
-      const filtered = merged.filter((p: VmProyecto) => (pidSel == null) ? true : (p as any)?.periodo_id === pidSel);
 
-      this.historiales.set(filtered);
+      // 1) Preferir AGENDA (participaciones reales del período)
+      const fromAgenda = ((this.agenda() ?? []))
+        .map(a => a.proyecto)
+        .filter(p => this.isClosed(p))
+        .filter(p => (pidSel == null) ? true : (p as any)?.periodo_id === pidSel);
+
+      if (fromAgenda.length) {
+        this.historiales.set(this.sortProjects(this.uniqById(fromAgenda)));
+        return onDone();
+      }
+
+      // 2) Fallback: históricos del backend PERO solo si tienen horas
+      const idsWithHours = this.projectsWithHours();
+      if (idsWithHours.size === 0) {
+        this.historiales.set([]);
+        return onDone();
+      }
+
+      const vincHist = (this.dataAlumno()?.vinculados_historicos ?? []) as VmProyecto[];
+      const filtered = vincHist
+        .filter(p => this.isClosed(p))
+        .filter(p => (pidSel == null) ? true : (p as any)?.periodo_id === pidSel)
+        .filter(p => idsWithHours.has(p.id));
+
+      this.historiales.set(this.sortProjects(this.uniqById(filtered)));
     } catch {
-      this.historiales.set(this.buildFallbackHistorial());
+      this.historiales.set([]);
     } finally {
       onDone();
     }
-  }
-
-  // Fallback: agenda + pendientes, solo CERRADOS del período seleccionado
-  private buildFallbackHistorial(): VmProyecto[] {
-    const periodId = this.selectedPeriodoId();
-    const periodMap = this.agendaPeriodMap(); // proyectoId -> periodo_id
-    const ag = (this.agenda() ?? []).map(a => a.proyecto);
-    const pend = (this.dataAlumno()?.pendientes ?? []).map(p => p.proyecto);
-    const base = this.uniqById([...ag, ...pend]);
-    return base.filter((p: VmProyecto) => {
-      if (!this.isClosed(p)) return false;
-      const pid = periodMap.get(p.id) ?? (p as any)?.periodo_id ?? null;
-      return periodId == null ? true : pid === periodId;
-    });
   }
 
   // ======== UI: progreso ========
@@ -306,7 +402,7 @@ export class MpListPage {
     const plan = this.getHorasPlan(p);
     if (plan <= 0) return 0;
     return Math.max(0, Math.min(100, +((this.getHorasHechas(p) / plan) * 100).toFixed(1)));
-    }
+  }
   getProgressRailClasses(p: VmProyecto): string {
     const falt = this.getFaltantes(p);
     const e = (p.estado || '').toUpperCase();

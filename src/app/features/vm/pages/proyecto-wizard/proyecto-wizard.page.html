@@ -1,3 +1,4 @@
+<!-- ✅ FILE: src/app/vm/pages/proyecto-wizard.page.html -->
 <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-12">
   <!-- Barra de progreso -->
   <div class="h-1 w-full bg-gray-200">
@@ -129,14 +130,46 @@
                   </div>
                 </div>
 
+                <!-- Multi-nivel (sólo VINCULADO) -->
                 <div *ngIf="tipo() === 'VINCULADO'">
-                  <label class="block text-sm font-medium mb-1">Ciclo académico</label>
-                  <select class="w-full border rounded-lg px-3 py-2" formControlName="nivel">
-                    <option [ngValue]="null">Seleccione…</option>
-                    <option *ngFor="let n of nivelesDisponibles()" [ngValue]="n">{{ n }}</option>
-                  </select>
-                  <p class="text-xs text-red-600 mt-1" *ngIf="hasError('nivel') || getSvr(['nivel'])">
-                    {{ getSvr(['nivel']) || 'Selecciona un ciclo válido' }}
+                  <label class="block text-sm font-medium mb-2">Ciclos académicos (puedes elegir varios)</label>
+
+                  <!-- Aviso de disponibilidad -->
+                  <div *ngIf="nivelesLoadWarning()" class="mb-2 rounded-md border border-amber-200 bg-amber-50 text-amber-800 text-xs px-3 py-2">
+                    {{ nivelesLoadWarning() }}
+                  </div>
+
+                  <div class="flex flex-wrap gap-2" *ngIf="nivelesDisponibles().length; else noNiveles">
+                    <label *ngFor="let n of nivelesDisponibles()"
+                           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-300 bg-white text-gray-700 cursor-pointer hover:bg-blue-50">
+                      <input type="checkbox" class="rounded border-gray-300"
+                             [checked]="isNivelSelected(n)"
+                             (change)="toggleNivel(n, $any($event.target).checked)"/>
+                      <span class="text-sm">Ciclo {{ n }}</span>
+                    </label>
+                  </div>
+
+                  <ng-template #noNiveles>
+                    <div class="text-xs text-amber-700">
+                      No hay ciclos habilitados para esta sede/período o no se pudo cargar la disponibilidad.
+                    </div>
+                  </ng-template>
+
+                  <div *ngIf="nivelesBloqueadosSrv().length" class="mt-2 text-xs text-red-600">
+                    No disponibles por otro proyecto:
+                    <ng-container *ngFor="let n of nivelesBloqueadosSrv(); let last = last">
+                      C{{ n }}<span *ngIf="!last">, </span>
+                    </ng-container>.
+                    Cambia el período o desmarca esos ciclos.
+                  </div>
+
+                  <div class="flex gap-2 mt-2">
+                    <button type="button" class="text-xs px-2 py-1 rounded border" (click)="selectAllNiveles()" [disabled]="!nivelesDisponibles().length">Seleccionar todos</button>
+                    <button type="button" class="text-xs px-2 py-1 rounded border" (click)="clearNiveles()">Limpiar</button>
+                  </div>
+
+                  <p class="text-xs text-red-600 mt-1" *ngIf="nivelesInvalid() && nivelesDisponibles().length > 0 || getSvr(['niveles'])">
+                    {{ getSvr(['niveles']) || 'Selecciona al menos un ciclo' }}
                   </p>
                 </div>
               </div>
@@ -176,38 +209,67 @@
         <!-- Paso 2 -->
         <div [class.hidden]="step()!==2">
           <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center justify-between mb-3">
               <h3 class="text-lg font-semibold text-gray-900">Procesos</h3>
-              <div class="text-sm text-gray-500">
-                {{ procesos().length }} proceso(s) · Asignadas (sólo HORAS/MIXTO):
-                <b>{{ totalAsignadas() }}</b>/<b>{{ form.get('horas_planificadas')!.value }}</b> h · Restan: <b>{{ remainingProject() }}</b>
+              <div class="text-sm"
+                   [ngClass]="{'text-red-600': totalAsignadas() > allowedPlanTotal(), 'text-gray-600': totalAsignadas() <= allowedPlanTotal()}">
+                {{ procesos().length }} proceso(s) · Asignadas (HORAS/MIXTO):
+                <b>{{ totalAsignadas() }}</b>/<b>{{ allowedPlanTotal() }}</b> h
+                <ng-container *ngIf="tipo() === 'VINCULADO' && (nivelesCtrl.value?.length || 0) >= 2">
+                  · Plan por ciclo: <b>{{ form.get('horas_planificadas')!.value }}</b> h × {{ nivelesCtrl.value!.length }}
+                </ng-container>
+                · Restan: <b>{{ remainingProject() }}</b> h
               </div>
+            </div>
+
+            <!-- Distribución por ciclo (sólo VINCULADO) -->
+            <div *ngIf="tipo() === 'VINCULADO' && (nivelesCtrl.value?.length || 0) >= 1" class="mb-5 space-y-2">
+              <div class="text-xs text-gray-500">Distribución por ciclo</div>
+              <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div *ngFor="let n of nivelesCtrl.value!"
+                     class="rounded-lg border p-3">
+                  <div class="flex items-center justify-between">
+                    <div class="text-sm font-medium">Ciclo {{ n }}</div>
+                    <div class="text-xs text-gray-500">
+                      {{ perNivelUsadasHoras(n) }} / {{ form.get('horas_planificadas')!.value }} h
+                    </div>
+                  </div>
+                  <div class="mt-2 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-2"
+                         [ngClass]="nivelBarClass(n)"
+                         [style.width.%]="perNivelPct(n)"></div>
+                  </div>
+                  <div class="mt-1 text-xs"
+                       [ngClass]="{'text-red-600': perNivelRestanteMin(n) <= 0, 'text-amber-600': perNivelRestanteMin(n) > 0 && perNivelRestanteMin(n) < planMin(), 'text-gray-500': perNivelRestanteMin(n) >= planMin()}">
+                    Restan {{ (perNivelRestanteMin(n)/60) | number:'1.0-2' }} h
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Aviso EVALUACION -->
+            <div *ngIf="hasEvaluationProcess()" class="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+              Modo <b>EVALUACIÓN</b>: sólo 1 proceso y 1 sesión. Las horas asignadas se fijan a las horas planificadas del proyecto. Rango de nota: 1–20.
             </div>
 
             <div class="space-y-6" formArrayName="procesos">
               <div *ngFor="let _ of procesos(); let pi = index" [formGroupName]="pi" class="rounded-xl border p-4">
                 <div class="grid md:grid-cols-4 gap-3">
-                  <!-- nombre -->
                   <div>
                     <input class="border rounded-lg px-3 py-2 w-full" formControlName="nombre" placeholder="Nombre del proceso"/>
                     <p class="text-xs text-red-600 mt-1" *ngIf="getSvr(['procesos', pi, 'nombre'])">{{ getSvr(['procesos', pi, 'nombre']) }}</p>
                   </div>
 
-                  <!-- horas_asignadas (sólo HORAS/MIXTO) -->
                   <div *ngIf="(procesosFA.at(pi).get('horas_asignadas')!.enabled)">
-                    <input type="number"
-                      [attr.min]="minAsignadas(pi)"
-                      [attr.max]="maxAsignablesParaProceso(pi)"
-                      step="1"
-                      class="border rounded-lg px-3 py-2 w-full"
-                      formControlName="horas_asignadas"
-                      placeholder="Horas asignadas"/>
+                    <input type="number" min="1" step="1"
+                           class="border rounded-lg px-3 py-2 w-full"
+                           formControlName="horas_asignadas"
+                           placeholder="Horas asignadas"/>
                     <p class="text-xs text-red-600 mt-1" *ngIf="getSvr(['procesos', pi, 'horas_asignadas'])">
                       {{ getSvr(['procesos', pi, 'horas_asignadas']) }}
                     </p>
                   </div>
 
-                  <!-- tipo_registro -->
                   <div>
                     <select class="border rounded-lg px-3 py-2 w-full" formControlName="tipo_registro">
                       <option value="HORAS">HORAS</option>
@@ -218,36 +280,35 @@
                     <p class="text-xs text-red-600 mt-1" *ngIf="getSvr(['procesos', pi, 'tipo_registro'])">{{ getSvr(['procesos', pi, 'tipo_registro']) }}</p>
                   </div>
 
-                  <!-- requiere_asistencia -->
                   <div class="flex items-center">
                     <label class="inline-flex items-center gap-2 text-sm">
                       <input type="checkbox" formControlName="requiere_asistencia"/>
                       Requiere asistencia
                     </label>
+                    <span class="text-xs text-gray-500 ml-2"
+                          *ngIf="procesosFA.at(pi).get('requiere_asistencia')!.disabled">
+                      (forzado por el tipo)
+                    </span>
                   </div>
 
-                  <!-- nota_minima (sólo EVALUACION|MIXTO) -->
                   <div *ngIf="(procesosFA.at(pi).get('nota_minima')!.enabled)">
-                    <input type="number" min="0" max="100" step="1" class="border rounded-lg px-3 py-2 w-full"
-                           formControlName="nota_minima" placeholder="Nota mínima (0–100)"/>
+                    <input type="number" min="1" max="20" step="1" class="border rounded-lg px-3 py-2 w-full"
+                           formControlName="nota_minima" placeholder="Nota mínima (1–20)"/>
                     <p class="text-xs text-red-600 mt-1" *ngIf="getSvr(['procesos', pi, 'nota_minima'])">
                       {{ getSvr(['procesos', pi, 'nota_minima']) }}
                     </p>
                   </div>
                 </div>
 
-                <!-- Línea con alerta si sesiones > asignadas (sólo HORAS/MIXTO) -->
+                <!-- Línea de control por proceso -->
                 <div *ngIf="procesosFA.at(pi).get('horas_asignadas')!.enabled"
                      class="mt-1 text-xs"
                      [ngClass]="{
-                       'text-red-600': usedHoursProceso(pi) > getHorasAsignadas(pi),
-                       'text-gray-500': usedHoursProceso(pi) <= getHorasAsignadas(pi)
+                       'text-red-600': usedMinutesProceso(pi) > (getHorasAsignadas(pi) * 60),
+                       'text-gray-500': usedMinutesProceso(pi) <= (getHorasAsignadas(pi) * 60)
                      }">
-                  En sesiones: <b>{{ usedHoursProceso(pi) }}</b> / Asignadas: <b>{{ getHorasAsignadas(pi) }}</b>
-                  <ng-container *ngIf="usedHoursProceso(pi) > getHorasAsignadas(pi)">
-                    · <b>Excede lo asignado</b>
-                  </ng-container>
-                  · Resta en proceso: <b>{{ remainingHorasProceso(pi) === (1/0) ? '—' : remainingHorasProceso(pi) }}</b>
+                  En sesiones: <b>{{ usedHoursProceso(pi) }}</b> h / Asignadas: <b>{{ getHorasAsignadas(pi) }}</b> h
+                  <ng-container *ngIf="usedMinutesProceso(pi) > (getHorasAsignadas(pi) * 60)"> · <b>Excede lo asignado</b> </ng-container>
                 </div>
 
                 <textarea rows="2" class="w-full mt-3 border rounded-lg px-3 py-2" formControlName="descripcion" placeholder="Descripción (opcional)"></textarea>
@@ -268,28 +329,57 @@
                   </div>
 
                   <div class="mt-3 grid gap-3">
-                    <div class="grid md:grid-cols-5 gap-3 items-end" *ngFor="let __ of sesiones(pi).controls; let si = index" [formGroupName]="si">
+                    <div class="grid md:grid-cols-7 gap-3 items-end" *ngFor="let __ of sesiones(pi).controls; let si = index" [formGroupName]="si">
                       <div>
+                        <label class="text-xs block mb-1">Fecha</label>
                         <input type="date" class="border rounded-lg px-3 py-2 w-full" formControlName="fecha"/>
                         <p class="text-xs text-red-600 mt-1" *ngIf="getSvr(['procesos', pi, 'sesiones', si, 'fecha'])">
                           {{ getSvr(['procesos', pi, 'sesiones', si, 'fecha']) }}
                         </p>
                       </div>
                       <div>
-                        <input type="time" class="border rounded-lg px-3 py-2 w-full" formControlName="hora_inicio"/>
+                        <label class="text-xs block mb-1">Inicio</label>
+                        <input type="time" class="border rounded-lg px-3 py-2 w-full" formControlName="hora_inicio" step="60"/>
                         <p class="text-xs text-red-600 mt-1" *ngIf="getSvr(['procesos', pi, 'sesiones', si, 'hora_inicio'])">
                           {{ getSvr(['procesos', pi, 'sesiones', si, 'hora_inicio']) }}
                         </p>
                       </div>
                       <div>
-                        <input type="number" min="0.5" max="24" step="0.5" class="border rounded-lg px-3 py-2 w-full" formControlName="duracion_horas" placeholder="Duración (h)"/>
-                      </div>
-                      <div>
-                        <input class="border rounded-lg px-3 py-2 bg-gray-50 w-full" formControlName="hora_fin" readonly/>
+                        <label class="text-xs block mb-1">Fin</label>
+                        <input type="time" class="border rounded-lg px-3 py-2 w-full" formControlName="hora_fin" step="60"/>
                         <p class="text-xs text-red-600 mt-1" *ngIf="getSvr(['procesos', pi, 'sesiones', si, 'hora_fin'])">
                           {{ getSvr(['procesos', pi, 'sesiones', si, 'hora_fin']) }}
                         </p>
                       </div>
+
+                      <!-- Duración -->
+                      <div>
+                        <label class="text-xs block mb-1">Duración (h)</label>
+                        <input type="number" min="0.5" step="0.5" class="border rounded-lg px-3 py-2 w-full" formControlName="duracion_horas"/>
+                      </div>
+
+                      <!-- Niveles por sesión (sólo VINCULADO) -->
+                      <div class="md:col-span-2" *ngIf="tipo() === 'VINCULADO' && (nivelesCtrl.value?.length || 0) >= 1">
+                        <div class="text-xs text-gray-600 mb-1">Ciclos de esta sesión</div>
+                        <div class="flex flex-wrap gap-2">
+                          <label *ngFor="let n of nivelesOpcionesParaSesion(pi, si)"
+                                 class="inline-flex items-center gap-2 px-2 py-1 rounded-md border cursor-pointer transition"
+                                 [ngClass]="nivelChipClass(n, pi, si)">
+                            <input type="checkbox" class="rounded border-gray-300"
+                                   [checked]="(__.get('niveles')!.value || []).includes(n)"
+                                   [disabled]="nivelChipDisabled(n, pi, si)"
+                                   (change)="toggleNivelSesion(pi, si, n, $any($event.target).checked)"/>
+                            <span class="text-xs">Ciclo {{ n }}</span>
+                          </label>
+                        </div>
+                        <div class="mt-1 text-[11px] text-gray-500">
+                          <ng-container *ngFor="let n of (__.get('niveles')!.value || [])">
+                            <span class="mr-2">C{{n}}:
+                              {{ (perNivelRestanteMin(n) / 60) | number:'1.0-2' }} h libres</span>
+                          </ng-container>
+                        </div>
+                      </div>
+
                       <div>
                         <button type="button" (click)="removeSesion(pi, si)" class="px-3 py-2 rounded-lg border text-red-600 border-red-200 hover:bg-red-50 w-full">Quitar</button>
                       </div>
@@ -297,7 +387,8 @@
                   </div>
 
                   <p class="mt-2 text-xs text-gray-500">
-                    Nota: la hora fin debe ser mayor a la hora inicio (no se permite cruzar medianoche). Las fechas deben caer dentro del período seleccionado.
+                    Usa rangos válidos (fin &gt; inicio), sin cruzar medianoche.
+                    Si el proceso es HORAS/MIXTO, la suma de duraciones no puede exceder las horas asignadas.
                   </p>
                 </div>
 
@@ -308,9 +399,9 @@
             </div>
 
             <div class="mt-6">
-              <button type="button"
-                      (click)="addProceso()"
-                      class="px-4 py-2 rounded-lg text-white bg-emerald-600">
+              <button type="button" (click)="addProceso()" class="px-4 py-2 rounded-lg text-white"
+                      [class.bg-emerald-600]="canAddProceso()" [class.bg-gray-300]="!canAddProceso()"
+                      [class.cursor-not-allowed]="!canAddProceso()" [disabled]="!canAddProceso()">
                 Agregar proceso
               </button>
             </div>

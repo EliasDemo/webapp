@@ -11,7 +11,7 @@ import { ApiResponse, isApiOk, VmProyectoArbol, VmSesion } from '../../../vm/mod
   selector: 'app-mp-view-page',
   imports: [CommonModule, RouterLink],
   templateUrl: './mp-view.page.html',
-  styleUrls: [] // Eliminamos la referencia al archivo SCSS
+  styleUrls: [] // sin SCSS
 })
 export class MpViewPage {
   private api = inject(VmApiService);
@@ -70,6 +70,8 @@ export class MpViewPage {
     if (s === 'PLANIFICADO') return 'bg-amber-50 text-amber-700 border-amber-200';
     if (s === 'EN_CURSO') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     if (s === 'CERRADO') return 'bg-slate-100 text-slate-700 border-slate-200';
+    if (s === 'FINALIZADO') return 'bg-slate-100 text-slate-700 border-slate-200';
+    if (s === 'CANCELADO') return 'bg-rose-50 text-rose-700 border-rose-200';
     return 'bg-slate-100 text-slate-700 border-slate-200';
   }
 
@@ -163,7 +165,7 @@ export class MpViewPage {
     return this.sesionRelativa(s) === 'ACTUAL';
   }
 
-  // 👇 Sub‑nav suave a secciones
+  // 👇 Sub-nav suave a secciones
   scrollTo(section: 'resumen'|'procesos'|'galeria'): void {
     const el = document.getElementById(section);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });

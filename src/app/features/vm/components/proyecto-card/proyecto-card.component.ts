@@ -11,6 +11,7 @@ import {
   OnDestroy,
   ViewChild,
   ElementRef,
+  HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -43,6 +44,9 @@ export class ProyectoCardComponent implements OnChanges, AfterViewInit, OnDestro
 
   constructor(private cdr: ChangeDetectorRef) {}
 
+  // ───────────────────────────────────────────────────────────────
+  // Lifecycle
+  // ───────────────────────────────────────────────────────────────
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['proyecto']) {
       this.images = this.buildImages(this.proyecto);
@@ -64,6 +68,9 @@ export class ProyectoCardComponent implements OnChanges, AfterViewInit, OnDestro
     this.resizeObs?.disconnect();
   }
 
+  // ───────────────────────────────────────────────────────────────
+  // Getters derivados
+  // ───────────────────────────────────────────────────────────────
   /** Imagen actual */
   get currentImgSrc(): string {
     if (!this.images.length) return this.placeholder;
@@ -71,45 +78,103 @@ export class ProyectoCardComponent implements OnChanges, AfterViewInit, OnDestro
     return this.images[i] || this.placeholder;
   }
 
-  /** toggles */
+  /** clases por estado */
+  get estadoClass(): string {
+    const e = (this.proyecto.estado || '').toUpperCase();
+    if (e === 'PLANIFICADO') return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (e === 'EN_CURSO')     return 'bg-green-50 text-green-700 border-green-200';
+    if (e === 'CERRADO')      return 'bg-red-50 text-red-700 border-red-200';
+    if (e === 'FINALIZADO')   return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (e === 'CANCELADO')    return 'bg-gray-100 text-gray-700 border-gray-200';
+    return 'bg-gray-50 text-gray-700 border-gray-200';
+  }
+
+  get estadoLabel(): string {
+    return (this.proyecto.estado || '').toUpperCase() || '—';
+  }
+
+  /** Eliminar solo cuando está planificado (regla actual) */
+  get isEliminable(): boolean {
+    return (this.proyecto.estado || '').toUpperCase() === 'PLANIFICADO';
+  }
+
+  /** Ciclos mostrados: usa niveles[] si existe; fallback a nivel (compatibilidad) */
+  get nivelesLabel(): string | null {
+    const arr = Array.isArray(this.proyecto.niveles) && this.proyecto.niveles.length
+      ? [...this.proyecto.niveles]
+      : (this.proyecto.nivel != null ? [this.proyecto.nivel] : []);
+    if (!arr.length) return null;
+    return this.compactRanges(arr.sort((a, b) => a - b));
+  }
+
+  // ───────────────────────────────────────────────────────────────
+  // Handlers
+  // ───────────────────────────────────────────────────────────────
   toggleExpand(ev?: Event): void {
     ev?.stopPropagation();
     this.expanded = !this.expanded;
-    // al expandir/colapsar no necesitamos forzar ver más; se recalcula por si cambia clamp
     this.cdr.markForCheck();
+    // al expandir/colapsar recalculamos por si cambia la altura
+    queueMicrotask(() => this.checkOverflow());
   }
 
   /** carrusel */
-  prevImg(ev?: Event) {
+  prevImg(ev?: Event): void {
     ev?.stopPropagation();
     if (!this.images.length) return;
     this.currentImgIndex = (this.currentImgIndex - 1 + this.images.length) % this.images.length;
     this.cdr.markForCheck();
   }
 
-  nextImg(ev?: Event) {
+  nextImg(ev?: Event): void {
     ev?.stopPropagation();
     if (!this.images.length) return;
     this.currentImgIndex = (this.currentImgIndex + 1) % this.images.length;
     this.cdr.markForCheck();
   }
 
-  /** clases por estado */
-  get estadoClass(): string {
-    const e = (this.proyecto?.estado || '').toUpperCase();
-    if (e === 'PLANIFICADO') return 'bg-blue-50 text-blue-700 border-blue-200';
-    if (e === 'EN_CURSO')     return 'bg-green-50 text-green-700 border-green-200';
-    if (e === 'CERRADO')      return 'bg-red-50 text-red-700 border-red-200';
-    return 'bg-gray-50 text-gray-700 border-gray-200';
+  onImgError(ev: Event): void {
+    const el = ev.target as HTMLImageElement | null;
+    if (el) el.src = this.placeholder;
   }
 
-  /** utils */
-  private buildImages(p?: VmProyecto): string[] {
-    if (!p) return [];
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.checkOverflow();
+  }
+
+  onKeydown(ev: KeyboardEvent): void {
+    // mejora de a11y: navegación con teclado
+    if (this.images.length > 1) {
+      if (ev.key === 'ArrowLeft') { this.prevImg(); ev.preventDefault(); }
+      else if (ev.key === 'ArrowRight') { this.nextImg(); ev.preventDefault(); }
+    }
+  }
+
+  trackByIndex(index: number): number { return index; }
+
+  // ───────────────────────────────────────────────────────────────
+  // Utils
+  // ───────────────────────────────────────────────────────────────
+  private checkOverflow(): void {
+    const el = this.descRef?.nativeElement;
+    if (!el) { this.showSeeMore = false; return; }
+
+    // Con line-clamp activo, si el contenido real supera lo visible, hay overflow.
+    const overflow = el.scrollHeight - el.clientHeight > 2;
+    const shouldShow = !this.expanded && overflow;
+    if (this.showSeeMore !== shouldShow) {
+      this.showSeeMore = shouldShow;
+      this.cdr.markForCheck();
+    }
+  }
+
+  private buildImages(p: VmProyecto): string[] {
     const cover = p.cover_url ? [p.cover_url] : [];
     const list = (p.imagenes ?? []).map(i => i?.url || '').filter(Boolean);
     const all = [...cover, ...list];
     if (all.length === 0) return [this.defaultByModalidad(p.modalidad)];
+    // eliminamos duplicados preservando orden
     return Array.from(new Set(all));
   }
 
@@ -121,16 +186,20 @@ export class ProyectoCardComponent implements OnChanges, AfterViewInit, OnDestro
     return '/assets/proyectos/default.svg';
   }
 
-  private checkOverflow(): void {
-    const el = this.descRef?.nativeElement;
-    if (!el) return;
+  /** Compacta [1,2,3,5,7,8] → "1–3, 5, 7–8" */
+  private compactRanges(nums: number[]): string {
+    if (!nums.length) return '';
+    const out: string[] = [];
+    let start = nums[0], prev = nums[0];
 
-    // Aplicamos clamp solo cuando NO está expandido; medir con clamp activo
-    const was = this.showSeeMore;
-    // overflow si el contenido real (scrollHeight) supera la altura visible (clientHeight)
-    this.showSeeMore = !this.expanded && el.scrollHeight > el.clientHeight + 1; // +1 para tolerancias
-
-    if (was !== this.showSeeMore) this.cdr.markForCheck();
+    for (let i = 1; i < nums.length; i++) {
+      const n = nums[i];
+      if (n === prev + 1) { prev = n; continue; }
+      out.push(start === prev ? `${start}` : `${start}–${prev}`);
+      start = prev = n;
+    }
+    out.push(start === prev ? `${start}` : `${start}–${prev}`);
+    return out.join(', ');
   }
 
   /** placeholder SVG embebido */

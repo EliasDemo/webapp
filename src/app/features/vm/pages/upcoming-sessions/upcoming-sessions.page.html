@@ -1,3 +1,4 @@
+<!-- ✅ FILE: src/app/vm/pages/upcoming-sessions/upcoming-sessions.page.html -->
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 py-6">
   <div class="mx-auto max-w-7xl px-4">
 
@@ -9,18 +10,46 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <!-- Filtro de período -->
+        <!-- Filtro de período (agrupado + flechas) -->
         <div class="flex items-center gap-2">
           <label class="text-sm font-medium text-slate-700">Período</label>
+
+          <button
+            class="px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50"
+            (click)="stepPeriodo(-1)" [disabled]="isAllSelected()"
+            title="Periodo anterior">
+            ←
+          </button>
+
           <select
-            class="rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-w-[260px]"
             [ngModel]="selectedPeriodoId()"
             (ngModelChange)="onPeriodoChange($event)"
           >
-            <option *ngFor="let p of periodos()" [ngValue]="p.id">
-              {{ p.anio }}-{{ p.ciclo }} {{ (p.estado || '') | uppercase }}
+            <!-- Opción: periodo actual (sentinela 'CURRENT') -->
+            <option *ngIf="defaultPeriodo()" [ngValue]="'CURRENT'">
+              Periodo actual ({{ defaultPeriodo()?.anio }}-{{ defaultPeriodo()?.ciclo }})
             </option>
+
+            <!-- Opción: todos -->
+            <option [ngValue]="'ALL'">Todos los períodos</option>
+
+            <!-- Períodos agrupados por año -->
+            <ng-container *ngFor="let g of periodoGroups()">
+              <optgroup [label]="'Año ' + g.anio">
+                <option *ngFor="let p of g.items" [ngValue]="p.id">
+                  {{ p.anio }}-{{ p.ciclo }} <span *ngIf="p.estado">({{ p.estado }})</span>
+                </option>
+              </optgroup>
+            </ng-container>
           </select>
+
+          <button
+            class="px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50"
+            (click)="stepPeriodo(1)" [disabled]="isAllSelected()"
+            title="Periodo siguiente">
+            →
+          </button>
         </div>
 
         <button
@@ -48,6 +77,14 @@
         </div>
       </div>
     </ng-container>
+
+    <!-- Resumen de cantidad -->
+    <div class="mb-4 text-sm text-slate-600" *ngIf="!error()">
+      Mostrando <span class="font-semibold text-slate-900">{{ visibleCount() }}</span>
+      <ng-container *ngIf="totalProj() as total">
+        (de <span class="font-semibold text-slate-900">{{ total }}</span> proyectos)
+      </ng-container>
+    </div>
 
     <!-- Contenido Principal -->
     <ng-container *ngIf="!error()">
@@ -93,7 +130,7 @@
                       <i class="fa-solid fa-diagram-project text-emerald-600"></i>
                       {{ hero.proceso.nombre }}
                     </span>
-                    <span class="{{ estadoChipClass(hero) }}">{{ relLabel(hero) }}</span>
+                    <span [ngClass]="estadoChipClass(hero)">{{ relLabel(hero) }}</span>
                   </div>
                 </div>
 
@@ -151,7 +188,7 @@
                       <i class="fa-solid fa-diagram-project text-emerald-600"></i>
                       {{ hero.proceso.nombre }}
                     </span>
-                    <span class="{{ estadoChipClass(hero) }}">{{ relLabel(hero) }}</span>
+                    <span [ngClass]="estadoChipClass(hero)">{{ relLabel(hero) }}</span>
                   </div>
                 </div>
 
@@ -170,7 +207,6 @@
 
       <!-- ===== PANEL DOBLE: POR VENIR + HISTORIAL ===== -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
         <!-- Por venir -->
         <section>
           <div class="mb-4 flex items-center justify-between">
@@ -209,7 +245,7 @@
                       <span class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 font-mono font-semibold">
                         {{ horaRange(card.sesion) }}
                       </span>
-                      <span class="{{ estadoChipClass(card) }}">{{ relLabel(card) }}</span>
+                      <span [ngClass]="estadoChipClass(card)">{{ relLabel(card) }}</span>
                     </div>
                   </div>
 
@@ -272,7 +308,7 @@
                       <span class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 font-mono font-semibold">
                         {{ horaRange(card.sesion) }}
                       </span>
-                      <span class="{{ estadoChipClass(card) }}">{{ relLabel(card) }}</span>
+                      <span [ngClass]="estadoChipClass(card)">{{ relLabel(card) }}</span>
                     </div>
                   </div>
 
@@ -297,6 +333,19 @@
           </ng-template>
         </section>
       </div>
+
+      <!-- Paginación / Cargar más -->
+      <div class="mt-6 flex items-center justify-center" *ngIf="hasMore()">
+        <button
+          class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+          (click)="loadMore()" [disabled]="busyMore()">
+          <i class="fa-solid" [ngClass]="busyMore() ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
+          {{ busyMore() ? 'Cargando…' : 'Cargar más' }}
+        </button>
+      </div>
+
+      <!-- Sentinela para infinite scroll -->
+      <div #sentinel class="h-1"></div>
     </ng-container>
   </div>
 </div>

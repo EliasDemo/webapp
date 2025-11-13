@@ -1,5 +1,6 @@
-// src/app/features/vm/pages/proyecto-view/proyecto-view.page.ts
-import { Component, computed, inject, signal } from '@angular/core';
+// ✅ FILE: src/app/vm/pages/proyecto-view/proyecto-view.page.ts
+
+import { Component, computed, inject, signal, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -36,7 +37,7 @@ import { SesionEditModalComponent } from '../../components/sesion-edit-modal/ses
   ],
   templateUrl: './proyecto-view.page.html',
 })
-export class ProyectoViewPage {
+export class ProyectoViewPage implements OnDestroy {
   // Inyección
   private api = inject(VmApiService);
   private route = inject(ActivatedRoute);
@@ -51,6 +52,18 @@ export class ProyectoViewPage {
   proyecto = computed(() => this.data()?.proyecto || null);
   procesos = computed<VmProcesoConSesiones[]>(() => this.data()?.procesos ?? []);
 
+  /** Sesiones ordenadas por fecha/hora dentro de cada proceso */
+  procesosSorted = computed<VmProcesoConSesiones[]>(() =>
+    this.procesos().map((p) => ({
+      ...p,
+      sesiones: [...(p.sesiones ?? [])].sort((a, b) => {
+        const ta = this.parseLocalDateTime(a.fecha, a.hora_inicio)?.getTime() ?? 0;
+        const tb = this.parseLocalDateTime(b.fecha, b.hora_inicio)?.getTime() ?? 0;
+        return ta - tb;
+      }),
+    }))
+  );
+
   isPlanificado = computed(
     () => (this.proyecto()?.estado || '').toUpperCase() === 'PLANIFICADO'
   );
@@ -62,9 +75,21 @@ export class ProyectoViewPage {
 
   galeria = computed(() => this.proyecto()?.imagenes ?? []);
 
+  /** Niveles (para proyectos VINCULADO), soporta nivel singular legacy */
+  nivelesTexto = computed(() => {
+    const p = this.proyecto();
+    if (!p || p.tipo !== 'VINCULADO') return null;
+    const arr = p.niveles?.length ? p.niveles : (p.nivel != null ? [p.nivel] : []);
+    return arr.length ? arr.join(', ') : null;
+  });
+
+  // Tick de tiempo para que los “relativos” sean reactivos
+  private nowTick = signal(Date.now());
+  private _timer: any = null;
+
   // Resumen sesiones
   private sesionesFlat = computed<VmSesion[]>(() =>
-    this.procesos().flatMap((p) => p.sesiones ?? [])
+    this.procesosSorted().flatMap((p) => p.sesiones ?? [])
   );
   totalSesiones = computed(() => this.sesionesFlat().length);
   totalProximas = computed(
@@ -79,7 +104,9 @@ export class ProyectoViewPage {
 
   // UI helpers / estado UI
   excelBusyId = signal<number | null>(null);
+  ciclosBusyId = signal<number | null>(null); // carga perezosa de ciclos
   private expanded = new Set<number>();
+  private fetchedCiclos = new Set<number>();
   toastMsg = signal<string | null>(null);
   toastIcon = signal<string>('fa-circle-check');
 
@@ -90,16 +117,24 @@ export class ProyectoViewPage {
 
   // Ciclo de vida
   constructor() {
-    const raw =
-      this.route.snapshot.paramMap.get('proyectoId') ??
-      this.route.snapshot.paramMap.get('id');
-    const id = Number(raw);
-    if (!Number.isFinite(id) || id <= 0) {
-      this.error.set('ID inválido');
-      this.loading.set(false);
-      return;
-    }
-    this.fetchAll(id);
+    // Reaccionar a cambios en la ruta (id dinámico)
+    this.route.paramMap.subscribe((pm) => {
+      const raw = pm.get('proyectoId') ?? pm.get('id');
+      const id = Number(raw);
+      if (!Number.isFinite(id) || id <= 0) {
+        this.error.set('ID inválido');
+        this.loading.set(false);
+        return;
+      }
+      this.fetchAll(id);
+    });
+
+    // Tick cada 30s para refrescar “Próxima/Actual/Pasada”
+    this._timer = setInterval(() => this.nowTick.set(Date.now()), 30_000);
+  }
+
+  ngOnDestroy() {
+    if (this._timer) clearInterval(this._timer);
   }
 
   async fetchAll(id: number) {
@@ -124,18 +159,18 @@ export class ProyectoViewPage {
     if (id) this.fetchAll(id);
   }
 
-  // Presentación / estilos coherentes con el HTML
-
-  /** Píldora de estado del header (evita claves duplicadas en ngClass) */
+  /** Píldora de estado del header */
   estadoPillClasses(est?: string): string {
     switch ((est || '').toUpperCase()) {
       case 'PLANIFICADO':
         return 'border-amber-200 bg-amber-50 text-amber-700';
       case 'EN_CURSO':
         return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+      case 'FINALIZADO':
+      case 'CERRADO':
+        return 'border-slate-200 bg-slate-50 text-slate-700';
       case 'CANCELADO':
         return 'border-rose-200 bg-rose-50 text-rose-700';
-      // CERRADO u otros -> default
       default:
         return 'border-slate-200 bg-slate-50 text-slate-700';
     }
@@ -156,16 +191,6 @@ export class ProyectoViewPage {
     return `${base} border-slate-200 bg-slate-50 text-slate-700`;
   }
 
-  /** Badge de estado general (por si lo necesitas más adelante) */
-  estadoBadgeClassShared(est?: string): string {
-    const s = String(est || '').toUpperCase();
-    if (s === 'PLANIFICADO') return 'bg-amber-100 text-amber-800';
-    if (s === 'EN_CURSO') return 'bg-emerald-100 text-emerald-800';
-    if (s === 'CERRADO') return 'bg-gray-100 text-gray-800';
-    if (s === 'CANCELADO') return 'bg-rose-100 text-rose-800';
-    return 'bg-slate-100 text-slate-800';
-  }
-
   /** Punto de estado relativo (próxima/actual/pasada) */
   dotClass(rel: 'PROXIMA' | 'ACTUAL' | 'PASADA') {
     if (rel === 'PROXIMA') return 'bg-amber-400';
@@ -179,9 +204,13 @@ export class ProyectoViewPage {
     return `${s.hora_inicio}–${s.hora_fin}`;
   }
 
-  private combine(fecha?: string | null, hhmm?: string | null): Date | null {
+  /** Parseo local robusto (evita ambigüedad de Date ISO sin zona) */
+  private parseLocalDateTime(fecha?: string | null, hhmm?: string | null): Date | null {
     if (!fecha || !hhmm) return null;
-    return new Date(`${fecha}T${hhmm}:00`);
+    const [y, m, d] = fecha.split('-').map(Number);
+    const [h, mi] = hhmm.split(':').map(Number);
+    if (!y || !m || !d) return null;
+    return new Date(y, (m - 1), d, h || 0, mi || 0, 0, 0);
   }
 
   sesionHoras(s: VmSesion): number {
@@ -200,21 +229,59 @@ export class ProyectoViewPage {
     return Math.round(tot * 10) / 10;
   }
 
+  processProgressPct(p: VmProcesoConSesiones): number {
+    const plan = p.horas_asignadas ?? 0;
+    if (plan <= 0) return 0;
+    const have = this.totalHorasSesionesByProceso(p);
+    return Math.min(100, Math.round((have / plan) * 100));
+  }
+
   relativoSesion(s: VmSesion): 'PROXIMA' | 'ACTUAL' | 'PASADA' {
-    const ini = this.combine(s?.fecha, s?.hora_inicio);
-    let fin = this.combine(s?.fecha, s?.hora_fin);
+    const ini = this.parseLocalDateTime(s?.fecha, s?.hora_inicio);
+    let fin = this.parseLocalDateTime(s?.fecha, s?.hora_fin);
     if (!ini || !fin) return 'PROXIMA';
     if (fin.getTime() <= ini.getTime()) fin = new Date(fin.getTime() + 24 * 60 * 60 * 1000); // cruza medianoche
-    const now = new Date();
+    const now = new Date(this.nowTick());
     if (now < ini) return 'PROXIMA';
     if (now >= fin) return 'PASADA';
     return 'ACTUAL';
   }
 
-  // Acordeón por sesión
+  // Acordeón por sesión + lazy-load de ciclos
   isSesionExpanded = (id: number) => this.expanded.has(id);
-  toggleSesion(id: number) {
+
+  async toggleSesion(id: number) {
     this.expanded.has(id) ? this.expanded.delete(id) : this.expanded.add(id);
+
+    if (this.expanded.has(id) && !this.fetchedCiclos.has(id)) {
+      const proc = this.procesos().find(pp => pp.sesiones?.some(ss => ss.id === id));
+      const ses  = proc?.sesiones?.find(x => x.id === id);
+      if (ses && !ses.ciclos) {
+        try {
+          this.ciclosBusyId.set(id);
+          const res = await firstValueFrom(this.api.obtenerSesionParaEdicion(id));
+          if (res && isApiOk(res)) {
+            (ses as any).ciclos = (res.data as any)?.ciclos ?? [];
+
+            // gatillar reactividad (copiamos el array de sesiones)
+            const d = this.data();
+            if (d && proc) {
+              this.data.set({
+                ...d,
+                procesos: d.procesos.map(pp =>
+                  pp.id === proc.id ? ({ ...pp, sesiones: [...(pp.sesiones ?? [])] }) : pp
+                ),
+              });
+            }
+          }
+        } catch {
+          // Silencio intencional
+        } finally {
+          this.ciclosBusyId.set(null);
+          this.fetchedCiclos.add(id);
+        }
+      }
+    }
   }
 
   // Reglas de edición
@@ -224,13 +291,11 @@ export class ProyectoViewPage {
 
   canEditProceso(p: { estado?: string } | VmProcesoConSesiones | VmProceso): boolean {
     const est = String(p?.estado || '').toUpperCase();
-    // No editable si ese proceso está en curso o cerrado
     return est !== 'EN_CURSO' && est !== 'CERRADO';
   }
 
   canEditSesion(s: VmSesion): boolean {
     const est = String(s?.estado || '').toUpperCase();
-    // No editable si ESA sesión está en curso o cerrada
     return est !== 'EN_CURSO' && est !== 'CERRADO';
   }
 
@@ -243,15 +308,30 @@ export class ProyectoViewPage {
       return;
     }
     if (!confirm(`¿Eliminar "${d.proyecto.titulo}"?`)) return;
-    await firstValueFrom(this.api.eliminarProyecto(d.proyecto.id));
-    this.router.navigateByUrl('/vm/proyectos');
+    try {
+      await firstValueFrom(this.api.eliminarProyecto(d.proyecto.id));
+      this.toastIcon.set('fa-circle-check');
+      this.showToast('Proyecto eliminado');
+      this.router.navigateByUrl('/vm/proyectos');
+    } catch {
+      this.toastIcon.set('fa-triangle-exclamation');
+      this.showToast('No se pudo eliminar el proyecto');
+    }
   }
 
   async handlePublish() {
     const d = this.data();
     if (!d) return;
-    await firstValueFrom(this.api.publicarProyecto(d.proyecto.id));
-    this.fetchAll(d.proyecto.id);
+    try {
+      const res = await firstValueFrom(this.api.publicarProyecto(d.proyecto.id));
+      if ((res as any)?.ok === false) throw new Error((res as any)?.message || 'Error');
+      this.fetchAll(d.proyecto.id);
+      this.toastIcon.set('fa-bullhorn');
+      this.showToast('Proyecto publicado');
+    } catch (e: any) {
+      this.toastIcon.set('fa-triangle-exclamation');
+      this.showToast(e?.message || 'No se pudo publicar el proyecto');
+    }
   }
 
   // Modales: Proyecto
@@ -320,22 +400,49 @@ export class ProyectoViewPage {
     this.showToast('Sesión actualizada');
   }
 
-  // Excel (placeholder)
-  exportarExcelSesionDesign(sesionId: number) {
+  // Exportar CSV de asistencias por sesión
+  async exportarExcelSesion(sesionId: number) {
     if (this.excelBusyId()) return;
     this.excelBusyId.set(sesionId);
-    this.showToast('Generando Excel…');
-    setTimeout(() => {
+    this.showToast('Generando reporte…');
+    try {
+      const blob = await firstValueFrom(this.api.descargarReporteAsistenciasCSV(sesionId));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte-asistencias-sesion-${sesionId}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      this.toastIcon.set('fa-download');
+      this.showToast('Reporte CSV descargado');
+    } catch {
+      this.toastIcon.set('fa-triangle-exclamation');
+      this.showToast('No se pudo descargar el reporte');
+    } finally {
       this.excelBusyId.set(null);
-      this.toastIcon.set('fa-file-excel');
-      this.showToast('Archivo Excel disponible próximamente');
-    }, 1200);
+    }
   }
 
   // Utilidades UI
   trackByIndex = (idx: number) => idx;
   trackByProceso = (_: number, item: VmProcesoConSesiones) => item.id;
   trackBySesion = (_: number, item: VmSesion) => item.id;
+
+  // Niveles para una sesión desde s.niveles o s.ciclos[]
+  sesionNiveles(s: VmSesion): number[] {
+    if (Array.isArray(s.niveles) && s.niveles.length) {
+      return [...s.niveles].sort((a,b) => a-b);
+    }
+    if (Array.isArray(s.ciclos) && s.ciclos.length) {
+      return s.ciclos
+        .map(c => Number(c?.nivel))
+        .filter(n => Number.isFinite(n))
+        .sort((a,b) => a-b);
+    }
+    return [];
+  }
 
   showToast(msg: string) {
     this.toastMsg.set(msg);

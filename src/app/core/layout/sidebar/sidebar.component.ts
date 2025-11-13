@@ -222,7 +222,22 @@ export class SidebarComponent {
       iconActiveColor: 'text-emerald-600 dark:text-emerald-400',
       textActiveColor: 'text-emerald-700 dark:text-emerald-300',
       exact: false,
+      roles: 'ENCARGADO',
+    },
+
+    {
+      route: '/r/horas',
+      label: 'Reportes · Horas por período',
+      icon: 'fas fa-clock-rotate-left text-base',
+      activeClass: 'bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300',
+      indicatorClass: 'bg-gradient-to-b from-indigo-500 to-violet-500',
+      iconActiveClass: 'bg-indigo-500/20 shadow-md',
+      iconActiveColor: 'text-indigo-600 dark:text-indigo-400',
+      textActiveColor: 'text-indigo-700 dark:text-indigo-300',
+      exact: false, // así también queda activo en /r/horas/123
+      roles: 'ENCARGADO', // ajusta a tu control de roles ('GESTOR', etc.)
     }
+
 
 
 

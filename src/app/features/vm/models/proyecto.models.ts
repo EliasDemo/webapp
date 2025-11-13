@@ -1,4 +1,8 @@
+// ✅ FILE: src/app/vm/models/proyecto.models.ts
+
+// ───────────────────────────────────────────────────────────────
 // Tipos base
+// ───────────────────────────────────────────────────────────────
 export type Id = number;
 
 export type TipoProyecto = 'VINCULADO' | 'LIBRE';
@@ -32,8 +36,13 @@ export interface VmProyecto {
   tipo: TipoProyecto;
   modalidad: Modalidad;
   estado: 'PLANIFICADO' | 'EN_CURSO' | 'CERRADO' | 'FINALIZADO' | 'CANCELADO' | string;
-  /** En VINCULADO, el backend usa nivel=ciclo; en LIBRE suele ser null */
+
+  /** En VINCULADO el backend históricamente expone nivel=ciclo */
   nivel: number | null;
+
+  /** ✅ NEW: algunos endpoints pueden devolver arreglo de niveles */
+  niveles?: number[]; // opcional, no rompe compatibilidad
+
   descripcion?: string | null;
   ep_sede_id: Id;
   periodo_id: Id;
@@ -59,6 +68,13 @@ export interface VmProceso {
   created_at: string | null;
 }
 
+/** ✅ NEW: relación de ciclos asociables a sesiones */
+export interface Ciclo {
+  id: Id;
+  nivel: number;
+  nombre?: string | null;
+}
+
 export interface VmSesion {
   id: Id;
   sessionable_type: string;
@@ -73,6 +89,10 @@ export interface VmSesion {
   lugar?: string | null;
   enlace?: string | null;
   observacion?: string | null;
+
+  // ✅ NEW: multiciclo (cualquiera de los dos puede venir según endpoint)
+  ciclos?: Ciclo[];
+  niveles?: number[];
 }
 
 export type TargetType = 'ep_sede' | 'sede' | 'facultad';
@@ -94,7 +114,9 @@ export interface VmEvento {
 
 export interface Imagen { id: Id; url: string | null; created_at?: string | null; }
 
+// ───────────────────────────────────────────────────────────────
 // Payloads
+// ───────────────────────────────────────────────────────────────
 export interface ProyectoCreate {
   ep_sede_id: Id;
   periodo_id: Id;
@@ -103,7 +125,13 @@ export interface ProyectoCreate {
   descripcion?: string | null;
   tipo: TipoProyecto;
   modalidad: Modalidad;
-  nivel: number | null; // (VINCULADO=ciclo; LIBRE=null)
+
+  /** ✅ NEW: el backend actual espera arreglo en VINCULADO */
+  niveles?: number[];
+
+  /** @deprecated: se mantiene para compatibilidad del form; el servicio lo convierte a niveles[] */
+  nivel?: number | null; // (VINCULADO=ciclo; LIBRE=null)
+
   horas_planificadas: number;
   horas_minimas_participante?: number | null;
 }
@@ -120,9 +148,24 @@ export interface ProcesoCreate {
 
 export interface SesionCreate { fecha: string; hora_inicio: string; hora_fin: string; }
 
+/** ✅ UPDATED: añadimos niveles? para asociar sesiones a ciclos en VINCULADO */
 export type SesionesBatchCreate =
-  | { mode: 'range'; fecha_inicio: string; fecha_fin: string; dias_semana?: Array<'DO'|'LU'|'MA'|'MI'|'JU'|'VI'|'SA'|0|1|2|3|4|5|6>; hora_inicio: string; hora_fin: string; }
-  | { mode: 'list'; fechas: string[]; hora_inicio: string; hora_fin: string; };
+  | {
+      mode: 'range';
+      fecha_inicio: string;
+      fecha_fin: string;
+      dias_semana?: Array<'DO'|'LU'|'MA'|'MI'|'JU'|'VI'|'SA'|0|1|2|3|4|5|6>;
+      hora_inicio: string;
+      hora_fin: string;
+      niveles?: number[]; // ✅ NEW
+    }
+  | {
+      mode: 'list';
+      fechas: string[];
+      hora_inicio: string;
+      hora_fin: string;
+      niveles?: number[]; // ✅ NEW
+    };
 
 export interface EventoCreate {
   periodo_id: Id; target_type: TargetType; target_id: Id;
@@ -142,7 +185,7 @@ export interface ProcesoContextoEdicion { proceso: VmProcesoConSesiones; sesione
 export type SesionEditResponse = VmSesion;
 
 // ───────────────────────────────────────────────────────────────
-// Alumno + inscripción (ACTUALIZADO)
+// Alumno + inscripción
 // ───────────────────────────────────────────────────────────────
 export interface ProyectosAlumnoContexto {
   ep_sede_id: Id;
@@ -161,11 +204,8 @@ export interface ProyectosAlumnoPendiente {
 export interface ProyectosAlumnoData {
   contexto: ProyectosAlumnoContexto;
   pendientes: ProyectosAlumnoPendiente[];
-  /** Vinculados disponibles para el ciclo del alumno (ya filtrados por backend) */
   inscribibles: VmProyecto[];
-  /** Libres activos del período seleccionado */
   libres: VmProyecto[];
-  /** Vinculados de períodos anteriores (informativo/histórico) */
   vinculados_historicos: VmProyecto[];
 }
 
@@ -237,7 +277,7 @@ export type StaffAgendaResponse = StaffSesionCard[];
 export interface Page<T> { data: T[]; current_page: number; last_page: number; total: number; }
 
 // ───────────────────────────────────────────────────────────────
-// Reportes de inscripción (mantener para vm.api.ts)
+// Reportes de inscripción
 // ───────────────────────────────────────────────────────────────
 export interface VmProyectoResumen {
   id: number;
@@ -279,7 +319,7 @@ export interface InscritosResponseData {
 }
 
 // ───────────────────────────────────────────────────────────────
-// Candidatos (mantener para vm.api.ts)
+// Candidatos
 // ───────────────────────────────────────────────────────────────
 export type MotivoElegible = 'ELEGIBLE_LIBRE' | 'ELEGIBLE_VINCULADO';
 export type RazonNoElegible =
@@ -312,7 +352,7 @@ export interface CandidatosResponseData {
 }
 
 // ───────────────────────────────────────────────────────────────
-// Proyecto index expandido (mantener para vm.api.ts)
+// Proyecto index expandido
 // ───────────────────────────────────────────────────────────────
 export interface ProyectoMin {
   id: Id;
@@ -356,7 +396,7 @@ export interface ProcesoSesionesGroup {
 export type SesionesListResponse = ProcesoSesionesGroup[];
 
 // ───────────────────────────────────────────────────────────────
-// Participantes y registros (re-expuestos para vm.api.ts)
+// Participantes y registros
 // ───────────────────────────────────────────────────────────────
 export interface Participante {
   id: Id; usuario_id: Id; proyecto_id: Id; rol: string;
@@ -371,7 +411,7 @@ export interface Registro {
 export interface RegistroCreate { usuario_id: Id; tipo: TipoRegistro; horas?: number | null; asistio?: boolean | null; calificacion?: number | null; observaciones?: string | null; }
 
 // ───────────────────────────────────────────────────────────────
-// Participantes de sesión + justificación (y alias esperado por vm.api.ts)
+// Participantes de sesión + justificación (alias esperado por vm.api.ts)
 // ───────────────────────────────────────────────────────────────
 export type EstadoCalculado = 'PRESENTE' | 'FALTA' | '';
 export interface ParticipanteSesionRow {

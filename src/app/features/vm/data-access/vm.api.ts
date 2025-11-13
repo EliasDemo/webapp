@@ -1,3 +1,5 @@
+// ✅ FILE: src/app/vm/data-access/vm.api.ts
+
 import { Inject, Injectable } from '@angular/core';
 import {
   HttpClient,
@@ -14,14 +16,10 @@ import {
   VmEvento, EventoCreate, Imagen, Participante, ParticipanteCreate, Registro, RegistroCreate,
   ProyectosAlumnoData, EnrolResponse, VmVentanaManual, VmQrVentanaQR, ListadoAsistenciaRow,
   ValidarAsistenciasResp, Id,
-  // ─── Tipos para reportes de inscripción ───
   VmProyectoResumen, InscritosResponseData, CandidatosResponseData,
-  // ─── Tipos de /vm/sesiones ───
   ProcesoSesionesGroup, SesionesListResponse,
   ProyectoIndexPage,
-  // ─── NUEVO: tipo para poll condicional ───
   PollResult,
-  // ─── 👇 NUEVOS tipos para asistencia manual extendida ───
   VmAsistencia,
   ParticipantesResponse,
   JustificarAsistenciaPayload,
@@ -36,8 +34,22 @@ export class VmApiService {
   ) {}
 
   // ---------- Proyectos ----------
+  /** ✅ UPDATED: Coerción nivel → niveles[] si tipo === 'VINCULADO' */
   crearProyecto(payload: ProyectoCreate): Observable<ApiResponse<VmProyecto>> {
-    return this.http.post<ApiResponse<VmProyecto>>(`${this.base}/vm/proyectos`, payload);
+    const body: any = { ...payload };
+
+    if (payload.tipo === 'VINCULADO') {
+      if (Array.isArray(payload.niveles) && payload.niveles.length) {
+        body.niveles = payload.niveles;
+      } else if (payload.nivel != null) {
+        body.niveles = [payload.nivel];
+      } else {
+        body.niveles = []; // evita 422; el backend validará según regla de negocio
+      }
+    }
+    delete body.nivel; // no enviar el campo singular
+
+    return this.http.post<ApiResponse<VmProyecto>>(`${this.base}/vm/proyectos`, body);
   }
 
   obtenerProyectoArbol(id: Id): Observable<ApiResponse<VmProyectoArbol>> {
@@ -53,8 +65,19 @@ export class VmApiService {
       .pipe(map(r => r.ok ? ({ ok: true, data: r.data.proyecto }) : r as any));
   }
 
+  /** ✅ UPDATED: también convertimos en update por consistencia */
   actualizarProyecto(id: Id, payload: Partial<ProyectoCreate>): Observable<ApiResponse<VmProyecto>> {
-    return this.http.put<ApiResponse<VmProyecto>>(`${this.base}/vm/proyectos/${id}`, payload);
+    const body: any = { ...payload };
+    if (payload?.tipo === 'VINCULADO') {
+      if (Array.isArray(payload.niveles) && payload.niveles.length) {
+        body.niveles = payload.niveles;
+      } else if (payload?.nivel != null) {
+        body.niveles = [payload.nivel];
+      }
+    }
+    delete body.nivel;
+
+    return this.http.put<ApiResponse<VmProyecto>>(`${this.base}/vm/proyectos/${id}`, body);
   }
 
   publicarProyecto(id: Id): Observable<ApiResponse<VmProyecto>> {

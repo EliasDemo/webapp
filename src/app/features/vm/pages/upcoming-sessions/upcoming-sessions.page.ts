@@ -1,6 +1,10 @@
+// ✅ FILE: src/app/vm/pages/upcoming-sessions/upcoming-sessions.page.ts
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import {
+  Component, OnDestroy, OnInit, AfterViewInit,
+  computed, inject, signal, ViewChild, ElementRef
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -45,85 +49,231 @@ type FlatCard = {
   proceso: VmProceso;
 };
 
+/* ========= períodos ========= */
+type PeriodoOpt = { id:number; anio:number; ciclo:string; estado?:string };
+type PeriodoSel = number | 'ALL' | 'CURRENT' | null;
+
 @Component({
   standalone: true,
   selector: 'app-upcoming-sessions-page',
   imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './upcoming-sessions.page.html',
 })
-export class UpcomingSessionsPage implements OnDestroy {
+export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
   private api = inject(VmApiService);
   private lookups = inject(LookupsApiService);
 
   loading = signal(true);
   error   = signal<string | null>(null);
   now     = signal(new Date());
+
+  // Datos planos (sesiones)
   cards   = signal<FlatCard[]>([]);
+  private seenSesionIds = new Set<number>(); // evita duplicados al paginar
 
-  periodos = signal<Array<{ id:number; anio:number; ciclo:string; estado?:string }>>([]);
-  selectedPeriodoId = signal<number | null>(null);
+  // Períodos
+  periodos = signal<PeriodoOpt[]>([]);
+  defaultPeriodoId = signal<number | null>(null);
+  selectedPeriodoId = signal<PeriodoSel>('CURRENT');
 
+  // Paginación
+  page     = signal(1);
+  pageSize = 24; // ajusta según performance
+  hasMore  = signal(false);
+  busyMore = signal(false);
+  totalProj = signal<number | null>(null); // total de proyectos (si el backend lo envía)
+
+  // Agrupación/orden de períodos
+  orderedPeriodos = computed(() => {
+    return [...this.periodos()].sort((a, b) => {
+      if (a.anio !== b.anio) return b.anio - a.anio; // año desc
+      return Number(b.ciclo) - Number(a.ciclo);      // ciclo 2, luego 1
+    });
+  });
+  periodoGroups = computed(() => {
+    const map = new Map<number, PeriodoOpt[]>();
+    for (const p of this.orderedPeriodos()) {
+      const arr = map.get(p.anio) ?? [];
+      arr.push(p);
+      map.set(p.anio, arr);
+    }
+    return Array.from(map.entries())
+      .map(([anio, items]) => ({ anio, items }))
+      .sort((a, b) => b.anio - a.anio);
+  });
+  private findPeriodoById = (id?: number | null) =>
+    (id ? this.periodos().find(p => p.id === id) ?? null : null);
+  defaultPeriodo = computed(() => this.findPeriodoById(this.defaultPeriodoId()));
+
+  // Resumen visible
+  visibleCount = computed(() => this.cards().length);
+
+  // Relativos (tick)
   private timer: any;
 
-  constructor() {
+  // Infinite scroll
+  @ViewChild('sentinel', { static: false }) sentinel?: ElementRef<HTMLDivElement>;
+  private io?: IntersectionObserver;
+
+  ngOnInit() {
     this.bootstrap();
     this.timer = setInterval(() => this.now.set(new Date()), 30_000);
   }
-  ngOnDestroy() { if (this.timer) clearInterval(this.timer); }
+  ngAfterViewInit() { this.setupObserver(); }
+  ngOnDestroy() {
+    if (this.timer) clearInterval(this.timer);
+    this.io?.disconnect();
+  }
+
+  private setupObserver() {
+    if (!('IntersectionObserver' in window)) return;
+    this.io?.disconnect();
+    this.io = new IntersectionObserver((entries) => {
+      const e = entries[0];
+      if (e.isIntersecting && this.hasMore() && !this.busyMore()) {
+        this.loadMore(); // auto-cargar siguiente página
+      }
+    }, { root: null, rootMargin: '160px', threshold: 0.01 });
+    if (this.sentinel?.nativeElement) {
+      this.io.observe(this.sentinel.nativeElement);
+    }
+  }
+
+  // Normaliza selección a id numérico (CURRENT → default; ALL → undefined)
+  private normalizedPeriodoId(): number | undefined {
+    const sel = this.selectedPeriodoId();
+    if (sel === 'ALL' || sel === null) return undefined;
+    if (sel === 'CURRENT') return this.defaultPeriodoId() ?? undefined;
+    return Number(sel) || undefined;
+  }
+  isAllSelected(): boolean {
+    return this.selectedPeriodoId() === 'ALL';
+  }
 
   private async bootstrap() {
     this.loading.set(true);
     try {
-      const per = await firstValueFrom(this.lookups.fetchPeriodos('', true));
+      // 🔹 Todos los períodos
+      const per = await firstValueFrom(this.lookups.fetchPeriodos('', false, 500));
+      per.sort((a, b) => (b.anio - a.anio) || (Number(b.ciclo) - Number(a.ciclo)));
       this.periodos.set(per);
-      const cur = per.find(p => (p.estado ?? '').toUpperCase() === 'EN_CURSO') ?? per[0];
-      this.selectedPeriodoId.set(cur?.id ?? null);
-      await this.fetch();
+
+      const actual =
+        per.find(p => (p.estado ?? '').toUpperCase() === 'EN_CURSO')
+        ?? per.find(p => (p.estado ?? '').toUpperCase() === 'PLANIFICADO')
+        ?? per[0];
+
+      this.defaultPeriodoId.set(actual?.id ?? null);
+      this.selectedPeriodoId.set('CURRENT');
+
+      await this.resetAndFetch();
     } catch {
       this.error.set('No se pudo cargar períodos.');
     } finally {
       this.loading.set(false);
+      setTimeout(() => this.setupObserver(), 0);
     }
   }
 
-  async fetch() {
-    this.loading.set(true); this.error.set(null);
-    try {
-      const pid = this.selectedPeriodoId();
-      const res = await firstValueFrom(this.api.listarProyectosArbol(pid ? { periodo_id: pid } : undefined));
-      if (res && isApiOk(res)) {
-        const page = res.data as Page<VmProyecto | { proyecto: VmProyecto; procesos: VmProcesoConSesiones[] }>;
-        const arr = Array.isArray(page?.data) ? page.data : [];
+  // Reset total + primera página
+  private async resetAndFetch() {
+    this.cards.set([]);
+    this.seenSesionIds.clear();
+    this.page.set(1);
+    this.totalProj.set(null);
+    this.hasMore.set(false);
+    await this.loadMore();
+  }
 
-        const flat: FlatCard[] = [];
-        for (const it of arr as any[]) {
-          const proyecto: VmProyecto = (it.proyecto ?? it) as VmProyecto;
-          const procesos: VmProcesoConSesiones[] = (it.procesos ?? []) as VmProcesoConSesiones[];
-          for (const pr of procesos) {
-            const sesiones = pr.sesiones ?? [];
-            for (const s of sesiones) {
-              flat.push({ sesion: s, proyecto, proceso: pr as VmProceso });
+  // Carga incremental (paginada)
+  async loadMore() {
+    this.busyMore.set(true);
+    try {
+      const pid = this.normalizedPeriodoId();
+      const params: any = {};
+      if (typeof pid === 'number') params.periodo_id = pid;
+
+      // 👇 ajusta a tu backend si usa otros nombres (page/per_page)
+      params.page = this.page();
+      params.per_page = this.pageSize;
+
+      const res = await firstValueFrom(this.api.listarProyectosArbol(params));
+      if (!isApiOk(res)) {
+        this.error.set((res as any)?.message || 'No se pudo cargar.');
+        this.hasMore.set(false);
+        return;
+      }
+
+      const pageRes = res.data as Page<VmProyecto | { proyecto: VmProyecto; procesos: VmProcesoConSesiones[] }>;
+      const arr = Array.isArray(pageRes?.data) ? pageRes.data : [];
+
+      // Aplana a tarjetas de sesión
+      const chunk: FlatCard[] = [];
+      for (const it of arr as any[]) {
+        const proyecto: VmProyecto = (it.proyecto ?? it) as VmProyecto;
+        const procesos: VmProcesoConSesiones[] = (it.procesos ?? []) as VmProcesoConSesiones[];
+        for (const pr of procesos) {
+          const sesiones = pr.sesiones ?? [];
+          for (const s of sesiones) {
+            if (!this.seenSesionIds.has(s.id)) {
+              this.seenSesionIds.add(s.id);
+              chunk.push({ sesion: s, proyecto, proceso: pr as VmProceso });
             }
           }
         }
-
-        flat.sort((a, b) => {
-          const aIni = combine(a.sesion.fecha, a.sesion.hora_inicio).getTime();
-          const bIni = combine(b.sesion.fecha, b.sesion.hora_inicio).getTime();
-          return aIni - bIni;
-        });
-
-        this.cards.set(flat);
-      } else {
-        this.error.set((res as any)?.message || 'No se pudo cargar.');
       }
+
+      // Ordena por inicio asc y concatena
+      chunk.sort((a, b) => {
+        const aIni = combine(a.sesion.fecha, a.sesion.hora_inicio).getTime();
+        const bIni = combine(b.sesion.fecha, b.sesion.hora_inicio).getTime();
+        return aIni - bIni;
+      });
+      this.cards.set([...this.cards(), ...chunk]);
+
+      // Guarda totales si vienen del backend
+      const total = (pageRes as any)?.total ?? (pageRes as any)?.meta?.total ?? null;
+      if (typeof total === 'number') this.totalProj.set(total);
+
+      // ¿hay más páginas?
+      const hasNextByLinks = !!(pageRes as any)?.links?.next;
+      const hasNextByMeta  = !!(pageRes as any)?.meta?.next_page;
+      const chunkSize = arr.length;
+      const hasNextBySize = chunkSize === this.pageSize;
+
+      const more = hasNextByLinks || hasNextByMeta || hasNextBySize;
+      this.hasMore.set(more);
+
+      if (more) this.page.update(p => p + 1);
     } catch (e:any) {
       this.error.set(e?.error?.message || 'Error de red.');
+      this.hasMore.set(false);
     } finally {
-      this.loading.set(false);
+      this.busyMore.set(false);
     }
   }
 
+  // Botón "Actualizar" → reset
+  async fetch() {
+    this.loading.set(true);
+    await this.resetAndFetch();
+    this.loading.set(false);
+  }
+
+  // Flechas de navegación entre períodos
+  async stepPeriodo(dir: -1 | 1) {
+    const list = this.orderedPeriodos();
+    const curId = this.normalizedPeriodoId() ?? this.defaultPeriodoId() ?? null;
+    if (!curId) return;
+    const idx = list.findIndex(p => p.id === curId);
+    if (idx < 0) return;
+    const next = list[idx + dir];
+    if (!next) return;
+    this.selectedPeriodoId.set(next.id);
+    await this.fetch();
+  }
+
+  /* ===== lógica de tarjetas ===== */
   private stateFor(s: VmSesion): RelState {
     const now = this.now();
     const ini = combine(s.fecha, s.hora_inicio);
@@ -222,11 +372,14 @@ export class UpcomingSessionsPage implements OnDestroy {
   }
 
   onPeriodoChange(val: any) {
-    const id = (val === null || val === undefined || val === '') ? null : Number(val);
-    this.changePeriodo(id);
-  }
-  changePeriodo(id: number | null) {
-    this.selectedPeriodoId.set(id);
+    if (val === 'ALL') {
+      this.selectedPeriodoId.set('ALL');
+    } else if (val === 'CURRENT') {
+      this.selectedPeriodoId.set('CURRENT');
+    } else {
+      const id = (val === null || val === '' || val === undefined) ? null : Number(val);
+      this.selectedPeriodoId.set(id);
+    }
     this.fetch();
   }
 
