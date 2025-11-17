@@ -1,77 +1,523 @@
-<section class="p-6 md:p-10 mt-24 max-w-4xl mx-auto space-y-6 text-white">
-  <h1 class="text-4xl font-bold brutal-shadow inline-block px-4 py-2">
-    ➕ Crear nuevo evento
-  </h1>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 pb-16">
+  <!-- Header -->
+  <header class="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between gap-4">
+        <!-- Título + migas -->
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-xl bg-indigo-100 text-indigo-700">
+            <i class="fa-solid fa-calendar-plus text-lg"></i>
+          </div>
+          <div>
+            <nav class="text-xs text-slate-500 mb-1 flex items-center gap-1">
+              <a routerLink="/" class="hover:text-slate-700 font-medium transition-colors">Inicio</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <a routerLink="/vm/eventos" class="hover:text-slate-700 font-medium transition-colors">Eventos</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <span class="text-indigo-700 font-semibold">Crear evento</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-slate-900">Crear nuevo evento</h1>
+            <p class="text-sm text-slate-600 mt-1">
+              Registra actividades académicas o institucionales para tu EP-SEDE.
+            </p>
+          </div>
+        </div>
 
-  <form (ngSubmit)="crearEvento()" class="form-container brutal-shadow space-y-6 bg-[#111111]">
-    <!-- Título -->
-    <div>
-      <label class="block text-lg font-bold mb-2">Título del evento *</label>
-      <input type="text" [(ngModel)]="form.titulo" name="titulo"
-        placeholder="Ej. Jornada de inducción"
-        class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
-    </div>
-
-    <!-- Periodo -->
-    <div>
-      <label class="block text-lg font-bold mb-2">Periodo académico *</label>
-      <select [(ngModel)]="form.periodo_id" name="periodo_id"
-        class="bg-[#1C1C1C] border-2 border-[#00E0FF] text-white p-3 w-full focus:border-[#FF007A] outline-none">
-        <option *ngFor="let p of periodos" [ngValue]="p.id" class="text-black">
-          {{ p.anio }} - {{ p.ciclo }} ({{ p.estado }})
-        </option>
-      </select>
-    </div>
-
-    <!-- Fecha -->
-    <div>
-      <label class="block text-lg font-bold mb-2">Fecha *</label>
-      <input type="date" [(ngModel)]="form.fecha" name="fecha"
-        class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
-    </div>
-
-    <!-- Horario -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <label class="block text-lg font-bold mb-2">Hora inicio *</label>
-        <input type="time" [(ngModel)]="form.hora_inicio" name="hora_inicio"
-          class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
-      </div>
-      <div>
-        <label class="block text-lg font-bold mb-2">Hora fin *</label>
-        <input type="time" [(ngModel)]="form.hora_fin" name="hora_fin"
-          class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
+        <div class="flex items-center gap-2">
+          <a
+            routerLink="/vm/eventos"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <i class="fa-solid fa-arrow-left"></i>
+            Volver a eventos
+          </a>
+        </div>
       </div>
     </div>
+  </header>
 
-    <!-- Inscripción -->
-    <div class="flex items-center gap-3">
-      <input type="checkbox" [(ngModel)]="form.requiere_inscripcion" name="requiere_inscripcion"
-        class="w-5 h-5 accent-[#00E0FF]" />
-      <label class="text-lg font-semibold">¿Requiere inscripción?</label>
+  <!-- Body -->
+  <main class="max-w-7xl mx-auto px-4 pt-8 space-y-8">
+
+    <!-- Alertas error -->
+    <div
+      *ngIf="error()"
+      class="rounded-2xl border border-rose-200 bg-white p-4 shadow-sm animate-fade-in"
+    >
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 p-2 rounded-lg bg-rose-100 text-rose-600">
+          <i class="fa-solid fa-circle-exclamation text-sm"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-rose-900 mb-1">Ocurrió un problema</div>
+          <div class="text-sm text-rose-700">
+            {{ error() }}
+          </div>
+        </div>
+        <button
+          (click)="error.set(null)"
+          class="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Cupo máximo -->
-    <div>
-      <label class="block text-lg font-bold mb-2">Cupo máximo</label>
-      <input type="number" [(ngModel)]="form.cupo_maximo" name="cupo_maximo"
-        min="1"
-        placeholder="Opcional"
-        class="bg-[#1C1C1C] border-2 border-[#00E0FF] p-3 w-full focus:border-[#FF007A] outline-none" />
+    <!-- Alertas éxito -->
+    <div
+      *ngIf="success()"
+      class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm animate-fade-in"
+    >
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 p-2 rounded-lg bg-emerald-100 text-emerald-600">
+          <i class="fa-solid fa-circle-check text-sm"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-emerald-900 mb-1">Evento registrado</div>
+          <div class="text-sm text-emerald-700">
+            {{ success() }}
+          </div>
+        </div>
+        <button
+          (click)="success.set(null)"
+          class="flex-shrink-0 text-emerald-500 hover:text-emerald-700 transition-colors"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Botones -->
-    <div class="flex justify-end gap-4 pt-4">
-      <button type="button"
-        routerLink="/events"
-        class="bg-gray-600 text-white px-6 py-3 font-bold brutal-shadow btn hover:bg-gray-400">
-        Cancelar
-      </button>
-      <button type="submit"
-        [disabled]="cargando"
-        class="bg-yellow-500 text-black px-6 py-3 font-bold brutal-shadow btn hover:bg-white disabled:opacity-50">
-        {{ cargando ? 'Creando...' : 'Crear evento' }}
-      </button>
+    <!-- Info EP-SEDE -->
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex items-start gap-3">
+        <div class="p-2 rounded-xl bg-sky-100 text-sky-600 mt-1">
+          <i class="fa-solid fa-circle-info text-sm"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Alcance del evento</h2>
+          <p class="text-sm text-slate-600 mt-1">
+            Los eventos se registran automáticamente para la
+            <b>EP-SEDE asociada a tu usuario</b>. No necesitas elegir facultad ni sede.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Formulario de creación -->
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="p-2 rounded-xl bg-indigo-100 text-indigo-600">
+          <i class="fa-solid fa-pen-to-square text-sm"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Datos del evento</h2>
+          <p class="text-sm text-slate-600">
+            Completa la información básica del evento, su categoría y sus sesiones.
+          </p>
+        </div>
+      </div>
+
+      <form (ngSubmit)="submit()" class="space-y-8" novalidate>
+        <!-- Período, categoría y código -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Período académico -->
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Período académico <span class="text-rose-500">*</span>
+            </label>
+            <select
+              name="periodo_id"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+              [(ngModel)]="periodoId"
+              [ngModelOptions]="{standalone: true}"
+              [disabled]="loadingPeriodos()"
+            >
+              <option [ngValue]="null" disabled>Selecciona un período…</option>
+              <option *ngFor="let p of periodos()" [ngValue]="p.id">
+                {{ p.anio }} - {{ p.ciclo }} {{ p.estado ? '(' + p.estado + ')' : '' }}
+              </option>
+            </select>
+            <p *ngIf="loadingPeriodos()" class="text-xs text-slate-500">
+              Cargando períodos académicos…
+            </p>
+            <p *ngIf="!loadingPeriodos() && !periodos().length" class="text-xs text-rose-500">
+              No se encontraron períodos académicos activos. Verifica la configuración.
+            </p>
+          </div>
+
+          <!-- Categoría -->
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Categoría de evento
+            </label>
+            <select
+              name="categoria_evento_id"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+              [(ngModel)]="categoriaId"
+              [ngModelOptions]="{standalone: true}"
+              [disabled]="loadingCategorias()"
+            >
+              <option [ngValue]="null">Sin categoría</option>
+              <option *ngFor="let c of categorias()" [ngValue]="c.id">
+                {{ c.nombre }}
+              </option>
+            </select>
+            <p *ngIf="loadingCategorias()" class="text-xs text-slate-500">
+              Cargando categorías de evento…
+            </p>
+            <p *ngIf="!loadingCategorias() && !categorias().length" class="text-xs text-slate-500">
+              Puedes configurar categorías desde el módulo de administración.
+            </p>
+          </div>
+
+          <!-- Código -->
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Código (opcional)
+            </label>
+            <input
+              name="codigo"
+              type="text"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+              placeholder="Si lo dejas vacío, se genera automáticamente"
+              [(ngModel)]="codigo"
+              [ngModelOptions]="{standalone: true}"
+            />
+            <p class="text-xs text-slate-500">
+              Úsalo solo si necesitas un código específico de identificación.
+            </p>
+          </div>
+        </div>
+
+        <!-- Título y subtítulo -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Título del evento <span class="text-rose-500">*</span>
+            </label>
+            <input
+              name="titulo"
+              type="text"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+              placeholder="Ej. Semana de Integración, Taller de Investigación, etc."
+              [(ngModel)]="titulo"
+              [ngModelOptions]="{standalone: true}"
+            />
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Subtítulo (opcional)
+            </label>
+            <input
+              name="subtitulo"
+              type="text"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+              placeholder="Texto breve que complementa el título"
+              [(ngModel)]="subtitulo"
+              [ngModelOptions]="{standalone: true}"
+            />
+          </div>
+        </div>
+
+        <!-- Descripción corta + modalidad -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Descripción corta
+            </label>
+            <textarea
+              name="descripcion_corta"
+              rows="3"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm resize-none"
+              placeholder="Resumen breve del evento (se puede mostrar en tarjetas/listados)."
+              [(ngModel)]="descripcionCorta"
+              [ngModelOptions]="{standalone: true}"
+            ></textarea>
+          </div>
+
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700">
+                Modalidad
+              </label>
+              <select
+                name="modalidad"
+                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+                [(ngModel)]="modalidad"
+                [ngModelOptions]="{standalone: true}"
+              >
+                <option value="PRESENCIAL">Presencial</option>
+                <option value="VIRTUAL">Virtual</option>
+                <option value="MIXTA">Mixta</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-slate-700">
+                Lugar / detalle (opcional)
+              </label>
+              <input
+                name="lugar_detallado"
+                type="text"
+                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+                placeholder="Ej. Auditorio principal, Aula 301, etc."
+                [(ngModel)]="lugarDetallado"
+                [ngModelOptions]="{standalone: true}"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Descripción detallada -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">
+            Descripción detallada
+          </label>
+          <textarea
+            name="descripcion_larga"
+            rows="4"
+            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+            placeholder="Describe los objetivos, contenidos y detalles importantes del evento."
+            [(ngModel)]="descripcionLarga"
+            [ngModelOptions]="{standalone: true}"
+          ></textarea>
+        </div>
+
+        <!-- URLs + imagen archivo -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              URL de imagen de portada (opcional)
+            </label>
+            <input
+              name="url_imagen_portada"
+              type="url"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+              placeholder="https://..."
+              [(ngModel)]="urlImagenPortada"
+              [ngModelOptions]="{standalone: true}"
+            />
+            <p class="text-xs text-slate-500">
+              Puedes usar una URL externa o subir un archivo de imagen.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Imagen principal del evento (archivo opcional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onImagenPortadaChange($event)"
+              class="block w-full text-sm text-slate-700
+                     file:mr-4 file:py-2.5 file:px-4
+                     file:rounded-lg file:border-0
+                     file:text-sm file:font-semibold
+                     file:bg-indigo-50 file:text-indigo-700
+                     hover:file:bg-indigo-100"
+            />
+            <p class="text-xs text-slate-500" *ngIf="imagenPortadaFile() as f">
+              Archivo seleccionado:
+              <span class="font-semibold">{{ f.name }}</span>
+            </p>
+            <p class="text-xs text-slate-500" *ngIf="!imagenPortadaFile()">
+              Si no seleccionas un archivo, solo se usará la URL (si la defines).
+            </p>
+          </div>
+        </div>
+
+        <!-- Inscripción y cupo -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-3">
+            <label class="block text-sm font-semibold text-slate-700">
+              Inscripción
+            </label>
+            <label class="inline-flex items-center gap-2 text-sm">
+              <input
+                name="requiere_inscripcion"
+                type="checkbox"
+                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-200"
+                [(ngModel)]="requiereInscripcion"
+                [ngModelOptions]="{standalone: true}"
+              />
+              <span>Requiere inscripción previa</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="block text-xs font-medium text-slate-600">
+                  Inscripción desde
+                </label>
+                <input
+                  name="inscripcion_desde"
+                  type="date"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+                  [(ngModel)]="inscripcionDesde"
+                  [ngModelOptions]="{standalone: true}"
+                />
+              </div>
+              <div class="space-y-1">
+                <label class="block text-xs font-medium text-slate-600">
+                  Inscripción hasta
+                </label>
+                <input
+                  name="inscripcion_hasta"
+                  type="date"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs"
+                  [(ngModel)]="inscripcionHasta"
+                  [ngModelOptions]="{standalone: true}"
+                />
+              </div>
+            </div>
+            <p class="text-xs text-slate-500">
+              Si no defines un rango, la inscripción estará abierta mientras el evento esté planificado.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Cupo máximo (opcional)
+            </label>
+            <input
+              name="cupo_maximo"
+              type="number"
+              min="1"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+              placeholder="Ej. 100"
+              [(ngModel)]="cupoMaximo"
+              [ngModelOptions]="{standalone: true}"
+            />
+            <p class="text-xs text-slate-500">
+              Déjalo vacío si el evento no tiene límite de participantes.
+            </p>
+          </div>
+        </div>
+
+        <!-- Sesiones -->
+        <div class="border-t border-slate-200 pt-6 mt-2 space-y-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800">Sesiones del evento</h3>
+              <p class="text-xs text-slate-500 mt-1">
+                Registra una o más sesiones con fecha y horario. El sistema valida que estén dentro del período.
+              </p>
+            </div>
+            <button
+              type="button"
+              (click)="addSesion()"
+              class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+            >
+              <i class="fa-solid fa-plus text-[11px]"></i>
+              Agregar sesión
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            <div
+              *ngFor="let sesion of sesiones(); index as i"
+              class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end rounded-xl bg-slate-50 px-3 py-3"
+            >
+              <div class="space-y-1">
+                <label class="block text-xs font-semibold text-slate-700">
+                  Fecha sesión {{ i + 1 }} <span class="text-rose-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  [(ngModel)]="sesiones()[i].fecha"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="updateSesion(i, { fecha: $event ?? '' })"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-xs font-semibold text-slate-700">
+                  Hora inicio <span class="text-rose-500">*</span>
+                </label>
+                <input
+                  type="time"
+                  step="60"
+                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  [(ngModel)]="sesiones()[i].hora_inicio"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="updateSesion(i, { hora_inicio: $event ?? '' })"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-xs font-semibold text-slate-700">
+                  Hora fin <span class="text-rose-500">*</span>
+                </label>
+                <input
+                  type="time"
+                  step="60"
+                  class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  [(ngModel)]="sesiones()[i].hora_fin"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="updateSesion(i, { hora_fin: $event ?? '' })"
+                />
+              </div>
+
+              <div class="flex md:justify-end">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 disabled:opacity-40 mt-5 md:mt-0"
+                  (click)="removeSesion(i)"
+                  [disabled]="sesiones().length === 1"
+                >
+                  <i class="fa-solid fa-trash-can text-[11px]"></i>
+                  Quitar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-500">
+            Debe existir al menos una sesión con fecha y horas completas para poder guardar el evento.
+          </p>
+        </div>
+
+        <!-- Acciones -->
+        <div class="flex flex-wrap gap-3 pt-4">
+          <button
+            type="submit"
+            [disabled]="!canSubmit()"
+            class="inline-flex items-center gap-3 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 shadow-md hover:shadow-lg"
+          >
+            <i class="fa-solid fa-floppy-disk" [class.hidden]="loading()"></i>
+            <i *ngIf="loading()" class="fa-solid fa-circle-notch animate-spin"></i>
+            {{ loading() ? 'Guardando…' : 'Crear evento' }}
+          </button>
+
+          <button
+            type="button"
+            (click)="resetForm(false); error.set(null); success.set(null);"
+            [disabled]="loading()"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            <i class="fa-solid fa-broom"></i>
+            Limpiar formulario
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Loader overlay para guardado -->
+    <div
+      *ngIf="loading()"
+      class="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 grid place-items-center"
+    >
+      <div class="text-center">
+        <div class="relative">
+          <div class="w-16 h-16 rounded-full border-4 border-slate-200"></div>
+          <div class="absolute inset-0 w-16 h-16 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+        </div>
+        <div class="mt-4 text-lg font-semibold text-slate-900">Registrando evento</div>
+        <div class="text-sm text-slate-600 mt-2">
+          Esto puede tomar unos segundos…
+        </div>
+      </div>
     </div>
-  </form>
-</section>
+  </main>
+</div>

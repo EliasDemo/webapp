@@ -15,6 +15,8 @@ import {
   VinculableProyectoRef,
 } from '../../models/h.models';
 
+import { LoaderService } from '../../../../shared/ui/loader/loader.service'; // 👈 NUEVO
+
 type PeriodProjectAgg = {
   id: number;
   titulo: string | null;
@@ -23,7 +25,7 @@ type PeriodProjectAgg = {
   estado: string | null;
   minutos: number;
   horas: number;
-  /** 👇 NUEVO: horas planificadas del proyecto */
+  /** 👇 horas planificadas del proyecto */
   plan_horas: number | null;
 };
 
@@ -40,11 +42,11 @@ type PeriodAgg = {
   selector: 'app-history-page',
   imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './history.page.html',
-  styleUrls: ['./history.page.scss']
+  styleUrls: ['./history.page.scss'],
 })
 export class HistoryPage implements OnInit {
-
   private api = inject(HorasApiService);
+  private loader = inject(LoaderService); // 👈 NUEVO
 
   // Estado UI
   loading = signal(true);
@@ -71,19 +73,26 @@ export class HistoryPage implements OnInit {
   totalMinutos = computed(() => this.resumen()?.total_minutos ?? 0);
 
   ngOnInit(): void {
-    this.reload();
+    void this.reload();
   }
 
-  async reload() {
+  async reload(): Promise<void> {
     this.loading.set(true);
     this.errorMsg.set(null);
+    this.resumen.set(null);       // 👈 evita mostrar totales viejos en error
     this.historial.set([]);
     this.periodGroups.set([]);
     this.meta.set(null);
-    this.params.update(p => ({ ...p, page: 1 }));
+    this.params.update((p) => ({ ...p, page: 1 }));
 
     try {
-      const res = await firstValueFrom(this.api.obtenerMiReporteHoras(this.params()));
+      const res = await firstValueFrom(
+        this.loader.track(
+          this.api.obtenerMiReporteHoras(this.params()),
+          'Cargando historial de horas...'
+        )
+      );
+
       if (this.isOk(res)) {
         this.onData(res);
       } else {
@@ -97,7 +106,7 @@ export class HistoryPage implements OnInit {
     }
   }
 
-  async loadMore() {
+  async loadMore(): Promise<void> {
     const meta = this.meta();
     if (!meta || meta.current_page >= meta.last_page) return;
 
@@ -107,8 +116,9 @@ export class HistoryPage implements OnInit {
     try {
       const next: HorasQuery = { ...this.params(), page: meta.current_page + 1 };
       const res = await firstValueFrom(this.api.obtenerMiReporteHoras(next));
+
       if (this.isOk(res)) {
-        this.historial.update(arr => arr.concat(res.data.historial || []));
+        this.historial.update((arr) => arr.concat(res.data.historial || []));
         this.meta.set(res.meta);
         this.recomputeGroups();
       } else {
@@ -122,25 +132,26 @@ export class HistoryPage implements OnInit {
     }
   }
 
-  async applyFilters() {
+  async applyFilters(): Promise<void> {
     await this.reload();
   }
 
-  async clearFilters() {
+  async clearFilters(): Promise<void> {
     this.params.set({ per_page: 1000, page: 1, estado: '' });
     await this.reload();
   }
 
-  onFechaChange(kind: 'desde'|'hasta', v: string) {
-    this.params.update(p => ({ ...p, [kind]: v || undefined }));
-  }
-  onEstadoChange(v: string) {
-    this.params.update(p => ({ ...p, estado: v }));
+  onFechaChange(kind: 'desde' | 'hasta', v: string): void {
+    this.params.update((p) => ({ ...p, [kind]: v || undefined }));
   }
 
-  async verPeriodo(periodoId: number | null) {
+  onEstadoChange(v: string): void {
+    this.params.update((p) => ({ ...p, estado: v }));
+  }
+
+  async verPeriodo(periodoId: number | null): Promise<void> {
     if (!periodoId) return;
-    this.params.update(p => ({ ...p, periodo_id: periodoId, page: 1 }));
+    this.params.update((p) => ({ ...p, periodo_id: periodoId, page: 1 }));
     await this.reload();
   }
 
@@ -148,14 +159,14 @@ export class HistoryPage implements OnInit {
     return ['/vm/proyectos', id];
   }
 
-  private onData(r: ReporteHorasOk) {
+  private onData(r: ReporteHorasOk): void {
     this.resumen.set(r.data.resumen ?? null);
     this.meta.set(r.meta ?? null);
     this.historial.set(r.data.historial || []);
     this.recomputeGroups();
   }
 
-  private recomputeGroups() {
+  private recomputeGroups(): void {
     const items = this.historial() || [];
     const groups = new Map<string, PeriodAgg>();
 
@@ -165,7 +176,13 @@ export class HistoryPage implements OnInit {
 
       const key = String(periodo_id ?? 'null');
       if (!groups.has(key)) {
-        groups.set(key, { periodo_id, codigo, minutos: 0, horas: 0, proyectos: [] });
+        groups.set(key, {
+          periodo_id,
+          codigo,
+          minutos: 0,
+          horas: 0,
+          proyectos: [],
+        });
       }
       const g = groups.get(key)!;
 
@@ -174,7 +191,7 @@ export class HistoryPage implements OnInit {
 
       const v = item.vinculable as VinculableProyectoRef | undefined;
       if (v && v.tipo === 'vm_proyecto' && v.id != null) {
-        const idx = g.proyectos.findIndex(pp => pp.id === v.id);
+        const idx = g.proyectos.findIndex((pp) => pp.id === v.id);
         if (idx === -1) {
           g.proyectos.push({
             id: v.id,
@@ -184,17 +201,19 @@ export class HistoryPage implements OnInit {
             estado: v.estado ?? null,
             minutos,
             horas: +(minutos / 60).toFixed(2),
-            plan_horas: v.horas_planificadas ?? null,  // 👈 NUEVO
+            plan_horas: v.horas_planificadas ?? null,
           });
         } else {
           g.proyectos[idx].minutos += minutos;
-          g.proyectos[idx].horas = +(g.proyectos[idx].minutos / 60).toFixed(2);
-          // plan_horas ya estaba seteado desde la primera aparición del proyecto
+          g.proyectos[idx].horas = +(
+            g.proyectos[idx].minutos / 60
+          ).toFixed(2);
+          // plan_horas se mantiene
         }
       }
     }
 
-    const arr = Array.from(groups.values()).map(g => ({
+    const arr = Array.from(groups.values()).map((g) => ({
       ...g,
       horas: +(g.minutos / 60).toFixed(2),
       proyectos: g.proyectos.sort((a, b) => b.minutos - a.minutos),
@@ -222,7 +241,7 @@ export class HistoryPage implements OnInit {
   trackProyecto = (_: number, pr: PeriodProjectAgg) => pr.id;
 
   // ------------------------------
-  // 👇 Helpers para la barra progreso
+  // Helpers para la barra progreso
   // ------------------------------
   hasPlan(pr: PeriodProjectAgg): boolean {
     return pr.plan_horas != null && pr.plan_horas > 0;

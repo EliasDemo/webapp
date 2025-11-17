@@ -144,7 +144,6 @@ export class SidebarComponent {
       textActiveColor: 'text-indigo-700 dark:text-indigo-300',
       exact: true,
       // EJEMPLO: proteger por rol (solo ADMIN)
-      roles: 'ADMINISTRADOR',
       // Para varios roles (cualquiera):
       // roles: ['ADMINISTRADOR','COORDINADOR'], roleAny: true
     },
@@ -226,20 +225,35 @@ export class SidebarComponent {
     },
 
     {
+      route: '/staff/ep-sede',
+      label: 'Staff · EP-Sede',
+      icon: 'fas fa-users-gear text-base',
+      activeClass:
+        'bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300',
+      indicatorClass:
+        'bg-gradient-to-b from-emerald-500 to-teal-500',
+      iconActiveClass:
+        'bg-emerald-500/20 shadow-md',
+      iconActiveColor:
+        'text-emerald-600 dark:text-emerald-400',
+      textActiveColor:
+        'text-emerald-700 dark:text-emerald-300',
+      exact: false, // también queda activo en /staff/ep-sede/123
+    },
+
+
+    {
       route: '/r/horas',
       label: 'Reportes · Horas por período',
-      icon: 'fas fa-clock-rotate-left text-base',
-      activeClass: 'bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300',
-      indicatorClass: 'bg-gradient-to-b from-indigo-500 to-violet-500',
-      iconActiveClass: 'bg-indigo-500/20 shadow-md',
-      iconActiveColor: 'text-indigo-600 dark:text-indigo-400',
-      textActiveColor: 'text-indigo-700 dark:text-indigo-300',
-      exact: false, // así también queda activo en /r/horas/123
-      roles: 'ENCARGADO', // ajusta a tu control de roles ('GESTOR', etc.)
-    }
-
-
-
+      icon: 'fas fa-clock text-base',
+      activeClass: 'bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300',
+      indicatorClass: 'bg-gradient-to-b from-emerald-500 to-green-500',
+      iconActiveClass: 'bg-emerald-500/20 shadow-md',
+      iconActiveColor: 'text-emerald-600 dark:text-emerald-400',
+      textActiveColor: 'text-emerald-700 dark:text-emerald-300',
+      exact: false,
+      roles: 'ENCARGADO',
+    },
 
 
 

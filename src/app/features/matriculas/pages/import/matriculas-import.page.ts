@@ -31,6 +31,10 @@ export class MatriculasImportPage {
   loading = signal<boolean>(false);
   error   = signal<string | null>(null);
 
+  // Progreso (0–100)
+  progress = signal<number>(0);
+  private progressTimer: any = null;
+
   // Formulario
   periodos = signal<PeriodoVM[]>([]);
   selectedPeriodoId = signal<number | null>(null);
@@ -46,7 +50,7 @@ export class MatriculasImportPage {
   // Respuesta
   summary = signal<MatriculaImportSummary | null>(null);
   rows    = signal<MatriculaImportRow[]>([]);
-  choices = signal<Id[] | null>(null); // EP‑SEDEs sugeridas por backend
+  choices = signal<Id[] | null>(null); // EP-SEDEs sugeridas por backend
 
   // Derivados
   selectedPeriodo = computed<PeriodoVM | null>(() => {
@@ -142,6 +146,8 @@ export class MatriculasImportPage {
     this.error.set(null);
     this.choices.set(null);
     this.epSedeId.set(null);
+    this.progress.set(0);
+    this.clearFakeProgress();
   }
 
   importar(): void {
@@ -158,6 +164,8 @@ export class MatriculasImportPage {
     if (!file) { this.error.set('Selecciona o arrastra un archivo Excel.'); return; }
 
     this.loading.set(true);
+    this.progress.set(0);
+    this.startFakeProgress();
 
     this.api.importarMatriculas({
       periodo_id: periodoId,
@@ -174,15 +182,52 @@ export class MatriculasImportPage {
           const ch = (res as any)?.choices as Id[] | undefined;
           if (Array.isArray(ch) && ch.length) this.choices.set(ch);
         }
+        // cuando llega respuesta, llevamos el progreso al 100%
+        this.progress.set(100);
       },
       error: (err: any) => {
         this.error.set(err?.error?.message || 'Error de red al importar.');
+        this.loading.set(false);
+        this.progress.set(0);
+        this.clearFakeProgress();
       },
-      complete: () => this.loading.set(false),
+      complete: () => {
+        this.loading.set(false);
+        // si por alguna razón no se puso en 100 en next, lo forzamos aquí
+        if (this.progress() < 100 && !this.error()) {
+          this.progress.set(100);
+        }
+        this.clearFakeProgress();
+      },
     });
   }
 
-  // ========= Helpers =========
+  // ========= Helpers de progreso =========
+  private startFakeProgress(): void {
+    this.clearFakeProgress();
+    this.progress.set(5);
+
+    this.progressTimer = setInterval(() => {
+      if (!this.loading()) {
+        this.clearFakeProgress();
+        return;
+      }
+      const current = this.progress();
+      // sube lentamente hasta 90%, el resto se completa al recibir la respuesta
+      if (current < 90) {
+        this.progress.set(current + 3);
+      }
+    }, 400);
+  }
+
+  private clearFakeProgress(): void {
+    if (this.progressTimer) {
+      clearInterval(this.progressTimer);
+      this.progressTimer = null;
+    }
+  }
+
+  // ========= Helpers UI =========
   chipStatusClass(status: 'ok' | 'error'): string {
     return status === 'ok'
       ? 'bg-emerald-100 text-emerald-700'

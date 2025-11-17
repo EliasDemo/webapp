@@ -1,69 +1,285 @@
-<section class="p-6 md:p-10 space-y-6 mt-24">
-  <!-- Filtros -->
-  <ev-event-filters
-    [search]="search"
-    [periodoId]="periodoId"
-    (searchChange)="onSearchChange($event)"
-    (periodoChange)="onPeriodoChange($event)"
-    (crear)="crearEvento()"
-  ></ev-event-filters>
+<!-- src/app/features/events/pages/events-list/events-list.page.html -->
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/40 to-slate-50">
+  <div class="mx-auto max-w-6xl px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-3">
+        <div
+          class="mt-1 flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-lg shadow-sky-500/30">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-sky-700">
+            Módulo de eventos
+          </p>
+          <h1 class="mt-0.5 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            Eventos académicos
+          </h1>
+          <p class="mt-1 text-sm text-slate-600 max-w-xl">
+            Administra y consulta los eventos planificados por periodo, ámbito y sus sesiones.
+          </p>
+        </div>
+      </div>
 
-  <!-- Estado de carga -->
-  <div *ngIf="cargando" class="text-center opacity-80">
-    Cargando eventos...
-  </div>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          [routerLink]="['new']"
+          class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-700 hover:shadow-md">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 4v16m8-8H4" />
+          </svg>
+          Nuevo evento
+        </button>
+      </div>
+    </div>
 
-  <!-- Mensaje de error -->
-  <div *ngIf="!cargando && error" class="text-center text-red-600 font-medium">
-    {{ error }}
-  </div>
+    <!-- Filtros -->
+    <section
+      class="mb-6 rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+      <form class="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end" (ngSubmit)="aplicarFiltros()">
+        <!-- Estado -->
+        <div>
+          <label class="mb-1 block text-xs font-medium text-slate-600">
+            Estado
+          </label>
+          <select
+            name="estado"
+            [ngModel]="estadoFilter()"
+            (ngModelChange)="estadoFilter.set($event)"
+            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30">
+            <option value="">Todos</option>
+            <option value="PLANIFICADO">Planificado</option>
+            <option value="EN_CURSO">En curso</option>
+            <option value="CERRADO">Cerrado</option>
+            <option value="CANCELADO">Cancelado</option>
+          </select>
+        </div>
 
-  <!-- Lista de cards -->
-  <div
-    *ngIf="!cargando && !error"
-    class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-  >
-    <ev-event-card
-      *ngFor="let ev of eventos; trackBy: trackByEventoId"
-      [evento]="ev"
-      (ver)="verEvento($event)"
-    ></ev-event-card>
+        <!-- Target ID -->
+        <div>
+          <label class="mb-1 block text-xs font-medium text-slate-600">
+            Target ID (Sede / Facultad / EP-Sede)
+          </label>
+          <input
+            type="number"
+            min="1"
+            name="target_id"
+            [ngModel]="targetIdFilter()"
+            (ngModelChange)="onTargetIdChange($event)"
+            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
+            placeholder="Ej. 12" />
+        </div>
 
-    <!-- Vacío -->
+        <!-- Búsqueda -->
+        <div>
+          <label class="mb-1 block text-xs font-medium text-slate-600">
+            Buscar por título / código
+          </label>
+          <input
+            type="text"
+            name="search"
+            [ngModel]="searchFilter()"
+            (ngModelChange)="searchFilter.set($event)"
+            class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
+            placeholder="Ej. Semana de inducción" />
+        </div>
+
+        <!-- Botones -->
+        <div class="flex gap-2">
+          <button
+            type="submit"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-black hover:shadow-md">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 6a6 6 0 014.472 9.949l3.39 3.39a1 1 0 01-1.415 1.414l-3.39-3.39A6 6 0 1110 6z" />
+            </svg>
+            Aplicar
+          </button>
+          <button
+            type="button"
+            (click)="limpiarFiltros()"
+            class="inline-flex flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            Limpiar
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Error global -->
     <div
-      *ngIf="eventos.length === 0"
-      class="col-span-full text-center opacity-70"
-    >
-      No se encontraron eventos.
-    </div>
-  </div>
-
-  <!-- Paginación mínima -->
-  <div
-    class="flex items-center justify-center gap-4"
-    *ngIf="!cargando && !error && total > pageSize"
-  >
-    <button
-      class="bg-white text-black px-4 py-2 font-bold brutal-shadow btn disabled:opacity-50"
-      [disabled]="page <= 1"
-      (click)="prevPage()"
-      type="button"
-    >
-      ◀ Anterior
-    </button>
-
-    <div class="select-none">
-      Página <span class="font-bold">{{ page }}</span>
-      <ng-container *ngIf="totalPages > 0"> de {{ totalPages }}</ng-container>
+      *ngIf="errorMsg()"
+      class="mb-4 flex gap-2 rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-800">
+      <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>{{ errorMsg() }}</span>
     </div>
 
-    <button
-      class="bg-white text-black px-4 py-2 font-bold brutal-shadow btn disabled:opacity-50"
-      [disabled]="page >= totalPages"
-      (click)="nextPage()"
-      type="button"
-    >
-      Siguiente ▶
-    </button>
+    <!-- Lista de eventos -->
+    <section
+      class="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+      <div class="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <div class="text-[11px] uppercase tracking-wide text-slate-500">
+            Listado de eventos
+          </div>
+          <h2 class="text-lg font-semibold text-slate-900">
+            {{ total() }} evento{{ total() === 1 ? '' : 's' }} encontrado{{ total() === 1 ? '' : 's' }}
+          </h2>
+        </div>
+
+        <div class="text-[11px] text-slate-500" *ngIf="total() > 0">
+          Mostrando
+          <span class="font-medium">{{ fromItem() }}</span>
+          –
+          <span class="font-medium">{{ toItem() }}</span>
+          de
+          <span class="font-medium">{{ total() }}</span>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="loading()" class="flex flex-col items-center justify-center py-10 text-sm text-slate-500">
+        <div
+          class="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-sky-600 border-t-transparent">
+        </div>
+        Cargando eventos...
+      </div>
+
+      <!-- Tabla -->
+      <ng-container *ngIf="!loading()">
+        <ng-container *ngIf="eventos().length > 0; else emptyEventosTpl">
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-xs text-slate-700">
+              <thead class="border-b border-slate-100 text-[11px] uppercase text-slate-500">
+                <tr>
+                  <th class="py-2 pr-4">Código</th>
+                  <th class="py-2 pr-4">Título</th>
+                  <th class="py-2 pr-4">Período</th>
+                  <th class="py-2 pr-4">Sesiones</th>
+                  <th class="py-2 pr-4">Target</th>
+                  <th class="py-2 pr-4">Estado</th>
+                  <th class="py-2 pr-4">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let ev of eventos(); trackBy: trackEvento"
+                  class="border-b border-slate-50 text-[11px] hover:bg-sky-50/40">
+                  <!-- Código -->
+                  <td class="py-2 pr-4 font-mono text-[11px] text-slate-700">
+                    {{ ev.codigo }}
+                  </td>
+
+                  <!-- Título + subtítulo -->
+                  <td class="py-2 pr-4 text-slate-800">
+                    <div class="font-semibold text-slate-900">
+                      {{ ev.titulo }}
+                    </div>
+                    <div *ngIf="ev.subtitulo" class="text-[11px] text-slate-500 mt-0.5">
+                      {{ ev.subtitulo }}
+                    </div>
+                  </td>
+
+                  <!-- Período -->
+                  <td class="py-2 pr-4 text-slate-700">
+                    <ng-container *ngIf="ev.periodo; else periodoIdTpl">
+                      {{ ev.periodo?.anio }} - {{ ev.periodo?.ciclo }}
+                      <span *ngIf="ev.periodo?.estado">({{ ev.periodo?.estado }})</span>
+                    </ng-container>
+                    <ng-template #periodoIdTpl>
+                      ID: {{ ev.periodo_id }}
+                    </ng-template>
+                  </td>
+
+                  <!-- Sesiones -->
+                  <td class="py-2 pr-4 text-slate-700">
+                    <div>
+                      {{ sesionesResumen(ev) }}
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">
+                      {{ ev.sesiones?.length || 0 }}
+                      sesión{{ (ev.sesiones?.length || 0) === 1 ? '' : 'es' }}
+                    </div>
+                  </td>
+
+                  <!-- Target -->
+                  <td class="py-2 pr-4 text-slate-700">
+                    <span class="font-medium">
+                      {{ prettyTargetType(ev.targetable_type) }}
+                    </span>
+                    <span class="ml-1 text-slate-500">
+                      #{{ ev.targetable_id }}
+                    </span>
+                  </td>
+
+                  <!-- Estado -->
+                  <td class="py-2 pr-4">
+                    <span
+                      class="inline-flex rounded-full px-2 py-0.5 font-medium"
+                      [ngClass]="{
+                        'bg-sky-50 text-sky-700': ev.estado === 'PLANIFICADO',
+                        'bg-emerald-50 text-emerald-700': ev.estado === 'EN_CURSO',
+                        'bg-slate-50 text-slate-700': ev.estado === 'CERRADO',
+                        'bg-red-50 text-red-700': ev.estado === 'CANCELADO'
+                      }">
+                      {{ prettyEstado(ev.estado) }}
+                    </span>
+                  </td>
+
+                  <!-- Acciones -->
+                  <td class="py-2 pr-4 text-right">
+                    <a
+                      [routerLink]="[ev.id]"
+                      class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50">
+                      Ver detalle
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Paginación -->
+          <div
+            class="mt-4 flex flex-col items-center justify-between gap-3 text-[11px] text-slate-600 sm:flex-row">
+            <div>
+              Página
+              <span class="font-medium">{{ page() }}</span>
+              de
+              <span class="font-medium">{{ totalPages() }}</span>
+            </div>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                (click)="goToPage(page() - 1)"
+                [disabled]="page() <= 1"
+                class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+                Anterior
+              </button>
+              <button
+                type="button"
+                (click)="goToPage(page() + 1)"
+                [disabled]="page() >= totalPages()"
+                class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #emptyEventosTpl>
+          <div class="py-10 text-center text-sm text-slate-500">
+            No se encontraron eventos con los filtros actuales.
+          </div>
+        </ng-template>
+      </ng-container>
+    </section>
   </div>
-</section>
+</div>

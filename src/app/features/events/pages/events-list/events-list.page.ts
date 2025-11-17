@@ -1,149 +1,240 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+// src/app/features/events/pages/events-list/events-list.page.ts
 import {
-  Subject,
-  debounceTime,
-  takeUntil,
-  finalize,
-  observeOn,
-  asyncScheduler,
-} from 'rxjs';
-import { EvApiService, ApiResponse } from '../../data-access/ev-api.service';
-import { VmEvento } from '../../models/ev.models';
-import { EventFiltersComponent } from '../../components/event-filters/event-filters.component';
-import { EventCardComponent } from '../../components/event-card/event-card.component';
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+
+import { EvApiService } from '../../data-access/ev-api.service';
+import { VmEvento, EventoFilter } from '../../models/ev.models';
+import { LoaderService } from '../../../../shared/ui/loader/loader.service';
 
 @Component({
-  selector: 'ev-events-list-page',
   standalone: true,
-  imports: [CommonModule, EventFiltersComponent, EventCardComponent],
+  selector: 'app-events-list-page',
   templateUrl: './events-list.page.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, FormsModule, RouterLink],
 })
-export class EventsListPage implements OnInit, OnDestroy {
-  eventos: VmEvento[] = [];
-  search = '';
-  periodoId?: number;
+export class EventsListPage implements OnInit {
+  private api = inject(EvApiService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private loader = inject(LoaderService);
 
-  page = 1;
-  total = 0;
-  pageSize = 15;
+  // -------------------------
+  // Estado base
+  // -------------------------
 
-  cargando = false;
-  error?: string;
+  loading = signal(false);
+  errorMsg = signal<string | null>(null);
 
-  private search$ = new Subject<void>();
-  private destroy$ = new Subject<void>();
+  eventos = signal<VmEvento[]>([]);
+  total = signal(0);
 
-  constructor(
-    private api: EvApiService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
+  // paginación (Laravel paginate(15))
+  readonly pageSize = 15;
+  page = signal(1);
+
+  // filtros
+  estadoFilter = signal<string>('');        // PLANIFICADO | EN_CURSO | ...
+  targetIdFilter = signal<number | null>(null);
+  searchFilter = signal<string>('');
+
+  // derivados
+  totalPages = computed(() =>
+    this.total() > 0
+      ? Math.max(1, Math.ceil(this.total() / this.pageSize))
+      : 1
+  );
+
+  fromItem = computed(() => {
+    if (this.total() === 0) return 0;
+    return (this.page() - 1) * this.pageSize + 1;
+  });
+
+  toItem = computed(() => {
+    if (this.total() === 0) return 0;
+    return Math.min(this.total(), this.page() * this.pageSize);
+  });
+
+  // -------------------------
+  // Ciclo de vida
+  // -------------------------
 
   ngOnInit(): void {
-    // Búsqueda con debounce (si cambia search, recarga)
-    this.search$
-      .pipe(debounceTime(250), takeUntil(this.destroy$))
-      .subscribe(() => this.load());
+    // Sincroniza filtros con query params (?page=2&estado=PLANIFICADO...)
+    this.route.queryParamMap.subscribe((pm) => {
+      const pageRaw = pm.get('page');
+      const page = pageRaw ? Number(pageRaw) : 1;
+      this.page.set(Number.isFinite(page) && page > 0 ? page : 1);
 
-    // Carga inicial
-    this.load();
+      this.estadoFilter.set(pm.get('estado') ?? '');
+
+      const targetRaw = pm.get('target_id');
+      this.targetIdFilter.set(
+        targetRaw && Number(targetRaw) > 0 ? Number(targetRaw) : null
+      );
+
+      this.searchFilter.set(pm.get('search') ?? '');
+
+      void this.loadEventos();
+    });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  // -------------------------
+  // Carga de eventos
+  // -------------------------
 
-  get totalPages(): number {
-    return this.pageSize > 0 ? Math.ceil(this.total / this.pageSize) : 0;
-  }
+  private async loadEventos(): Promise<void> {
+    this.loading.set(true);
+    this.errorMsg.set(null);
 
-  onSearchChange(v: string) {
-    this.search = v ?? '';
-    this.page = 1;
-    this.search$.next();
-  }
+    const filtro: EventoFilter = {
+      page: this.page(),
+    };
 
-  onPeriodoChange(id?: number) {
-    this.periodoId = id;
-    this.page = 1;
-    this.load();
-  }
+    if (this.estadoFilter()) filtro.estado = this.estadoFilter();
+    if (this.targetIdFilter()) filtro.target_id = this.targetIdFilter()!;
+    if (this.searchFilter().trim()) filtro.search = this.searchFilter().trim();
 
-  crearEvento() {
-    this.router.navigate(['/events/new']);
-  }
-
-  verEvento(ev: VmEvento) {
-    this.router.navigate(['/events', ev.id]);
-  }
-
-  prevPage() {
-    if (this.page > 1) {
-      this.page--;
-      this.load();
-    }
-  }
-
-  nextPage() {
-    if (this.page < this.totalPages) {
-      this.page++;
-      this.load();
-    }
-  }
-
-  trackByEventoId = (_: number, ev: VmEvento) => ev.id;
-
-  load() {
-    this.cargando = true;
-    this.error = undefined;
-    // OnPush: marcamos para renderizar el estado "cargando"
-    this.cdr.markForCheck();
-
-    this.api
-      .listarEventos({
-        search: this.search || undefined,
-        page: this.page,
-        // periodo_id: this.periodoId, // Descomenta si tu backend lo soporta
-      } as any)
-      .pipe(
-        // Fuerza que todas las notificaciones y complete sean asíncronas
-        observeOn(asyncScheduler),
-        takeUntil(this.destroy$),
-        finalize(() => {
-          // Evita NG0100 si la fuente completa de forma inmediata
-          queueMicrotask(() => {
-            this.cargando = false;
-            this.cdr.markForCheck();
-          });
-        })
-      )
+    this.loader
+      .track(this.api.listarEventos(filtro), 'Cargando eventos...')
       .subscribe({
-        next: (resp: ApiResponse<VmEvento[]>) => {
-          const rows = Array.isArray(resp.data) ? resp.data : [];
-
-          const filtrados = this.periodoId
-            ? rows.filter((r) => r.periodo_id === this.periodoId)
-            : rows;
-
-          this.eventos = filtrados;
-          this.total = resp.meta?.total ?? filtrados.length;
-
-          this.cdr.markForCheck();
+        next: (res) => {
+          const page = res.data;
+          this.eventos.set(page.items ?? []);
+          this.total.set(page.total ?? (page.items?.length ?? 0));
         },
-        error: (err: unknown) => {
-          // Mantén el log si te sirve en dev
+        error: (err) => {
           console.error(err);
-          this.error = 'No se pudieron cargar los eventos.';
-          // Si hay error, vaciamos la lista para que el template no mezcle estados
-          this.eventos = [];
-          this.total = 0;
-
-          this.cdr.markForCheck();
+          this.eventos.set([]);
+          this.total.set(0);
+          this.errorMsg.set(
+            err?.error?.message ||
+              'No se pudieron cargar los eventos.'
+          );
+          this.loading.set(false);
+        },
+        complete: () => {
+          this.loading.set(false);
         },
       });
+  }
+
+  // -------------------------
+  // Filtros / navegación
+  // -------------------------
+
+  onTargetIdChange(raw: string | number | null): void {
+    const n = Number(raw);
+    this.targetIdFilter.set(
+      Number.isFinite(n) && n > 0 ? n : null
+    );
+  }
+
+  aplicarFiltros(): void {
+    const queryParams: any = { page: 1 };
+
+    if (this.estadoFilter()) queryParams.estado = this.estadoFilter();
+    if (this.targetIdFilter()) queryParams.target_id = this.targetIdFilter();
+    if (this.searchFilter().trim())
+      queryParams.search = this.searchFilter().trim();
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  limpiarFiltros(): void {
+    this.estadoFilter.set('');
+    this.targetIdFilter.set(null);
+    this.searchFilter.set('');
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: 1, estado: null, target_id: null, search: null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page === this.page() || page > this.totalPages()) return;
+
+    const queryParams = {
+      ...this.route.snapshot.queryParams,
+      page,
+    };
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  // -------------------------
+  // Helpers
+  // -------------------------
+
+  trackEvento = (_: number, ev: VmEvento) => ev.id;
+
+  prettyEstado(estado: VmEvento['estado']): string {
+    switch (estado) {
+      case 'PLANIFICADO':
+        return 'Planificado';
+      case 'EN_CURSO':
+        return 'En curso';
+      case 'CERRADO':
+        return 'Cerrado';
+      case 'CANCELADO':
+        return 'Cancelado';
+      default:
+        return estado;
+    }
+  }
+
+  prettyTargetType(t: VmEvento['targetable_type']): string {
+    switch (t) {
+      case 'ep_sede':
+        return 'EP-Sede';
+      case 'sede':
+        return 'Sede';
+      case 'facultad':
+        return 'Facultad';
+      default:
+        return t;
+    }
+  }
+
+  /**
+   * Texto resumen de las sesiones de un evento.
+   */
+  sesionesResumen(ev: VmEvento): string {
+    const sesiones = ev.sesiones ?? [];
+    if (!sesiones.length) {
+      return 'Sin sesiones';
+    }
+
+    const sorted = [...sesiones].sort((a, b) => {
+      const aKey = `${a.fecha} ${a.hora_inicio}`;
+      const bKey = `${b.fecha} ${b.hora_inicio}`;
+      return aKey.localeCompare(bKey);
+    });
+
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+
+    if (sorted.length === 1) {
+      return `${first.fecha} · ${first.hora_inicio}–${first.hora_fin}`;
+    }
+
+    return `${sorted.length} sesiones · ${first.fecha} ${first.hora_inicio} → ${last.fecha} ${last.hora_fin}`;
   }
 }

@@ -241,8 +241,11 @@ export class RpHorasPage {
 
   // ↗️ Ir a la pantalla de importación (ajusta la ruta si la defines distinta)
   irAImportar(): void {
-    this.router.navigate(['/vm/import/historico-horas']);
+    this.router.navigate(['/r/import/historico-horas']);
   }
+
+
+
 
   // ───────── CSV local ─────────
   exportarLocalCSV(): void {

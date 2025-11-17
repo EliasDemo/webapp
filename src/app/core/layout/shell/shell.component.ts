@@ -3,7 +3,12 @@ import {
   AfterViewInit, Component, HostListener, OnInit, ViewChild,
   DestroyRef, inject, signal, computed
 } from '@angular/core';
-import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import {
+  Router,
+  RouterOutlet,
+  NavigationEnd,
+  ActivatedRoute
+} from '@angular/router';
 import { NgIf, NgClass } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs/operators';
@@ -23,9 +28,12 @@ import { WelcomeFooterComponent } from '../footer/welcome-footer.component';
   selector: 'app-shell',
   standalone: true,
   imports: [
-    RouterOutlet, NgIf,
-    LoaderComponent, AlertCenterComponent,
-    TopbarComponent, SidebarComponent,
+    RouterOutlet,
+    NgIf,
+    LoaderComponent,
+    AlertCenterComponent,
+    TopbarComponent,
+    SidebarComponent,
     // 👇 añadir el componente del footer
     WelcomeFooterComponent,
   ],
@@ -82,7 +90,9 @@ import { WelcomeFooterComponent } from '../footer/welcome-footer.component';
                    text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
             (click)="sidebarExpanded.set(!sidebarExpanded())"
             [title]="sidebarExpanded() ? 'Contraer sidebar' : 'Expandir sidebar'">
-      <i class="fa-solid" [class.fa-chevron-left]="sidebarExpanded()" [class.fa-chevron-right]="!sidebarExpanded()"></i>
+      <i class="fa-solid"
+         [class.fa-chevron-left]="sidebarExpanded()"
+         [class.fa-chevron-right]="!sidebarExpanded()"></i>
     </button>
   </div>
 </div>
@@ -90,23 +100,28 @@ import { WelcomeFooterComponent } from '../footer/welcome-footer.component';
 <!-- 👇 Banner de bienvenida (aparece y se esconde solo) -->
 <app-welcome-footer [autoShow]="true" [duration]="5000"></app-welcome-footer>
 
+<!-- 👇 Loader global SOLO si la ruta NO define customLoader -->
+<app-loader *ngIf="!routeHasCustomLoader()" />
 
-<app-loader />
 <app-alert-center />
   `,
 })
 export class ShellComponent implements OnInit, AfterViewInit {
   @ViewChild(LoaderComponent) loader!: LoaderComponent;
 
-  private loaderSvc = inject(LoaderService);
-  private auth = inject(AuthApi);
-  private userStore = inject(UserStore);
-  private router = inject(Router);
-  private destroyRef = inject(DestroyRef);
+  private loaderSvc   = inject(LoaderService);
+  private auth        = inject(AuthApi);
+  private userStore   = inject(UserStore);
+  private router      = inject(Router);
+  private route       = inject(ActivatedRoute);
+  private destroyRef  = inject(DestroyRef);
 
-  sidebarOpen = signal(false);
+  sidebarOpen    = signal(false);
   sidebarExpanded = signal(true);
-  screenWidth = signal(window.innerWidth);
+  screenWidth    = signal(window.innerWidth);
+
+  // 👉 flag: ¿la ruta actual tiene su propio loader?
+  routeHasCustomLoader = signal(false);
 
   // Computed properties para responsividad
   isMobile = computed(() => this.screenWidth() < 1024);
@@ -119,7 +134,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     if (this.auth.session().token) this.userStore.loadMe();
 
-    // Cerrar sidebar en navegación
+    // Cerrar sidebar en navegación + detectar customLoader
     this.router.events
       .pipe(
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),
@@ -129,16 +144,35 @@ export class ShellComponent implements OnInit, AfterViewInit {
         if (this.isMobile()) {
           this.sidebarOpen.set(false);
         }
+        this.updateRouteLoaderFlag();
       });
 
     // Trackear tamaño de pantalla
     this.updateScreenWidth();
+
+    // Inicializar flag para la primera ruta
+    this.updateRouteLoaderFlag();
   }
 
   ngAfterViewInit() {
     this.loaderSvc.register(this.loader);
   }
 
+  // ─────────────────────────────
+  // Detectar si la ruta tiene customLoader
+  // ─────────────────────────────
+  private updateRouteLoaderFlag() {
+    let current = this.route;
+    while (current.firstChild) {
+      current = current.firstChild;
+    }
+    const hasCustom = current.snapshot.data?.['customLoader'] === true;
+    this.routeHasCustomLoader.set(hasCustom);
+  }
+
+  // ─────────────────────────────
+  // Listeners de viewport / UX
+  // ─────────────────────────────
   @HostListener('window:resize')
   onResize() {
     this.updateScreenWidth();

@@ -1,13 +1,16 @@
 import { inject, Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable, catchError, finalize, tap } from 'rxjs';
 import { API_URL } from '../../../core/tokens/api-url.token';
+
 import {
-  LookupRequest, LookupResponse,
-  LoginRequest,  LoginResponse,
-  UserSummary,   AcademicoSummary,
+  LookupRequest,
+  LookupResponse,
+  LoginRequest,
+  LoginResponse,
+  UserSummary,
+  AcademicoSummary,
 } from './auth.models';
-import { Observable } from 'rxjs';
-import { tap, finalize, catchError } from 'rxjs/operators';
 
 type Session = {
   token: string | null;
@@ -25,6 +28,7 @@ export class AuthApi {
     user: null,
     academico: null,
   });
+
   readonly session = this._session.asReadonly();
   readonly isLoggedIn = computed(() => !!this._session().token);
 
@@ -36,14 +40,21 @@ export class AuthApi {
     return this.http.post<LoginResponse>(`${this.base}/auth/login`, payload).pipe(
       tap((res) => {
         localStorage.setItem('token', res.token);
-        this._session.set({ token: res.token, user: res.user, academico: res.academico });
+        this._session.set({
+          token: res.token,
+          user: res.user,
+          academico: res.academico,
+        });
       })
     );
   }
 
   logout(): Observable<{ ok: boolean; message: string }> {
     return this.http.post<{ ok: boolean; message: string }>(`${this.base}/auth/logout`, {}).pipe(
-      catchError(() => this.http.post<{ ok: boolean; message: string }>(`${this.base}/auth/logout`, {})),
+      // si falla el logout del servidor, igual limpiamos sesión
+      catchError(() =>
+        this.http.post<{ ok: boolean; message: string }>(`${this.base}/auth/logout`, {})
+      ),
       finalize(() => this.clearSession())
     );
   }

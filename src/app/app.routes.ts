@@ -85,6 +85,17 @@ export const routes: Routes = [
         // loadChildren: () => import('./features/reportes/rp.routes').then(m => m.default),
       },
 
+            {
+        path: 'staff',
+        loadChildren: () =>
+          import('./features/ep-sede-staff/ep-sede-staff.routes')
+            .then(m => m.ESS_ROUTES),
+        // si exportas default en el archivo de rutas, también puedes usar:
+        // loadChildren: () =>
+        //   import('./features/ep-sede-staff/ep-sede-staff.routes')
+        //     .then(m => m.default),
+      },
+
 
 
 

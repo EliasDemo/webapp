@@ -5,8 +5,8 @@ import {
   ElementRef,
   inject,
   signal,
-  computed,
   OnDestroy,
+  OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -22,38 +22,48 @@ import { VmQrVentanaQR } from '../../models/proyecto.models';
   templateUrl: './proyecto-qr.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProyectoQrPage implements OnDestroy {
+export class ProyectoQrPage implements OnDestroy, OnInit {
   private api = inject(VmApiService);
   private route = inject(ActivatedRoute);
 
   // UI state
   loading = signal(false);
-  error = signal<string | null>(null);
+  error   = signal<string | null>(null);
+
+  // Código del backend: 'QR_OPENED' | 'QR_RENEWED' | 'QR_ALREADY_OPEN'
+  qrStatusCode = signal<string | null>(null);
 
   // Params
   sesionId = signal<number>(0);
 
   // Config
-  maxUsos = new FormControl<number | null>(null);
-  radioM  = new FormControl<number>(120, { nonNullable: true });
+  maxUsos      = new FormControl<number | null>(null);
+  radioM       = new FormControl<number>(120, { nonNullable: true });
   usarGeocerca = signal<boolean>(false);
-  geo = signal<{ lat: number; lng: number } | null>(null);
+  geo          = signal<{ lat: number; lng: number } | null>(null);
 
-  // Result
+  // Resultado de la API
   ventana = signal<VmQrVentanaQR | null>(null);
 
-  // canvas ref
+  // Canvas para el QR
   @ViewChild('qrCanvas', { static: false }) qrCanvas?: ElementRef<HTMLCanvasElement>;
 
-  // reloj (opcional, por si quieres refrescar countdown en el html)
+  // reloj (opcional por si luego quieres actualizar algo cada X tiempo)
   private clock: any;
 
   constructor() {
     const id = Number(this.route.snapshot.paramMap.get('sesionId'));
     this.sesionId.set(id);
 
-    // opcional: actualizar cada 30s algo en la UI si quieres
+    // opcional: mantener un “tick” si luego quieres refrescar algo cada X tiempo
     this.clock = setInterval(() => {}, 30_000);
+  }
+
+  ngOnInit(): void {
+    // Al entrar a la pantalla, intenta obtener el QR vigente.
+    // - Si ya hay uno, el backend lo devuelve (QR_ALREADY_OPEN).
+    // - Si no hay, crea uno nuevo (QR_OPENED).
+    this.abrirQr(false);
   }
 
   ngOnDestroy(): void {
@@ -89,13 +99,22 @@ export class ProyectoQrPage implements OnDestroy {
     }
   }
 
-  async abrirQr() {
+  /**
+   * Abre o reutiliza un QR:
+   * - renovar = false → si ya hay un QR vigente, el backend devuelve ese mismo (QR_ALREADY_OPEN)
+   * - renovar = true  → backend desactiva el anterior y crea uno nuevo (QR_RENEWED)
+   */
+  async abrirQr(renovar: boolean = false) {
     this.error.set(null);
     this.loading.set(true);
+    this.qrStatusCode.set(null);
+
     try {
       const payload: any = {};
       const max = this.maxUsos.value;
-      if (typeof max === 'number' && max > 0) payload.max_usos = max;
+      if (typeof max === 'number' && max > 0) {
+        payload.max_usos = max;
+      }
 
       if (this.usarGeocerca() && this.geo()) {
         payload.lat = this.geo()!.lat;
@@ -104,11 +123,23 @@ export class ProyectoQrPage implements OnDestroy {
         payload.radio_m = Math.max(10, Math.min(5000, Number(r)));
       }
 
-      const resp = await firstValueFrom(this.api.abrirVentanaQr(this.sesionId(), payload));
-      if (!resp.ok) throw new Error(resp.message || 'No se pudo abrir el QR');
+      if (renovar) {
+        payload.renovar = true;
+      }
+
+      // La API debe devolver: { ok, code, data }
+      const resp: any = await firstValueFrom(
+        this.api.abrirVentanaQr(this.sesionId(), payload)
+      );
+
+      if (!resp?.ok) {
+        throw new Error(resp?.message || 'No se pudo abrir el QR');
+      }
 
       this.ventana.set(resp.data);
-      // pinta el QR
+      this.qrStatusCode.set(resp.code || 'QR_OPENED');
+
+      // Render del QR en el canvas
       setTimeout(() => this.renderQr(), 0);
     } catch (e: any) {
       this.error.set(e?.error?.message || e?.message || 'Error al abrir QR.');
@@ -117,27 +148,28 @@ export class ProyectoQrPage implements OnDestroy {
     }
   }
 
+  /**
+   * Renovar QR → fuerza crear uno nuevo en backend.
+   */
   async reiniciarQr() {
-    // simplemente vuelve a llamar abrirQr() para obtener un nuevo token/ventana
-    await this.abrirQr();
+    await this.abrirQr(true);
   }
 
   private async renderQr() {
     if (!this.qrCanvas?.nativeElement || !this.ventana()) return;
 
     const canvas = this.qrCanvas.nativeElement;
-    // Contenido del QR:
-    // — opción simple: solo el token
+
+    // Contenido del QR (simple): el token
     const content = this.ventana()!.token;
 
-    // — si prefieres un deep-link propio:
+    // Alternativa: deep-link propio
     // const content = `vm://checkin?s=${this.sesionId()}&t=${this.ventana()!.token}`;
 
-    // Carga dinámica para no romper SSR y no forzar tipos
     const QRCode = await import('qrcode');
     await QRCode.toCanvas(canvas, content, {
       margin: 1,
-      scale: 6, // tamaño “decente”
+      scale: 6,
       errorCorrectionLevel: 'M',
     });
   }

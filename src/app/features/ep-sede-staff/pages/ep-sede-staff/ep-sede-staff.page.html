@@ -1,0 +1,585 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50">
+  <div class="mx-auto max-w-6xl px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="flex items-start gap-3">
+        <div
+          class="mt-1 flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-500/30">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 10c0 3.866-3.582 7-8 7s-8-3.134-8-7a8 8 0 1116 0z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+            Panel de administración
+          </p>
+          <h1
+            class="mt-0.5 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            Staff académico por EP-Sede
+          </h1>
+          <p class="mt-1 text-sm text-slate-600 max-w-xl">
+            Consulta y administra coordinadores y encargados titulares de cada EP-Sede, junto con el
+            historial de movimientos.
+          </p>
+
+          <!-- Contexto según permisos (ADMIN / COORDINADOR / solo lectura) -->
+          <div
+            class="mt-2 inline-flex items-center gap-2 rounded-full bg-slate-900/90 px-3 py-1 text-[11px] text-white">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+
+            <!-- Cargando contexto -->
+            <ng-container *ngIf="contextLoading(); else contextLoadedTpl">
+              <span class="inline-flex items-center gap-2">
+                <span class="h-3 w-3 animate-spin rounded-full border border-white/40 border-t-transparent"></span>
+                Cargando contexto de permisos...
+              </span>
+            </ng-container>
+
+            <!-- Contexto cargado -->
+            <ng-template #contextLoadedTpl>
+              <ng-container *ngIf="isAdmin(); else notAdminBadge">
+                <span>
+                  Estás operando como
+                  <strong class="font-semibold">Administrador</strong>
+                  (puedes gestionar coordinadores y encargados).
+                </span>
+              </ng-container>
+
+              <ng-template #notAdminBadge>
+                <ng-container *ngIf="isCoordinator(); else readonlyBadge">
+                  <span>
+                    Estás operando como
+                    <strong class="font-semibold">Coordinador de EP-Sede</strong>
+                    (solo puedes gestionar encargados).
+                  </span>
+                </ng-container>
+                <ng-template #readonlyBadge>
+                  <span>
+                    Estás en modo
+                    <strong class="font-semibold">solo lectura</strong>
+                    (no puedes modificar coordinadores ni encargados).
+                  </span>
+                </ng-template>
+              </ng-template>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-sm text-right space-y-1">
+        <div class="text-[11px] uppercase tracking-wide text-slate-500">
+          EP-Sede actual
+        </div>
+
+        <div class="text-right">
+          <ng-container *ngIf="epSedeId(); else noEpSede">
+            <div class="text-xl font-semibold text-slate-900">
+              #{{ epSedeId() }}
+            </div>
+            <div
+              *ngIf="currentEpSedeLabel()"
+              class="mt-0.5 text-[11px] font-medium text-emerald-700">
+              {{ currentEpSedeLabel() }}
+            </div>
+          </ng-container>
+          <ng-template #noEpSede>
+            <div class="text-base font-medium text-slate-400">
+              No seleccionada
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="text-[11px] text-slate-400">
+          Ruta base:
+          <code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px]">
+            /staff/ep-sede/:epSedeId
+          </code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card de selección de EP-Sede solo para ADMIN cuando no hay id -->
+    <div *ngIf="isAdmin() && !epSedeId()" class="mb-8">
+      <div
+        class="rounded-2xl border border-dashed border-emerald-300/80 bg-white/80 p-6 text-center shadow-sm backdrop-blur-sm space-y-4">
+        <h2 class="text-lg font-semibold text-slate-900">
+          Selecciona una EP-Sede a gestionar
+        </h2>
+        <p class="text-sm text-slate-600 max-w-xl mx-auto">
+          Como administrador puedes gestionar cualquier EP-Sede sobre la que tengas alcance. Elige una de la lista
+          o ingresa su ID manualmente.
+        </p>
+
+        <!-- Lista de EP-Sede desde el contexto -->
+        <div *ngIf="epSedes().length > 0" class="mt-2 space-y-2">
+          <label class="text-xs font-medium text-slate-600">
+            Elige una EP-Sede de la lista
+          </label>
+          <select
+            class="w-full sm:w-80 rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+            (change)="onSelectEpSedeFromList($event)">
+            <option value="">Selecciona una EP-Sede...</option>
+            <option *ngFor="let ep of epSedes()" [value]="ep.id">
+              #{{ ep.id }} · {{ ep.label }}
+            </option>
+          </select>
+          <p class="text-[11px] text-slate-400">
+            Al seleccionar una EP-Sede se actualizará la ruta y el panel.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido cuando sí hay EP-Sede -->
+    <ng-container *ngIf="epSedeId() as currentEpSedeId">
+      <!-- Mensaje de error global -->
+      <div *ngIf="errorMsg()" class="mb-6 rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-800 flex gap-2">
+        <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{{ errorMsg() }}</span>
+      </div>
+
+      <!-- Resumen rápido -->
+      <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-[11px] uppercase tracking-wide text-slate-400">
+                Movimientos registrados
+              </div>
+              <div class="mt-1 text-2xl font-semibold text-slate-900">
+                {{ history().length }}
+              </div>
+            </div>
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10m-9 4h6m-9 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+          <div class="text-[11px] uppercase tracking-wide text-slate-400">
+            Coordinador actual
+          </div>
+          <div class="mt-1 text-sm font-medium text-slate-900">
+            {{ staff()?.COORDINADOR?.user || 'Sin coordinador' }}
+          </div>
+          <div class="mt-1 text-[11px] text-slate-500">
+            Desde:
+            <span class="font-medium">
+              {{ staff()?.COORDINADOR?.vigente_desde || '—' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+          <div class="text-[11px] uppercase tracking-wide text-slate-400">
+            Encargado actual
+          </div>
+          <div class="mt-1 text-sm font-medium text-slate-900">
+            {{ staff()?.ENCARGADO?.user || 'Sin encargado' }}
+          </div>
+          <div class="mt-1 text-[11px] text-slate-500">
+            Desde:
+            <span class="font-medium">
+              {{ staff()?.ENCARGADO?.vigente_desde || '—' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards de staff actual -->
+      <ng-container *ngIf="!loadingCurrent(); else loadingStaffTpl">
+        <div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <!-- Coordinador -->
+          <section
+            class="flex flex-col gap-4 rounded-2xl border border-white/70 bg-white/90 p-5 shadow-sm transition hover:shadow-md">
+            <header class="flex items-start justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-1 text-[11px] uppercase tracking-wide text-slate-500">
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                  Coordinador
+                </div>
+                <h2 class="mt-1 text-lg font-semibold text-slate-900">
+                  {{ staff()?.COORDINADOR?.user || 'Sin coordinador asignado' }}
+                </h2>
+                <p class="mt-1 text-xs text-slate-500 max-w-xs">
+                  Responsable académico principal de la EP-Sede.
+                </p>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span
+                  class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
+                  [ngClass]="{
+                    'bg-emerald-50 text-emerald-700': staff()?.COORDINADOR?.status === 'active',
+                    'bg-slate-50 text-slate-600': staff()?.COORDINADOR?.status === 'view_only',
+                    'bg-red-50 text-red-700': staff()?.COORDINADOR?.status === 'suspended'
+                  }">
+                  {{ formatStatus(staff()?.COORDINADOR?.status) }}
+                </span>
+                <div class="text-[11px] text-slate-500">
+                  Desde:
+                  <span class="font-medium">
+                    {{ staff()?.COORDINADOR?.vigente_desde || '—' }}
+                  </span>
+                </div>
+              </div>
+            </header>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+              <div class="flex items-center gap-1">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span *ngIf="staff()?.COORDINADOR; else noCoord">
+                  ID usuario:
+                  <span class="font-mono font-medium">#{{ staff()?.COORDINADOR?.user_id }}</span>
+                </span>
+                <ng-template #noCoord>
+                  <span class="italic text-slate-400">Aún no se ha configurado un coordinador.</span>
+                </ng-template>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <ng-container *ngIf="canManageCoordinador(); else coordReadOnlyTpl">
+                  <button
+                    type="button"
+                    [routerLink]="['/staff/ep-sede', currentEpSedeId, 'manage', 'COORDINADOR']"
+                    class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-black hover:shadow-md">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4v16m8-8H4" />
+                    </svg>
+                    Gestionar coordinador
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="openUnassign('COORDINADOR')"
+                    [disabled]="!staff()?.COORDINADOR"
+                    class="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+                    Desasignar
+                  </button>
+                </ng-container>
+
+                <ng-template #coordReadOnlyTpl>
+                  <span class="text-[11px] text-slate-400">
+                    Solo administradores pueden modificar el coordinador.
+                  </span>
+                </ng-template>
+              </div>
+            </div>
+          </section>
+
+          <!-- Encargado -->
+          <section
+            class="flex flex-col gap-4 rounded-2xl border border-white/70 bg-white/90 p-5 shadow-sm transition hover:shadow-md">
+            <header class="flex items-start justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-1 text-[11px] uppercase tracking-wide text-slate-500">
+                  <span class="h-1.5 w-1.5 rounded-full bg-teal-500"></span>
+                  Encargado
+                </div>
+                <h2 class="mt-1 text-lg font-semibold text-slate-900">
+                  {{ staff()?.ENCARGADO?.user || 'Sin encargado asignado' }}
+                </h2>
+                <p class="mt-1 text-xs text-slate-500 max-w-xs">
+                  Soporte operativo y de seguimiento académico para la EP-Sede.
+                </p>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span
+                  class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
+                  [ngClass]="{
+                    'bg-emerald-50 text-emerald-700': staff()?.ENCARGADO?.status === 'active',
+                    'bg-slate-50 text-slate-600': staff()?.ENCARGADO?.status === 'view_only',
+                    'bg-red-50 text-red-700': staff()?.ENCARGADO?.status === 'suspended'
+                  }">
+                  {{ formatStatus(staff()?.ENCARGADO?.status) }}
+                </span>
+                <div class="text-[11px] text-slate-500">
+                  Desde:
+                  <span class="font-medium">
+                    {{ staff()?.ENCARGADO?.vigente_desde || '—' }}
+                  </span>
+                </div>
+              </div>
+            </header>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+              <div class="flex items-center gap-1">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span *ngIf="staff()?.ENCARGADO; else noEnc">
+                  ID usuario:
+                  <span class="font-mono font-medium">#{{ staff()?.ENCARGADO?.user_id }}</span>
+                </span>
+                <ng-template #noEnc>
+                  <span class="italic text-slate-400">Aún no se ha configurado un encargado.</span>
+                </ng-template>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <ng-container *ngIf="canManageEncargado(); else encReadOnlyTpl">
+                  <button
+                    type="button"
+                    [routerLink]="['/staff/ep-sede', currentEpSedeId, 'manage', 'ENCARGADO']"
+                    class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:from-emerald-700 hover:to-teal-700 hover:shadow-md">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4v16m8-8H4" />
+                    </svg>
+                    Gestionar encargado
+                  </button>
+
+                  <a
+                    [routerLink]="['/staff/ep-sede', currentEpSedeId, 'manage', 'ENCARGADO']"
+                    [queryParams]="{ mode: 'delegate' }"
+                    class="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-50">
+                    Delegar interino
+                  </a>
+
+                  <button
+                    type="button"
+                    (click)="openUnassign('ENCARGADO')"
+                    [disabled]="!staff()?.ENCARGADO"
+                    class="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+                    Desasignar
+                  </button>
+                </ng-container>
+
+                <ng-template #encReadOnlyTpl>
+                  <span class="text-[11px] text-slate-400">
+                    No tienes permisos para modificar el encargado.
+                  </span>
+                </ng-template>
+              </div>
+            </div>
+          </section>
+        </div>
+      </ng-container>
+
+      <!-- Loading staff -->
+      <ng-template #loadingStaffTpl>
+        <div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="animate-pulse rounded-2xl border border-slate-100 bg-white/80 p-5">
+            <div class="mb-4 h-4 w-28 rounded bg-slate-100"></div>
+            <div class="mb-2 h-5 w-48 rounded bg-slate-100"></div>
+            <div class="mb-6 h-3 w-64 rounded bg-slate-100"></div>
+            <div class="h-8 w-full rounded bg-slate-100"></div>
+          </div>
+          <div class="animate-pulse rounded-2xl border border-slate-100 bg-white/80 p-5">
+            <div class="mb-4 h-4 w-28 rounded bg-slate-100"></div>
+            <div class="mb-2 h-5 w-48 rounded bg-slate-100"></div>
+            <div class="mb-6 h-3 w-64 rounded bg-slate-100"></div>
+            <div class="h-8 w-full rounded bg-slate-100"></div>
+          </div>
+        </div>
+      </ng-template>
+
+      <!-- Historial -->
+      <section
+        class="mb-6 rounded-2xl border border-white/70 bg-white/90 p-5 shadow-sm backdrop-blur-sm">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <div class="text-[11px] uppercase tracking-wide text-slate-500">
+              Historial de staff
+            </div>
+            <h2 class="text-lg font-semibold text-slate-900">
+              Movimientos recientes de coordinadores y encargados
+            </h2>
+          </div>
+          <button
+            type="button"
+            (click)="reloadAll()"
+            class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 0014.36-1.36M19 5A9 9 0 004.64 6.36" />
+            </svg>
+            Recargar
+          </button>
+        </div>
+
+        <ng-container *ngIf="!loadingHistory(); else loadingHistoryTpl">
+          <ng-container *ngIf="history().length > 0; else emptyHistoryTpl">
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-left text-xs text-slate-700">
+                <thead class="border-b border-slate-100 text-[11px] uppercase text-slate-500">
+                  <tr>
+                    <th class="py-2 pr-4">Fecha</th>
+                    <th class="py-2 pr-4">Rol</th>
+                    <th class="py-2 pr-4">Usuario</th>
+                    <th class="py-2 pr-4">Evento</th>
+                    <th class="py-2 pr-4">Vigencia</th>
+                    <th class="py-2 pr-4">Actor</th>
+                    <th class="py-2 pr-4">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let h of history(); trackBy: trackHistory"
+                    class="border-b border-slate-50 text-[11px] hover:bg-emerald-50/40">
+                    <td class="py-2 pr-4 text-slate-600">
+                      {{ h.created_at | date:'yyyy-MM-dd HH:mm' }}
+                    </td>
+                    <td class="py-2 pr-4 font-semibold">
+                      <span
+                        class="inline-flex rounded-full px-2 py-0.5"
+                        [ngClass]="{
+                          'bg-emerald-50 text-emerald-700': h.role === 'COORDINADOR',
+                          'bg-teal-50 text-teal-700': h.role === 'ENCARGADO'
+                        }">
+                        {{ h.role }}
+                      </span>
+                    </td>
+                    <td class="py-2 pr-4 text-slate-700">
+                      #{{ h.user_id }}
+                    </td>
+                    <td class="py-2 pr-4">
+                      <span
+                        class="inline-flex rounded-full px-2 py-0.5 font-medium"
+                        [ngClass]="{
+                          'bg-emerald-50 text-emerald-700': h.evento === 'ASSIGN' || h.evento === 'REINSTATE',
+                          'bg-red-50 text-red-700': h.evento === 'UNASSIGN',
+                          'bg-amber-50 text-amber-700': h.evento === 'DELEGATE',
+                          'bg-slate-50 text-slate-600': h.evento === 'AUTO_END' || h.evento === 'TRANSFER'
+                        }">
+                        {{ formatEvento(h.evento) }}
+                      </span>
+                    </td>
+                    <td class="py-2 pr-4 text-slate-600">
+                      <div>Desde: <span class="font-medium">{{ h.desde || '—' }}</span></div>
+                      <div>Hasta: <span class="font-medium">{{ h.hasta || '—' }}</span></div>
+                    </td>
+                    <td class="py-2 pr-4 text-slate-600">
+                      <span *ngIf="h.actor_id; else sinActor">
+                        #{{ h.actor_id }}
+                      </span>
+                      <ng-template #sinActor>
+                        <span class="text-slate-400">—</span>
+                      </ng-template>
+                    </td>
+                    <td class="py-2 pr-4 text-slate-600 max-w-xs">
+                      {{ h.motivo || '—' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+        </ng-container>
+
+        <!-- Loading historial -->
+        <ng-template #loadingHistoryTpl>
+          <div class="flex flex-col items-center justify-center py-10 text-sm text-slate-500">
+            <div class="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent"></div>
+            Cargando historial de movimientos...
+          </div>
+        </ng-template>
+
+        <!-- Historial vacío -->
+        <ng-template #emptyHistoryTpl>
+          <div class="py-10 text-center text-sm text-slate-500">
+            No hay movimientos registrados en el historial para esta EP-Sede.
+          </div>
+        </ng-template>
+      </section>
+    </ng-container>
+  </div>
+
+  <!-- Modal de desasignación -->
+  <div
+    *ngIf="unassignDialogOpen"
+    class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 px-4">
+    <div
+      class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div class="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <h3 class="text-base font-semibold text-slate-900">
+            Confirmar desasignación
+          </h3>
+          <p class="mt-1 text-xs text-slate-500">
+            Esta acción suspenderá al titular actual del rol seleccionado en esta EP-Sede.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="cancelUnassign()"
+          class="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 border border-amber-100">
+        Revisa que este cambio esté alineado con las directivas académicas antes de confirmarlo.
+      </div>
+
+      <div class="mb-4 space-y-2 text-sm">
+        <div class="flex items-center justify-between text-xs text-slate-600">
+          <span>EP-Sede</span>
+          <span class="font-mono font-medium text-slate-900">#{{ epSedeId() }}</span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-slate-600">
+          <span>Rol a desasignar</span>
+          <span class="font-medium text-slate-900">{{ unassignRole }}</span>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="mb-1 block text-xs font-medium text-slate-600">
+          Motivo (opcional)
+        </label>
+        <textarea
+          [(ngModel)]="unassignMotivo"
+          rows="3"
+          class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+          placeholder="Ej. Cambio de responsabilidades, término de contrato, etc."></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button
+          type="button"
+          (click)="cancelUnassign()"
+          [disabled]="unassignSubmitting"
+          class="rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="confirmUnassign()"
+          [disabled]="unassignSubmitting"
+          class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-red-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60">
+          <ng-container *ngIf="!unassignSubmitting; else desasignandoTpl">
+            Desasignar ahora
+          </ng-container>
+          <ng-template #desasignandoTpl>
+            <span class="inline-flex items-center gap-1">
+              <span class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+              Procesando...
+            </span>
+          </ng-template>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

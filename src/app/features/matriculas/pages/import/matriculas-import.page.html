@@ -280,7 +280,7 @@
             <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50/50 border border-slate-200">
               <i class="fa-solid fa-key text-slate-600 mt-0.5 text-sm"></i>
               <div class="text-sm">
-                <div class="font-semibold text-slate-900">EP‑SEDE</div>
+                <div class="font-semibold text-slate-900">EP-SEDE</div>
                 <div class="text-slate-700 mt-1 text-xs">
                   Si gestionas múltiples sedes, el backend te mostrará opciones para elegir.
                 </div>
@@ -407,7 +407,7 @@
       </div>
     </section>
 
-    <!-- Loader -->
+    <!-- Loader con progreso -->
     <div *ngIf="loading()" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 grid place-items-center">
       <div class="text-center">
         <div class="relative">
@@ -415,7 +415,24 @@
           <div class="absolute inset-0 w-16 h-16 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
         </div>
         <div class="mt-4 text-lg font-semibold text-slate-900">Procesando archivo</div>
-        <div class="text-sm text-slate-600 mt-2">Esto puede tomar unos momentos...</div>
+
+        <!-- Progreso numérico -->
+        <div class="mt-1 text-sm text-slate-700">
+          Progreso:
+          <span class="font-semibold">
+            {{ progress() | number:'1.0-0' }}%
+          </span>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div class="mt-3 w-64 max-w-full mx-auto h-2 rounded-full bg-slate-200 overflow-hidden">
+          <div
+            class="h-2 bg-blue-600 transition-all duration-300"
+            [style.width.%]="progress()">
+          </div>
+        </div>
+
+        <div class="text-sm text-slate-600 mt-3">Esto puede tomar unos momentos...</div>
         <div class="text-xs text-slate-500 mt-4 animate-pulse">
           <i class="fa-solid fa-circle-info mr-1"></i>
           No cierres esta ventana durante el proceso

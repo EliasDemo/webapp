@@ -51,9 +51,9 @@
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(148, 27, 36, 0.95) 0%,
-    rgba(148, 27, 36, 0.9) 28%,
-    rgba(190, 49, 68, 0.85) 55%,
+    rgba(30, 64, 175, 0.95) 0%,
+    rgba(37, 99, 235, 0.9) 28%,
+    rgba(59, 130, 246, 0.85) 55%,
     rgba(15, 23, 42, 0.9) 100%
   );
 }
@@ -120,7 +120,7 @@
       width: 0.35rem;
       height: 0.35rem;
       border-radius: 999px;
-      background: #f97373;
+      background: #60a5fa; /* azul suave */
     }
   }
 }
@@ -199,10 +199,10 @@
   transition: all 0.25s ease;
 
   &.active {
-    border-color: #9b1c26;
-    background: #9b1c26;
+    border-color: #1d4ed8;
+    background: #1d4ed8;
     color: #f9fafb;
-    box-shadow: 0 0 0 3px rgba(155, 28, 38, 0.15);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
   }
 }
 
@@ -251,10 +251,10 @@
 
     &:focus {
       outline: none;
-      border-color: #9b1c26;
+      border-color: #1d4ed8;
       box-shadow:
-        0 0 0 1px #9b1c26,
-        0 0 0 4px rgba(155, 28, 38, 0.15);
+        0 0 0 1px #1d4ed8,
+        0 0 0 4px rgba(59, 130, 246, 0.25);
       background: #ffffff;
     }
   }
@@ -295,10 +295,6 @@
     height: 100%;
     object-fit: cover;
   }
-
-  &.placeholder span {
-    font-size: 1.1rem;
-  }
 }
 
 .user-details {
@@ -325,7 +321,7 @@
   background: transparent;
   font-size: 0.78rem;
   font-weight: 500;
-  color: #9b1c26;
+  color: #1d4ed8;
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
@@ -391,10 +387,10 @@
 
     &:focus {
       outline: none;
-      border-color: #9b1c26;
+      border-color: #1d4ed8;
       box-shadow:
-        0 0 0 1px #9b1c26,
-        0 0 0 4px rgba(155, 28, 38, 0.15);
+        0 0 0 1px #1d4ed8,
+        0 0 0 4px rgba(59, 130, 246, 0.25);
       background: #ffffff;
     }
 
@@ -443,7 +439,7 @@
     text-decoration: none;
 
     &:hover {
-      color: #9b1c26;
+      color: #1d4ed8;
       text-decoration: underline;
     }
   }
@@ -462,14 +458,14 @@
 }
 
 .primary-btn {
-  background: #9b1c26;
+  background: #1d4ed8;
   color: #f9fafb;
   width: 100%;
   text-align: center;
 
   &:hover:not(:disabled) {
-    background: #7f151e;
-    box-shadow: 0 12px 30px rgba(155, 28, 38, 0.35);
+    background: #1e40af;
+    box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
     transform: translateY(-1px);
   }
 
@@ -495,10 +491,7 @@
   display: flex;
   gap: 0.75rem;
 
-  .secondary-btn {
-    flex: 1;
-  }
-
+  .secondary-btn,
   .primary-btn {
     flex: 1;
   }
@@ -518,7 +511,7 @@
   }
 
   .help-link {
-    color: #9b1c26;
+    color: #1d4ed8;
     font-weight: 500;
     text-decoration: none;
 

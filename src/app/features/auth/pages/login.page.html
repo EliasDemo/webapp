@@ -17,7 +17,19 @@
             class="brand-logo"
             onerror="this.style.display='none'"
           />
-          <span class="brand-campus">Campus Perú</span>
+
+          <!-- Paso 1: solo nombre de la universidad -->
+          <span class="brand-campus" *ngIf="step() === 1">
+            Universidad Peruana Unión
+          </span>
+
+          <!-- Paso 2: sede + escuela profesional -->
+          <span class="brand-campus" *ngIf="step() === 2">
+            {{ sede() || 'Universidad Peruana Unión' }}
+            <ng-container *ngIf="escuela()">
+              • {{ escuela() }}
+            </ng-container>
+          </span>
         </div>
 
         <h2 class="brand-title">
@@ -96,11 +108,11 @@
         >
           <!-- Resumen de usuario -->
           <div class="user-info-simple">
-            <div class="user-avatar" *ngIf="profilePhoto()">
-              <img [src]="profilePhoto()!" alt="Foto de perfil" />
-            </div>
-            <div class="user-avatar placeholder" *ngIf="!profilePhoto()">
-              <span>{{ fullName() ? fullName().charAt(0) : '?' }}</span>
+            <div class="user-avatar">
+              <img
+                [src]="profilePhoto() || 'assets/photo.svg'"
+                alt="Foto de perfil"
+              />
             </div>
 
             <div class="user-details">
@@ -120,14 +132,14 @@
             </button>
           </div>
 
-          <!-- Mensaje de bloqueo -->
+          <!-- Mensaje de bloqueo (cuando backend lo indique) -->
           <div *ngIf="isLocked()" class="lock-message">
             <div class="lock-icon">
               <span>🔒</span>
             </div>
             <div class="lock-text">
               <strong>Cuenta temporalmente bloqueada</strong>
-              <p>Por seguridad. Tiempo restante: {{ remainingTime() }} segundos.</p>
+              <p>{{ loginError() }}</p>
             </div>
           </div>
 
@@ -142,7 +154,7 @@
                 autocomplete="current-password"
                 placeholder="Ingresa tu contraseña"
                 class="password-input"
-                [class.error]="loginError()"
+                [class.error]="loginError() && !isLocked()"
                 [disabled]="isLocked()"
               />
 

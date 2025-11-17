@@ -12,18 +12,17 @@ export type RpDir = 'asc' | 'desc';
  * periodos[] usa formato YYYY-1 | YYYY-2 (p.ej. "2025-1").
  */
 export interface RpHorasFiltro {
-  periodos?: string[];                         // p.ej. ['2025-1','2025-2']
-  ultimos?: number;                            // 1..12 (si no envías periodos)
-  unidad?: RpUnidad;                           // 'h' | 'min' (default 'h')
-  estado?: RpEstadoRegistro;                   // default 'APROBADO'
-  solo_con_horas_periodos?: boolean | '0' | '1'; // default '1'
-  orden?: RpOrdenCampo;                        // default 'apellidos'
-  dir?: RpDir;                                 // default 'asc'
+  periodos?: string[];                            // p.ej. ['2025-1','2025-2']
+  ultimos?: number;                               // 1..12 (si no envías periodos)
+  unidad?: RpUnidad;                              // 'h' | 'min' (default 'h')
+  estado?: RpEstadoRegistro;                      // default 'APROBADO'
+  solo_con_horas_periodos?: boolean | '0' | '1';  // default '1'
+  orden?: RpOrdenCampo;                           // default 'apellidos'
+  dir?: RpDir;                                    // default 'asc'
 }
 
 /**
  * Meta que retorna el backend.
- * Se tipan claves comunes que ya estás usando en FE (ep_sede_id, escuela_profesional, bucket_antes).
  */
 export interface RpHorasPorPeriodoMeta {
   epSedeId?: number;                    // opcional (camel)
@@ -44,7 +43,6 @@ export interface RpHorasPorPeriodoMeta {
 
 /**
  * Cada fila del reporte. `periodos` es un diccionario periodo->valor.
- * Dejamos campos de persona opcionales para no acoplar fuerte.
  */
 export interface RpHorasPorPeriodoItem {
   persona_id?: number;
@@ -63,3 +61,74 @@ export interface RpHorasPorPeriodoPayload {
 
 /** Envoltorio estándar. */
 export type ApiResponse<T> = { ok: boolean; data: T; meta?: any };
+
+// ─────────────────────────────────────────────
+// Reporte: avance "mías por proyecto"
+//   GET /api/reportes/horas/mias/por-proyecto
+// ─────────────────────────────────────────────
+
+export interface RpAvanceProyectoItem {
+  id: number;
+  titulo: string | null;
+  minutos: number;
+  horas: number;
+  horas_planificadas?: number | null;
+  minutos_requeridos?: number | null;
+  minutos_faltantes?: number | null;
+  porcentaje?: number | null; // 0..100
+  [k: string]: unknown;
+}
+
+export interface RpAvancePorProyectoData {
+  por_proyecto: RpAvanceProyectoItem[];
+  total_minutos: number;
+  total_horas: number;
+}
+
+export interface RpAvanceFiltro {
+  estado?: RpEstadoRegistro | '*'; // default 'APROBADO'
+  periodo_id?: number;
+  debug?: boolean;
+}
+
+// ─────────────────────────────────────────────
+// Import horas históricas (VM)
+// ─────────────────────────────────────────────
+
+export interface VmImportHorasHistoricasOptions {
+  ep_sede_id?: number; // opcional, el backend lo puede resolver
+  replace?: boolean;   // si true, borra lo previo en las sesiones afectadas
+}
+
+export interface VmImportHorasHistoricasError {
+  row?: number;
+  codigo?: string;
+  reason?: string;
+  [k: string]: unknown;
+}
+
+export interface VmImportHorasHistoricasSummary {
+  processed_rows: number;
+  targets: number;
+  asistencias_upserted: number;
+  errors: number;
+}
+
+export interface VmImportHorasHistoricasResponse {
+  ok: boolean;
+  summary?: VmImportHorasHistoricasSummary;
+  errors?: VmImportHorasHistoricasError[] | any;
+}
+
+/** Status simple: ¿hay horas históricas cargadas? */
+export interface VmImportHorasHistoricasStatus {
+  ok: boolean;
+  ep_sede_id: number;
+  has_horas: boolean;
+}
+
+/** Opciones para descargar plantilla (periodos o ultimos N). */
+export interface VmPlantillaHorasOptions {
+  periodos?: string[];
+  ultimos?: number;
+}

@@ -1,0 +1,369 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 pb-16">
+  <!-- Header -->
+  <header class="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between gap-4">
+        <!-- Título + migas -->
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+            <i class="fa-solid fa-file-excel text-lg"></i>
+          </div>
+          <div>
+            <nav class="text-xs text-slate-500 mb-1 flex items-center gap-1">
+              <a routerLink="/" class="hover:text-slate-700 font-medium transition-colors">Inicio</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <a routerLink="/r/horas" class="hover:text-slate-700 font-medium transition-colors">Reportes</a>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+              <span class="text-emerald-700 font-semibold">Importar horas históricas</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-slate-900">Importar horas históricas</h1>
+            <p class="text-sm text-slate-600 mt-1">
+              Carga horas de períodos anteriores desde un archivo Excel. Nunca se escriben datos
+              en el período en curso.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <a
+            routerLink="/r/horas"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <i class="fa-solid fa-arrow-left"></i>
+            Volver al reporte
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <main class="max-w-7xl mx-auto px-4 pt-8 space-y-8">
+    <!-- Alertas -->
+    <div
+      *ngIf="error()"
+      class="rounded-2xl border border-rose-200 bg-white p-4 shadow-sm animate-fade-in"
+    >
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 p-2 rounded-lg bg-rose-100 text-rose-600">
+          <i class="fa-solid fa-circle-exclamation text-sm"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-rose-900 mb-1">Ocurrió un problema</div>
+          <div class="text-sm text-rose-700">{{ error() }}</div>
+        </div>
+        <button
+          (click)="error.set(null)"
+          class="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Estado actual -->
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-xl bg-sky-100 text-sky-600">
+            <i class="fa-solid fa-circle-info text-sm"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Estado actual</h2>
+            <p class="text-sm text-slate-600">
+              Consulta si ya existen horas históricas registradas para tu EP-SEDE.
+            </p>
+          </div>
+        </div>
+        <button
+          (click)="cargarStatus()"
+          [disabled]="loading()"
+          class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          <i class="fa-solid fa-rotate-right" [class.animate-spin]="loading()"></i>
+          Refrescar
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">
+            EP-SEDE (opcional)
+          </label>
+          <input
+            type="number"
+            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm"
+            [ngModel]="epSedeId()"
+            (ngModelChange)="epSedeId.set($event ? +$event : null)"
+            placeholder="Autodetectar (si solo administras una)"
+          />
+          <p class="text-xs text-slate-500">
+            Déjalo vacío si solo administras una EP-SEDE. Si administras varias, indica el ID.
+          </p>
+        </div>
+
+        <div
+          *ngIf="hasStatus()"
+          class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 text-center">
+            <div class="text-xs text-slate-500 mb-1">EP-SEDE resuelta</div>
+            <div class="text-lg font-black text-slate-900">
+              {{ status()?.ep_sede_id ?? '—' }}
+            </div>
+          </div>
+          <div
+            class="p-4 rounded-xl border border-emerald-200"
+            [ngClass]="status()?.has_horas ? 'bg-emerald-50' : 'bg-slate-50'"
+          >
+            <div class="text-xs text-slate-500 mb-1">Horas históricas</div>
+            <div
+              class="text-sm font-semibold"
+              [ngClass]="status()?.has_horas ? 'text-emerald-700' : 'text-slate-700'"
+            >
+              <ng-container *ngIf="status()?.has_horas; else noHoras">
+                Ya existen registros históricos para esta EP-SEDE.
+              </ng-container>
+              <ng-template #noHoras>
+                Aún no se han registrado horas históricas para esta EP-SEDE.
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Formulario import -->
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="p-2 rounded-xl bg-emerald-100 text-emerald-600">
+          <i class="fa-solid fa-upload text-sm"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Importar archivo</h2>
+          <p class="text-sm text-slate-600">
+            Usa la plantilla sugerida para asegurar el formato correcto de columnas y períodos.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <!-- Archivo -->
+        <div class="space-y-2 md:col-span-2">
+          <label class="block text-sm font-semibold text-slate-700">Archivo Excel</label>
+
+          <div
+            class="flex flex-col gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3"
+          >
+            <!-- input file oculto -->
+            <input
+              #fileInput
+              type="file"
+              (change)="onFileChange($event)"
+              accept=".xlsx,.xls,.csv"
+              class="hidden"
+            />
+
+            <!-- Botón visible para abrir el diálogo -->
+            <button
+              type="button"
+              (click)="fileInput.click()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <i class="fa-solid fa-folder-open text-slate-500"></i>
+              <span>Seleccionar archivo…</span>
+            </button>
+
+            <!-- Info de ayuda -->
+            <div class="text-xs text-slate-500 flex items-center gap-2">
+              <i class="fa-solid fa-circle-info text-[10px]"></i>
+              Extensiones permitidas: .xlsx, .xls, .csv
+            </div>
+
+            <!-- Nombre del archivo seleccionado -->
+            <div *ngIf="file()" class="text-xs text-slate-600">
+              Seleccionado: <b>{{ file()?.name }}</b>
+            </div>
+          </div>
+        </div>
+
+        <!-- Opciones -->
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Reemplazar datos previos
+            </label>
+            <label class="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                class="rounded border-slate-300 text-rose-600 focus:ring-rose-200"
+                [ngModel]="replace()"
+                (ngModelChange)="replace.set(!!$event)"
+              />
+              <span>Limpiar y volver a generar las horas tocadas por este archivo.</span>
+            </label>
+            <p class="text-xs text-rose-500">
+              Úsalo con cuidado: borra asistencias/horas previas con meta <b>horas_import</b>
+              en las sesiones/proyectos afectados.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-slate-700">
+              Períodos en plantilla
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="12"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              [ngModel]="ultimos()"
+              (ngModelChange)="ultimos.set($event ? +$event : 6)"
+            />
+            <p class="text-xs text-slate-500">
+              Cantidad usada al generar la plantilla (si no indicas <code>periodos[]</code>
+              explícitos).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="flex flex-wrap gap-3 pt-2">
+        <button
+          (click)="importar()"
+          [disabled]="loading() || !file()"
+          class="inline-flex items-center gap-3 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 shadow-md hover:shadow-lg"
+        >
+          <i class="fa-solid fa-cloud-arrow-up" [class.hidden]="loading()"></i>
+          <i *ngIf="loading()" class="fa-solid fa-circle-notch animate-spin"></i>
+          {{ loading() ? 'Importando...' : 'Importar' }}
+        </button>
+
+        <button
+          (click)="descargarPlantilla()"
+          [disabled]="loading()"
+          class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          <i class="fa-solid fa-file-excel"></i>
+          Descargar plantilla
+        </button>
+
+        <button
+          (click)="limpiarResultado()"
+          [disabled]="loading()"
+          class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+        >
+          <i class="fa-solid fa-eraser"></i>
+          Limpiar resultado
+        </button>
+      </div>
+    </section>
+
+    <!-- Resultado -->
+    <section
+      *ngIf="hasResultado()"
+      class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4"
+    >
+      <div class="flex items-center gap-3 mb-2">
+        <div class="p-2 rounded-xl bg-slate-100 text-slate-600">
+          <i class="fa-solid fa-clipboard-check text-sm"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Resumen de importación</h2>
+          <p class="text-sm text-slate-600">
+            Revisa filas procesadas, asistencias creadas y errores por fila.
+          </p>
+        </div>
+      </div>
+
+      <!-- Resumen -->
+      <div *ngIf="summary()" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="text-center p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <div class="text-2xl font-black text-slate-900">
+            {{ summary()?.processed_rows ?? 0 }}
+          </div>
+          <div class="text-xs font-medium text-slate-600 mt-1">Filas con datos</div>
+        </div>
+        <div class="text-center p-4 rounded-xl bg-indigo-50 border border-indigo-200">
+          <div class="text-2xl font-black text-indigo-700">
+            {{ summary()?.targets ?? 0 }}
+          </div>
+          <div class="text-xs font-medium text-indigo-700 mt-1">Targets (proy./slots)</div>
+        </div>
+        <div class="text-center p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+          <div class="text-2xl font-black text-emerald-700">
+            {{ summary()?.asistencias_upserted ?? 0 }}
+          </div>
+          <div class="text-xs font-medium text-emerald-700 mt-1">Asistencias upsert</div>
+        </div>
+        <div class="text-center p-4 rounded-xl bg-rose-50 border border-rose-200">
+          <div class="text-2xl font-black text-rose-700">
+            {{ summary()?.errors ?? 0 }}
+          </div>
+          <div class="text-xs font-medium text-rose-700 mt-1">Errores</div>
+        </div>
+      </div>
+
+      <!-- Detalle de errores -->
+      <div *ngIf="errores().length" class="mt-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm font-semibold text-rose-700 flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Detalle de errores
+          </div>
+          <div class="text-xs text-slate-500">
+            {{ errores().length }} filas con problemas
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-rose-100 bg-rose-50/40 max-h-64 overflow-auto">
+          <table class="min-w-full text-xs">
+            <thead class="bg-rose-100/80 text-rose-900">
+              <tr>
+                <th class="px-3 py-2 text-left font-semibold">Fila</th>
+                <th class="px-3 py-2 text-left font-semibold">Código</th>
+                <th class="px-3 py-2 text-left font-semibold">Motivo</th>
+                <th class="px-3 py-2 text-left font-semibold">Extra</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let e of errores(); trackBy: trackError"
+                class="border-t border-rose-100"
+              >
+                <td class="px-3 py-2 text-rose-900">{{ e.row ?? '—' }}</td>
+                <td class="px-3 py-2 text-rose-900 font-mono">{{ e.codigo ?? '—' }}</td>
+                <td class="px-3 py-2 text-rose-900">{{ e.reason ?? '—' }}</td>
+                <td class="px-3 py-2 text-rose-900">
+                  <code class="text-[10px] break-all">
+                    {{ e | json }}
+                  </code>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loader local -->
+    <div
+      *ngIf="loading()"
+      class="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 grid place-items-center"
+    >
+      <div class="text-center">
+        <div class="relative">
+          <div class="w-16 h-16 rounded-full border-4 border-slate-200"></div>
+          <div
+            class="absolute inset-0 w-16 h-16 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent"
+          ></div>
+        </div>
+        <div class="mt-4 text-lg font-semibold text-slate-900">Procesando</div>
+        <div class="text-sm text-slate-600 mt-2">
+          Esto puede tomar unos segundos…
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

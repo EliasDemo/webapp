@@ -1,0 +1,519 @@
+<!-- src/app/features/ep-sede-staff/pages/ep-sede-staff-manage/ep-sede-staff-manage.page.html -->
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/20 to-slate-50">
+  <div class="mx-auto max-w-6xl px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-3">
+        <button
+          type="button"
+          (click)="volverALaEpSede()"
+          class="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white/80 text-slate-700 shadow-sm hover:bg-white hover:shadow transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+            Gestión de {{ roleLabel }} · EP-Sede #{{ epSedeId ?? '—' }}
+          </div>
+          <h1
+            class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            Configurar {{ roleLabel.toLowerCase() }} de la EP-Sede
+          </h1>
+          <p class="mt-1 text-xs text-slate-600 max-w-xl">
+            Puedes asignar un usuario existente, crear un nuevo perfil académico o, en el caso de encargados,
+            registrar una delegación interina con fecha fin.
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="rounded-2xl border border-white/70 bg-white/90 px-4 py-3 shadow-sm backdrop-blur-sm text-right space-y-1">
+        <div class="text-[11px] uppercase tracking-wide text-slate-500">
+          Rol a asignar
+        </div>
+        <div
+          class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-800">
+          {{ roleLabel | uppercase }}
+        </div>
+        <div class="text-[11px] text-slate-400">
+          EP-Sede:
+          <span class="font-mono font-medium text-slate-800">#{{ epSedeId ?? '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensajes globales -->
+    <div *ngIf="errorMsg" class="mb-4 flex gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+      <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>{{ errorMsg }}</span>
+    </div>
+
+    <div *ngIf="successMsg" class="mb-4 flex gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+      <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M5 13l4 4L19 7" />
+      </svg>
+      <span>{{ successMsg }}</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mb-5 border-b border-slate-100">
+      <nav class="-mb-px flex flex-wrap gap-2 text-xs font-medium">
+        <button
+          type="button"
+          (click)="changeTab('existing')"
+          [class.bg-white]="selectedTab === 'existing'"
+          [class.text-emerald-700]="selectedTab === 'existing'"
+          [class.border-emerald-500]="selectedTab === 'existing'"
+          class="inline-flex items-center gap-1 rounded-t-lg border border-transparent px-3 py-1.5 text-slate-600 hover:bg-white hover:text-emerald-700">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500/70"></span>
+          Asignar usuario existente
+        </button>
+
+        <button
+          type="button"
+          (click)="changeTab('new')"
+          [class.bg-white]="selectedTab === 'new'"
+          [class.text-emerald-700]="selectedTab === 'new'"
+          [class.border-emerald-500]="selectedTab === 'new'"
+          class="inline-flex items-center gap-1 rounded-t-lg border border-transparent px-3 py-1.5 text-slate-600 hover:bg-white hover:text-emerald-700">
+          <span class="h-1.5 w-1.5 rounded-full bg-sky-500/70"></span>
+          Crear nuevo perfil
+        </button>
+
+        <button
+          *ngIf="isEncargado"
+          type="button"
+          (click)="changeTab('delegate')"
+          [class.bg-white]="selectedTab === 'delegate'"
+          [class.text-emerald-700]="selectedTab === 'delegate'"
+          [class.border-emerald-500]="selectedTab === 'delegate'"
+          class="inline-flex items-center gap-1 rounded-t-lg border border-transparent px-3 py-1.5 text-slate-600 hover:bg-white hover:text-emerald-700">
+          <span class="h-1.5 w-1.5 rounded-full bg-amber-500/70"></span>
+          Delegar encargado interino
+        </button>
+      </nav>
+    </div>
+
+    <!-- Contenido de pestañas -->
+    <div class="rounded-2xl border border-white/70 bg-white/90 p-5 shadow-sm backdrop-blur-sm">
+      <!-- TAB: Asignar existente -->
+      <ng-container *ngIf="selectedTab === 'existing'">
+        <div class="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+          <!-- Col izquierda: Buscar + resultado -->
+          <div class="space-y-4">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">
+                Buscar por correo y asignar
+              </h2>
+              <p class="mt-1 text-xs text-slate-500">
+                Ingresa el correo institucional o personal del docente/encargado para localizar un perfil
+                existente y asignarlo a esta EP-Sede como {{ roleLabel.toLowerCase() }}.
+              </p>
+            </div>
+
+            <!-- Form de búsqueda -->
+            <form [formGroup]="searchForm" (ngSubmit)="onBuscarPorCorreo()" class="space-y-2">
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <div class="flex-1">
+                  <input
+                    type="email"
+                    formControlName="email"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                    placeholder="ej. docente@instituto.edu.pe" />
+                </div>
+
+                <button
+                  type="submit"
+                  [disabled]="loadingLookup || searchForm.invalid || !epSedeId"
+                  class="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:from-emerald-700 hover:to-teal-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60">
+                  <ng-container *ngIf="!loadingLookup; else buscandoTpl">
+                    Buscar
+                  </ng-container>
+                  <ng-template #buscandoTpl>
+                    <span class="inline-flex items-center gap-1">
+                      <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                      Buscando...
+                    </span>
+                  </ng-template>
+                </button>
+              </div>
+
+              <p class="text-[11px] text-slate-400">
+                Este paso ayuda a evitar duplicados de usuario en el sistema.
+              </p>
+            </form>
+
+            <!-- Resultado de lookup -->
+            <div class="mt-3 min-h-[140px] rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-3">
+              <ng-container *ngIf="lookup as l; else sinBusquedaTpl">
+                <!-- Usuario encontrado -->
+                <ng-container *ngIf="l.user; else noUsuarioTpl">
+                  <div class="rounded-xl border border-emerald-100 bg-emerald-50/80 p-3 text-sm space-y-1">
+                    <div class="font-semibold text-slate-900">
+                      {{ l.user!.last_name }} {{ l.user!.first_name }}
+                    </div>
+                    <div class="text-xs text-slate-600">
+                      Usuario:
+                      <span class="font-mono text-[11px] font-medium">
+                        {{ l.user!.username }}
+                      </span>
+                    </div>
+                    <div class="text-xs text-slate-600">
+                      Correo:
+                      <span>{{ l.user!.email || l.email }}</span>
+                    </div>
+                    <div class="text-xs text-slate-600">
+                      Estado:
+                      <span class="font-medium">{{ l.user!.status }}</span>
+                    </div>
+                    <div *ngIf="l.user!.roles?.length" class="text-[11px] text-slate-500">
+                      Roles:
+                      <span class="font-mono">
+                        {{ l.user!.roles!.join(', ') }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    *ngIf="l.expediente"
+                    class="mt-2 space-y-1 rounded-xl border border-slate-100 bg-white p-3 text-[11px] text-slate-600">
+                    <div class="font-semibold text-slate-800 text-xs mb-1">
+                      Expediente en esta EP-Sede
+                    </div>
+                    <div>Rol: <span class="font-medium">{{ l.expediente!.rol }}</span></div>
+                    <div>Estado: <span class="font-medium">{{ l.expediente!.estado }}</span></div>
+                    <div>
+                      Correo institucional:
+                      <span class="font-mono">{{ l.expediente!.correo_institucional || '—' }}</span>
+                    </div>
+                    <div>
+                      Vigente desde:
+                      <span class="font-medium">{{ l.expediente!.vigente_desde || '—' }}</span>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- No hay usuario, pero sí hubo búsqueda -->
+                <ng-template #noUsuarioTpl>
+                  <div
+                    class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    No se encontró ningún usuario ni expediente con ese correo.
+                    Puedes crear un nuevo perfil académico en la pestaña
+                    <span class="font-semibold">"Crear nuevo perfil"</span>.
+                  </div>
+                </ng-template>
+              </ng-container>
+
+              <!-- Aún no se buscó nada -->
+              <ng-template #sinBusquedaTpl>
+                <div class="text-xs text-slate-400">
+                  Ingresa un correo y haz clic en <span class="font-medium">“Buscar”</span> para verificar si el
+                  perfil ya existe.
+                </div>
+              </ng-template>
+            </div>
+          </div>
+
+          <!-- Col derecha: Asignar -->
+          <div class="space-y-3 border-t border-slate-100 pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+            <h3 class="text-sm font-semibold text-slate-900">
+              Confirmar asignación
+            </h3>
+            <p class="text-xs text-slate-500">
+              Completa los datos de vigencia y motivo antes de guardar. La asignación reemplazará al titular
+              actual de este rol en la EP-Sede.
+            </p>
+
+            <form
+              [formGroup]="assignForm"
+              (ngSubmit)="onAsignarDesdeLookup()"
+              class="space-y-3 text-sm">
+              <div class="flex flex-col gap-1">
+                <label class="text-xs text-slate-600">Vigente desde</label>
+                <input
+                  type="date"
+                  formControlName="vigente_desde"
+                  class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <label class="text-xs text-slate-600">Motivo (opcional)</label>
+                <textarea
+                  formControlName="motivo"
+                  rows="3"
+                  class="resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                  placeholder="Ej. Encargo oficial del departamento, reemplazo temporal, etc."></textarea>
+              </div>
+
+              <div class="flex justify-end">
+                <button
+                  type="submit"
+                  [disabled]="loadingAssign || !tieneUsuarioEncontrado"
+                  class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-black hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60">
+                  <ng-container *ngIf="!loadingAssign; else asignandoTpl">
+                    Asignar como {{ roleLabel }}
+                  </ng-container>
+                  <ng-template #asignandoTpl>
+                    <span class="inline-flex items-center gap-1">
+                      <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                      Guardando...
+                    </span>
+                  </ng-template>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- TAB: Crear nuevo perfil -->
+      <ng-container *ngIf="selectedTab === 'new'">
+        <div class="space-y-5">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">
+                Crear nuevo perfil académico y asignar
+              </h2>
+              <p class="mt-1 text-xs text-slate-500 max-w-xl">
+                Úsalo solo si estás seguro de que el usuario no existe aún en el sistema. Se creará un
+                usuario activo y su expediente académico como {{ roleLabel.toLowerCase() }} de esta EP-Sede.
+              </p>
+            </div>
+
+            <div class="text-right space-y-1">
+              <div class="text-[11px] uppercase tracking-wide text-slate-400">
+                Rol Spatie
+              </div>
+              <input
+                type="text"
+                name="spatieRole"
+                [(ngModel)]="spatieRole"
+                [ngModelOptions]="{ standalone: true }"
+                class="w-40 rounded-lg border border-slate-200 px-2 py-1 text-[11px] uppercase shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+              <div class="text-[10px] text-slate-400">
+                Ej: COORDINADOR, ENCARGADO, ENCARGADO_PROYECTOS...
+              </div>
+            </div>
+          </div>
+
+          <form
+            [formGroup]="createForm"
+            (ngSubmit)="onCrearYAsignar()"
+            class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Username *</label>
+              <input
+                type="text"
+                formControlName="username"
+                class="rounded-lg border border-slate-200 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Correo *</label>
+              <input
+                type="email"
+                formControlName="email"
+                class="rounded-lg border border-slate-200 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Nombres *</label>
+              <input
+                type="text"
+                formControlName="first_name"
+                class="rounded-lg border border-slate-200 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Apellidos *</label>
+              <input
+                type="text"
+                formControlName="last_name"
+                class="rounded-lg border border-slate-200 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Tipo de documento</label>
+              <select
+                formControlName="doc_tipo"
+                class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+                <option value="">—</option>
+                <option value="DNI">DNI</option>
+                <option value="CE">CE</option>
+                <option value="PASAPORTE">PASAPORTE</option>
+                <option value="OTRO">OTRO</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">N° documento</label>
+              <input
+                type="text"
+                formControlName="doc_numero"
+                class="rounded-lg border border-slate-200 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Celular</label>
+              <input
+                type="text"
+                formControlName="celular"
+                class="rounded-lg border border-slate-200 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">País (ISO-2)</label>
+              <input
+                type="text"
+                maxlength="2"
+                formControlName="pais"
+                class="rounded-lg border border-slate-200 px-3 py-2 uppercase shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Vigente desde</label>
+              <input
+                type="date"
+                formControlName="vigente_desde"
+                class="rounded-lg border border-slate-200 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Correo institucional (opcional)</label>
+              <input
+                type="email"
+                formControlName="correo_institucional"
+                class="rounded-lg border border-slate-200 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="sm:col-span-2 flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Motivo</label>
+              <textarea
+                formControlName="motivo"
+                rows="2"
+                class="resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"></textarea>
+            </div>
+
+            <div class="sm:col-span-2 mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                (click)="onResetCreateForm()"
+                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                Limpiar
+              </button>
+
+              <button
+                type="submit"
+                [disabled]="loadingCreate || !epSedeId"
+                class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:from-emerald-700 hover:to-teal-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60">
+                <ng-container *ngIf="!loadingCreate; else creandoTpl">
+                  Crear y asignar {{ roleLabel }}
+                </ng-container>
+                <ng-template #creandoTpl>
+                  <span class="inline-flex items-center gap-1">
+                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                    Guardando...
+                  </span>
+                </ng-template>
+              </button>
+            </div>
+          </form>
+        </div>
+      </ng-container>
+
+      <!-- TAB: Delegar encargado interino -->
+      <ng-container *ngIf="selectedTab === 'delegate'">
+        <div class="space-y-5">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">
+                Delegar encargado interino
+              </h2>
+              <p class="mt-1 text-xs text-slate-500 max-w-xl">
+                Registra un encargado interino para esta EP-Sede, con una fecha de término definida. El sistema
+                actualiza el expediente académico del nuevo encargado y registra el movimiento en el historial.
+              </p>
+            </div>
+            <div class="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[11px] text-amber-800 max-w-xs">
+              <strong class="font-semibold">Nota:</strong>
+              la delegación aplica solo al rol de ENCARGADO. El COORDINADOR titular no se ve afectado.
+            </div>
+          </div>
+
+          <form
+            [formGroup]="delegateForm"
+            (ngSubmit)="onDelegarEncargado()"
+            class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+            <div class="flex flex-col gap-1 sm:col-span-2">
+              <label class="text-xs text-slate-600">ID de usuario a delegar *</label>
+              <input
+                type="number"
+                formControlName="user_id"
+                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                placeholder="Ej. 1023" />
+              <p class="text-[11px] text-slate-400">
+                Puedes localizar el ID del usuario desde la pestaña "Asignar usuario existente" usando el correo.
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Desde *</label>
+              <input
+                type="date"
+                formControlName="desde"
+                class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Hasta *</label>
+              <input
+                type="date"
+                formControlName="hasta"
+                class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+            </div>
+
+            <div class="sm:col-span-2 flex flex-col gap-1">
+              <label class="text-xs text-slate-600">Motivo (opcional)</label>
+              <textarea
+                formControlName="motivo"
+                rows="3"
+                class="resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                placeholder="Ej. Suplencia por licencia, encargo temporal del área, etc."></textarea>
+            </div>
+
+            <div class="sm:col-span-2 mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                (click)="changeTab('existing')"
+                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                [disabled]="loadingDelegate || !epSedeId"
+                class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-600 to-emerald-600 px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:from-amber-700 hover:to-emerald-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60">
+                <ng-container *ngIf="!loadingDelegate; else delegandoTpl">
+                  Registrar delegación
+                </ng-container>
+                <ng-template #delegandoTpl>
+                  <span class="inline-flex items-center gap-1">
+                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                    Guardando...
+                  </span>
+                </ng-template>
+              </button>
+            </div>
+          </form>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

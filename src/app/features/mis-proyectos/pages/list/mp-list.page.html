@@ -229,8 +229,8 @@
 
                       <!-- BOTÓN -->
                       <div class="flex justify-end pt-4 mt-4 border-t border-slate-200/60">
-                        <a [routerLink]="['/mis-proyectos', p.id]"
-                           class="inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform transition-all duration-300 hover:scale-105 hover:from-blue-700 hover:to-indigo-700">
+                        <a [routerLink]="[p.id]"
+                          class="inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transform transition-all duration-300 hover:scale-105 hover:from-blue-700 hover:to-indigo-700">
                           <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
                           Ver detalle del proyecto
                         </a>
@@ -455,8 +455,8 @@
 
                     <!-- BOTÓN: VER DETALLE TAMBIÉN EN HISTORIAL -->
                     <div class="flex justify-end pt-4 mt-6 border-t border-slate-200/60">
-                      <a [routerLink]="['/mis-proyectos', p.id]"
-                         class="inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-500/25 hover:shadow-xl hover:shadow-slate-500/30 transform transition-all duration-300 hover:scale-105">
+                      <a [routerLink]="[p.id]"
+                        class="inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-slate-700 to-slate-800 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-500/25 hover:shadow-xl hover:shadow-slate-500/30 transform transition-all duration-300 hover:scale-105">
                         <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
                         Ver detalle del proyecto
                       </a>
@@ -483,3 +483,7 @@
     </ng-template>
   </div>
 </div>
+
+
+
+
