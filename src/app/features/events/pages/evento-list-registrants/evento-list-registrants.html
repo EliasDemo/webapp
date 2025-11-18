@@ -11,22 +11,22 @@
             </svg>
           </div>
           <h1 class="text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 bg-clip-text text-transparent">
-            Proyecto · Inscritos y Candidatos
+            Evento · Inscritos y Candidatos
           </h1>
         </div>
         <p class="text-gray-600 text-base font-medium flex items-center gap-2">
           <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-          Gestión de participantes del proyecto
+          Gestión de participantes del evento
         </p>
       </div>
 
-      <a [routerLink]="['/vm/proyectos', proyectoId()]"
+      <a [routerLink]="['/vm/eventos', eventoId()]"
          class="whitespace-nowrap bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-300 font-semibold border-0 px-6 py-3.5 rounded-xl">
         <span class="flex items-center gap-2">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
-          Volver al proyecto
+          Volver al evento
         </span>
       </a>
     </div>
@@ -52,9 +52,17 @@
 
         <div class="flex-1"></div>
 
-        <div *ngIf="proyectoResumen() as pr" class="hidden md:flex items-center gap-3 text-sm">
+        <div *ngIf="eventoInfo() as ev" class="hidden md:flex items-center gap-3 text-sm">
           <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-            {{ pr.tipo }} <span *ngIf="pr.nivel">· Nivel {{ pr.nivel }}</span>
+            Evento #{{ ev.id }}
+          </span>
+          <span *ngIf="ev.estado"
+                class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+            Estado: {{ ev.estado }}
+          </span>
+          <span *ngIf="ev.cupo_maximo"
+                class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+            Cupo: {{ ev.cupo_maximo }}
           </span>
         </div>
       </div>
@@ -108,6 +116,16 @@
       </div>
 
       <div class="mt-4 flex items-center justify-end gap-3">
+        <!-- Botón Excel solo en INSCRITOS -->
+        <button *ngIf="view()==='INSCRITOS'"
+                type="button"
+                (click)="onDownloadExcel()"
+                class="px-4 py-2 rounded-lg bg-slate-100 text-gray-700 font-semibold hover:bg-slate-200 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                [disabled]="true"
+                title="Próximamente">
+          Descargar Excel (próximamente)
+        </button>
+
         <button (click)="onApplyFilters()"
                 class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
           Aplicar filtros
@@ -122,24 +140,41 @@
       <ng-container *ngIf="view()==='INSCRITOS'">
         <ng-container *ngIf="!loadingInscritos(); else loadingInsTpl">
           <ng-container *ngIf="inscritosFiltrados().length; else emptyInsTpl">
+
+            <div class="bg-white rounded-xl shadow-sm border overflow-hidden mb-4" *ngIf="inscritos() as data">
+              <div class="px-4 py-3 border-b bg-blue-50 flex flex-wrap items-center justify-between gap-3 text-sm">
+                <div class="font-semibold text-gray-800">
+                  Resumen de inscritos
+                </div>
+                <div class="flex flex-wrap gap-3 text-gray-700">
+                  <span>Total: <span class="font-semibold text-blue-700">{{ data.resumen.total }}</span></span>
+                  <span>Activos:
+                    <span class="font-semibold text-emerald-700">{{ data.resumen.activos }}</span>
+                  </span>
+                  <span>Finalizados:
+                    <span class="font-semibold text-slate-800">{{ data.resumen.finalizados }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
               <table class="w-full table-auto text-sm text-gray-800 border-separate border-spacing-0">
                 <thead class="bg-blue-50 text-gray-700">
                   <tr>
                     <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Código</th>
                     <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Estudiante</th>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Grupo / Ciclo</th>
                     <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Rol</th>
                     <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Estado</th>
-                    <th class="py-3 px-4 text-center font-semibold border-b border-blue-100">Requerido</th>
-                    <th class="py-3 px-4 text-center font-semibold border-b border-blue-100">Acumulado</th>
-                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Progreso</th>
-                    <th class="py-3 px-4 text-center font-semibold border-b border-blue-100">OK</th>
+                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Contacto</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let i of inscritosFiltrados(); trackBy: trackByInscrito"
                       class="odd:bg-white even:bg-slate-50 hover:bg-blue-50/50 transition-colors">
                     <td class="py-3 px-4 border-b">{{ i.expediente.codigo || '—' }}</td>
+
                     <td class="py-3 px-4 border-b">
                       <div class="font-medium">
                         <ng-container *ngIf="i.expediente.usuario?.full_name; else insNameFnLn">
@@ -149,13 +184,10 @@
                           {{ i.expediente.usuario?.first_name }} {{ i.expediente.usuario?.last_name }}
                         </ng-template>
                       </div>
-                      <div class="text-xs text-gray-500">
-                        {{ i.expediente.usuario?.email }}
-                        <ng-container *ngIf="i.expediente.usuario?.celular">
-                          · {{ i.expediente.usuario?.celular }}
-                        </ng-container>
-                      </div>
-                      <div class="mt-1 text-xs text-gray-500 flex flex-wrap gap-2">
+                    </td>
+
+                    <td class="py-3 px-4 border-b">
+                      <div class="flex flex-wrap gap-2 text-xs text-gray-600">
                         <span class="px-2 py-0.5 bg-slate-100 rounded-full">
                           Grupo: {{ i.expediente.grupo || '—' }}
                         </span>
@@ -164,28 +196,28 @@
                         </span>
                       </div>
                     </td>
-                    <td class="py-3 px-4 border-b"><span class="text-gray-700">{{ i.rol }}</span></td>
+
                     <td class="py-3 px-4 border-b">
-                      <span class="{{ badgeEstado(i.estado) }}">{{ i.estado }}</span>
+                      <span class="text-gray-800 font-medium">{{ i.rol }}</span>
                     </td>
-                    <td class="py-3 px-4 border-b text-center whitespace-nowrap">{{ mmToHHmm(i.requerido_min) }}</td>
-                    <td class="py-3 px-4 border-b text-center whitespace-nowrap">{{ mmToHHmm(i.acumulado_min) }}</td>
+
                     <td class="py-3 px-4 border-b">
-                      <div class="w-full h-2.5 bg-gray-200 rounded-full">
-                        <div class="h-2.5 rounded-full"
-                             [style.width.%]="percent(i.porcentaje)"
-                             [ngClass]="pctColor(i.porcentaje)"></div>
+                      <span [ngClass]="badgeEstado(i.estado)">{{ i.estado }}</span>
+                    </td>
+
+                    <td class="py-3 px-4 border-b">
+                      <div class="text-xs text-gray-600">
+                        {{ i.expediente.usuario?.email || '—' }}
+                        <ng-container *ngIf="i.expediente.usuario?.celular">
+                          · {{ i.expediente.usuario?.celular }}
+                        </ng-container>
                       </div>
-                      <div class="text-xs text-gray-500 mt-1">{{ (i.porcentaje ?? 0) }}%</div>
-                    </td>
-                    <td class="py-3 px-4 border-b text-center">
-                      <span *ngIf="i.finalizado; else nok" class="text-emerald-600">✅</span>
-                      <ng-template #nok><span class="text-rose-500">❌</span></ng-template>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+
           </ng-container>
         </ng-container>
       </ng-container>
@@ -197,97 +229,19 @@
 
             <!-- Elegibles -->
             <div class="bg-white rounded-xl shadow-sm border overflow-hidden mb-8">
-              <div class="px-4 py-3 border-b bg-blue-50 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex flex-col gap-1">
-                  <h3 class="font-semibold text-gray-800">Candidatos elegibles</h3>
-                  <div *ngIf="massEnrollMsg()"
-                       class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md">
-                    {{ massEnrollMsg() }}
-                  </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                  <div>
-                    Total:&nbsp;
-                    <span class="font-semibold text-blue-700">
-                      {{ candidatos()?.candidatos_total || 0 }}
-                    </span>
-                  </div>
-
-                  <div>
-                    Seleccionados:&nbsp;
-                    <span class="font-semibold text-emerald-700">
-                      {{ selectedCount() }}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    (click)="selectAllFiltered()"
-                    class="px-2 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 transition"
-                    [disabled]="!candidatosFiltrados().candidatos.length">
-                    Seleccionar todos
-                  </button>
-
-                  <button
-                    type="button"
-                    (click)="clearSelection()"
-                    class="px-2 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 transition"
-                    [disabled]="!selectedCount()">
-                    Limpiar selección
-                  </button>
-
-                  <button
-                    type="button"
-                    (click)="onMassEnrollSeleccionados()"
-                    class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold
-                           bg-emerald-600 text-white shadow hover:shadow-md
-                           disabled:opacity-60 disabled:cursor-not-allowed
-                           transition-all duration-200"
-                    [disabled]="massEnrolling() || !selectedCount()">
-                    <span class="flex items-center gap-1.5">
-                      <svg *ngIf="!massEnrolling()" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M5 13l4 4L19 7" />
-                      </svg>
-                      <svg *ngIf="massEnrolling()" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
-                        <path class="opacity-75" stroke-width="4" d="M4 12a8 8 0 018-8"></path>
-                      </svg>
-                      <span>Inscribir seleccionados</span>
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    (click)="onMassEnrollElegibles()"
-                    class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold
-                           bg-gradient-to-r from-emerald-500 to-teal-500
-                           text-white shadow hover:shadow-md
-                           disabled:opacity-60 disabled:cursor-not-allowed
-                           transition-all duration-200"
-                    [disabled]="massEnrolling() || !candidatosFiltrados().candidatos.length">
-                    <span class="flex items-center gap-1.5">
-                      <svg *ngIf="!massEnrolling()" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M5 13l4 4L19 7" />
-                      </svg>
-                      <svg *ngIf="massEnrolling()" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle>
-                        <path class="opacity-75" stroke-width="4" d="M4 12a8 8 0 018-8"></path>
-                      </svg>
-                      <span>Inscribir todos los elegibles</span>
-                    </span>
-                  </button>
+              <div class="px-4 py-3 border-b bg-blue-50 flex flex-wrap items-center justify-between gap-3">
+                <h3 class="font-semibold text-gray-800">Candidatos elegibles</h3>
+                <div class="text-sm text-gray-600">
+                  Total:
+                  <span class="font-semibold text-blue-700">
+                    {{ candidatos()?.candidatos_total || 0 }}
+                  </span>
                 </div>
               </div>
 
               <table class="w-full table-auto text-sm text-gray-800 border-separate border-spacing-0">
                 <thead class="bg-blue-50 text-gray-700">
                   <tr>
-                    <th class="py-3 px-4 text-left font-semibold border-b border-blue-100 w-10">
-                      Sel.
-                    </th>
                     <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Código</th>
                     <th class="py-3 px-4 text-left font-semibold border-b border-blue-100">Estudiante</th>
                     <th class="py-3 px-4 text-center font-semibold border-b border-blue-100">Grupo / Ciclo</th>
@@ -297,14 +251,6 @@
                 <tbody>
                   <tr *ngFor="let c of candidatosFiltrados().candidatos; trackBy: trackByCandidato"
                       class="odd:bg-white even:bg-slate-50 hover:bg-blue-50/50 transition-colors">
-                    <td class="py-3 px-4 border-b">
-                      <input
-                        type="checkbox"
-                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        [checked]="isSelected(c)"
-                        (change)="toggleCandidate(c, $event.target.checked)"
-                      />
-                    </td>
                     <td class="py-3 px-4 border-b">{{ c.codigo || '—' }}</td>
                     <td class="py-3 px-4 border-b">
                       <div class="font-medium">
@@ -331,10 +277,8 @@
                       </div>
                     </td>
                     <td class="py-3 px-4 border-b text-center">
-                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold border"
-                            [ngClass]="c.motivo === 'ELEGIBLE_VINCULADO'
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                              : 'bg-blue-50 text-blue-700 border-blue-200'">
+                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold border
+                                   bg-blue-50 text-blue-700 border-blue-200">
                         {{ c.motivo }}
                       </span>
                     </td>
@@ -348,7 +292,10 @@
               <div class="px-4 py-3 border-b bg-blue-50 flex items-center justify-between">
                 <h3 class="font-semibold text-gray-800">No elegibles (motivo)</h3>
                 <div class="text-sm text-gray-600">
-                  Total: <span class="font-semibold text-blue-700">{{ candidatos()?.descartados_total || 0 }}</span>
+                  Total:
+                  <span class="font-semibold text-blue-700">
+                    {{ candidatos()?.descartados_total || 0 }}
+                  </span>
                 </div>
               </div>
               <table class="w-full table-auto text-sm text-gray-800 border-separate border-spacing-0">
@@ -400,24 +347,24 @@
     <ng-template #emptyInsTpl>
       <div class="text-center py-20 bg-white rounded-2xl shadow-sm border">
         <h3 class="text-lg font-semibold mb-2">No hay inscritos</h3>
-        <p class="text-gray-600">Cuando haya estudiantes inscritos aparecerán aquí.</p>
+        <p class="text-gray-600">Cuando haya participantes inscritos aparecerán aquí.</p>
       </div>
     </ng-template>
 
     <ng-template #emptyCandTpl>
       <div class="text-center py-20 bg-white rounded-2xl shadow-sm border">
         <h3 class="text-lg font-semibold mb-2">Sin candidatos</h3>
-        <p class="text-gray-600">Cambia los filtros o revisa el estado del proyecto.</p>
+        <p class="text-gray-600">Cambia los filtros o revisa el estado del evento.</p>
       </div>
     </ng-template>
   </div>
 
-  <!-- Footer estilo "brand" -->
+  <!-- Footer -->
   <div class="mx-auto max-w-7xl px-4">
     <div class="flex items-center justify-center mt-8">
       <img src="https://i.ibb.co/h2kNRRL/file.png" alt="Logo" class="w-12 h-12">
-      <div class="ml-3 text-xl font-semibold text-blue-600">VM · Participantes</div>
+      <div class="ml-3 text-xl font-semibold text-blue-600">VM · Eventos</div>
     </div>
-    <footer class="text-center mt-6 text-sm text-gray-500">&copy; 2024 · Gestión de Proyectos</footer>
+    <footer class="text-center mt-6 text-sm text-gray-500">&copy; 2024 · Gestión de Eventos</footer>
   </div>
 </div>

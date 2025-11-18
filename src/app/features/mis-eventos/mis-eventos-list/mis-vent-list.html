@@ -1,0 +1,302 @@
+<div class="min-h-screen bg-slate-50/60">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Encabezado -->
+    <section class="mb-8">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <nav class="text-xs text-slate-500 mb-1" aria-label="Breadcrumb">
+            <span class="font-medium text-slate-500">Vida académica</span>
+            <span class="mx-2 text-slate-400">/</span>
+            <span class="text-slate-700 font-semibold">Mis eventos</span>
+          </nav>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+            Mis eventos
+          </h1>
+          <p class="mt-1 text-sm text-slate-600">
+            Aquí verás los eventos en los que estás inscrito y el historial de periodos anteriores.
+          </p>
+        </div>
+
+        <div class="flex flex-col items-end gap-3">
+          <div class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-right shadow-sm">
+            <div class="text-xs text-slate-500">Total de eventos</div>
+            <div class="text-2xl font-black text-slate-900">
+              {{ totalEventos() }}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            (click)="toggleHelp()"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 shadow-sm"
+          >
+            <i class="fa-solid fa-circle-question text-sky-600"></i>
+            ¿Cómo registrarme en un evento?
+          </button>
+        </div>
+      </div>
+
+      <!-- Bloque de ayuda: cómo registrarse -->
+      <div *ngIf="showHelp()" class="mt-4 rounded-2xl border border-sky-100 bg-sky-50/70 p-4 text-sm text-slate-700 shadow-sm">
+        <div class="flex items-start gap-3">
+          <div class="mt-0.5">
+            <i class="fa-solid fa-info-circle text-sky-600"></i>
+          </div>
+          <div>
+            <div class="font-semibold text-slate-900 mb-1">
+              ¿Cómo me inscribo a un evento nuevo?
+            </div>
+            <ol class="list-decimal list-inside space-y-1">
+              <li>Ingresa al módulo de eventos desde el menú principal (catálogo de eventos).</li>
+              <li>Busca el evento que te interese y revisa su información.</li>
+              <li>Si el evento indica “requiere inscripción” y hay cupos, pulsa el botón “Inscribirme”.</li>
+              <li>Una vez inscrito, el evento aparecerá aquí en “Mis eventos”.</li>
+            </ol>
+            <p class="mt-2 text-xs text-slate-500">
+              Nota: algunos eventos pueden ser de asistencia libre y no aparecerán en este listado.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading -->
+    <ng-container *ngIf="!loading(); else loadingTpl">
+      <!-- Error -->
+      <ng-container *ngIf="!error(); else errorTpl">
+        <!-- Sin eventos -->
+        <ng-container *ngIf="totalEventos() === 0; else withEvents">
+          <div class="max-w-xl mx-auto rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-xl bg-slate-900 text-white">
+              <i class="fa-solid fa-calendar-xmark text-lg"></i>
+            </div>
+            <h2 class="text-lg font-bold text-slate-900">Aún no tienes eventos inscritos</h2>
+            <p class="mt-2 text-sm text-slate-600">
+              Cuando te inscribas a un evento académico, aparecerá aquí el detalle por período y estado.
+            </p>
+          </div>
+        </ng-container>
+
+        <!-- Con eventos -->
+        <ng-template #withEvents>
+          <!-- Período actual -->
+          <section *ngIf="currentPeriodo() as pActual" class="mb-10">
+            <header class="mb-3 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-white">
+                  <i class="fa-solid fa-calendar-day"></i>
+                </div>
+                <div>
+                  <h2 class="text-xl font-bold text-slate-900">
+                    Período actual: {{ periodoEtiqueta(pActual) }}
+                  </h2>
+                  <p class="text-xs text-slate-500">
+                    Estado: {{ pActual.estado || '—' }} · {{ pActual.total_eventos }} evento(s)
+                  </p>
+                </div>
+              </div>
+            </header>
+
+            <ng-container *ngIf="eventosPeriodoActual().length; else noEventosActual">
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <article
+                  *ngFor="let e of eventosPeriodoActual()"
+                  class="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <header class="flex items-start justify-between gap-3 mb-3">
+                    <div class="min-w-0">
+                      <h3 class="text-sm font-bold text-slate-900 truncate">
+                        {{ e.titulo }}
+                      </h3>
+                      <p class="text-xs text-slate-500 truncate" *ngIf="e.subtitulo">
+                        {{ e.subtitulo }}
+                      </p>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                      <span [class]="estadoEventoClass(e.estado)">
+                        <i class="fa-solid fa-circle text-[6px] opacity-80"></i>
+                        {{ e.estado }}
+                      </span>
+                      <span [class]="estadoParticipacionClass(e.participacion?.estado)">
+                        {{ e.participacion?.estado || '—' }}
+                      </span>
+                    </div>
+                  </header>
+
+                  <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <span class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                      <i class="fa-solid fa-hashtag text-sky-600"></i>
+                      {{ e.codigo || '—' }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                      <i class="fa-solid fa-location-dot text-emerald-600"></i>
+                      {{ e.modalidad }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                      <i class="fa-solid fa-calendar text-amber-600"></i>
+                      {{ periodoEtiqueta(e.periodo) }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="text-[11px] text-slate-500">
+                      <div>
+                        Requiere inscripción:
+                        <span class="font-semibold text-slate-800">
+                          {{ e.requiere_inscripcion ? 'Sí' : 'No' }}
+                        </span>
+                      </div>
+                      <div *ngIf="e.cupo_maximo !== null">
+                        Cupo máximo:
+                        <span class="font-semibold text-slate-800">
+                          {{ e.cupo_maximo }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      [routerLink]="['/mis-eventos', e.id]"
+                      class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <i class="fa-solid fa-arrow-right"></i>
+                      Ver detalle
+                    </button>
+                  </div>
+                </article>
+              </div>
+            </ng-container>
+
+            <ng-template #noEventosActual>
+              <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+                No tienes eventos en el período actual. Revisa el historial o inscríbete a nuevos eventos desde el catálogo.
+              </div>
+            </ng-template>
+          </section>
+
+          <!-- Historial -->
+          <section *ngIf="tieneHistorial()">
+            <header class="mb-3 flex items-center gap-3">
+              <div class="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-white">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-slate-900">Historial de eventos</h2>
+                <p class="text-xs text-slate-500">
+                  Eventos de períodos anteriores donde participaste.
+                </p>
+              </div>
+            </header>
+
+            <div class="space-y-6">
+              <section *ngFor="let p of historicoPeriodos()">
+                <h3 class="text-sm font-semibold text-slate-700 mb-2">
+                  Período {{ periodoEtiqueta(p) }} · {{ p.estado || '—' }} · {{ p.total_eventos }} evento(s)
+                </h3>
+
+                <ng-container *ngIf="eventosPorPeriodo(p.id).length; else noEvPeriodo">
+                  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <article
+                      *ngFor="let e of eventosPorPeriodo(p.id)"
+                      class="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <header class="flex items-start justify-between gap-3 mb-3">
+                        <div class="min-w-0">
+                          <h4 class="text-sm font-bold text-slate-900 truncate">
+                            {{ e.titulo }}
+                          </h4>
+                          <p class="text-xs text-slate-500 truncate" *ngIf="e.subtitulo">
+                            {{ e.subtitulo }}
+                          </p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                          <span [class]="estadoEventoClass(e.estado)">
+                            <i class="fa-solid fa-circle text-[6px] opacity-80"></i>
+                            {{ e.estado }}
+                          </span>
+                          <span [class]="estadoParticipacionClass(e.participacion?.estado)">
+                            {{ e.participacion?.estado || '—' }}
+                          </span>
+                        </div>
+                      </header>
+
+                      <div class="flex flex-wrap items-center gap-2 mb-3">
+                        <span class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                          <i class="fa-solid fa-hashtag text-sky-600"></i>
+                          {{ e.codigo || '—' }}
+                        </span>
+                        <span class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                          <i class="fa-solid fa-location-dot text-emerald-600"></i>
+                          {{ e.modalidad }}
+                        </span>
+                      </div>
+
+                      <div class="flex items-center justify-between gap-3">
+                        <div class="text-[11px] text-slate-500">
+                          Inscripción:
+                          <span class="font-semibold text-slate-800">
+                            {{ e.requiere_inscripcion ? 'Con inscripción' : 'Libre' }}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          [routerLink]="['/mis-eventos', e.id]"
+                          class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          Ver detalle
+                        </button>
+                      </div>
+                    </article>
+                  </div>
+                </ng-container>
+
+                <ng-template #noEvPeriodo>
+                  <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-xs text-slate-500">
+                    No se encontraron eventos en este período.
+                  </div>
+                </ng-template>
+              </section>
+            </div>
+          </section>
+        </ng-template>
+      </ng-container>
+    </ng-container>
+
+    <!-- Loading -->
+    <ng-template #loadingTpl>
+      <div class="grid place-items-center py-20 text-center">
+        <div class="relative">
+          <div class="h-12 w-12 rounded-full border-4 border-slate-200"></div>
+          <div class="absolute inset-0 h-12 w-12 animate-spin rounded-full border-4 border-slate-900 border-t-transparent"></div>
+        </div>
+        <p class="mt-3 text-sm font-semibold text-slate-700">
+          Cargando tus eventos…
+        </p>
+      </div>
+    </ng-template>
+
+    <!-- Error -->
+    <ng-template #errorTpl>
+      <div class="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm">
+        <div class="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-rose-100 text-rose-600">
+          <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+        </div>
+        <h2 class="text-lg font-bold text-slate-900">
+          No se pudo cargar la información
+        </h2>
+        <p class="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">
+          {{ error() }}
+        </p>
+        <button
+          type="button"
+          (click)="cargarMisEventos()"
+          class="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          <i class="fa-solid fa-rotate"></i>
+          Reintentar
+        </button>
+      </div>
+    </ng-template>
+  </div>
+</div>

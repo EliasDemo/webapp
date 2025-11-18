@@ -267,7 +267,6 @@ export class EventDetailPage implements OnInit {
 
   trackImg = (_: number, img: VmImagen) => img.id;
 
-  // <- IMPORTANTE: tipo string para evitar tener que castear en el template
   prettyEstado(estado: string): string {
     switch (estado) {
       case 'PLANIFICADO':

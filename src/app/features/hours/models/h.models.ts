@@ -73,7 +73,7 @@ export interface RegistroHoraItem {
   [extra: string]: any;
 }
 
-/** Resumen */
+/** Resumen por periodo */
 export interface ResumenPorPeriodoItem {
   periodo_id: Id | null;
   codigo?: string | null;
@@ -81,12 +81,19 @@ export interface ResumenPorPeriodoItem {
   horas: number;
 }
 
+/** Resumen por vínculo (proyecto/evento) */
 export interface ResumenPorVinculoItem {
-  tipo: string;
+  tipo: string;                 // 'vm_proyecto' | 'vm_evento' | otro alias
+  tipo_label: string;           // 'PROYECTO' | 'EVENTO' | MAYUS de alias
   id: Id;
   titulo: string | null;
   minutos: number;
   horas: number;
+
+  // estos campos vienen del backend para proyectos con horas mínimas
+  minutos_requeridos: number | null;
+  horas_requeridas: number | null;
+  cumplido: boolean | null;     // true si ya llegó a la meta, null si no aplica
 }
 
 export interface ResumenHoras {
@@ -123,6 +130,9 @@ export type ReporteHorasFail = {
   meta?: Record<string, unknown>;
 };
 
+export type ReporteHorasResponse = ReporteHorasOk | ReporteHorasFail;
+
+/** Query para /reportes/horas/mias/por-proyecto */
 export type AvanceProyectoQuery = Partial<{
   estado: string;   // 'APROBADO' por defecto; usa '*' para todos
   periodo_id: Id;   // opcional
@@ -154,7 +164,6 @@ export type AvancePorProyectoFail = {
   meta?: Record<string, unknown>;
 };
 
-export type AvancePorProyectoResponse = AvancePorProyectoOk | AvancePorProyectoFail;
-
-
-export type ReporteHorasResponse = ReporteHorasOk | ReporteHorasFail;
+export type AvancePorProyectoResponse =
+  | AvancePorProyectoOk
+  | AvancePorProyectoFail;

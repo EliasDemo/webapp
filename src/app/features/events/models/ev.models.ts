@@ -160,3 +160,145 @@ export interface VmImagen {
   created_at?: string;
   updated_at?: string;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Usuario / Expediente ref para eventos
+// ─────────────────────────────────────────────────────────────
+
+export interface VmUsuarioRef {
+  id: number | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  full_name?: string | null;
+  email?: string | null;
+  celular?: string | null;
+}
+
+export interface VmExpedienteRef {
+  id: number;
+  codigo?: string | null;
+  grupo?: string | null;
+  ciclo?: string | null;
+  usuario?: VmUsuarioRef | null;
+}
+
+// Resumen de evento que se usa en inscritos/candidatos
+export interface VmEventoResumen {
+  id: number;
+  estado?: VmEstado;
+  requiere_inscripcion?: boolean;
+  cupo_maximo?: number | null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Inscritos en evento
+// ─────────────────────────────────────────────────────────────
+
+export interface VmEventoInscritoItem {
+  participacion_id: number;
+  rol: string;
+  estado: string;
+  expediente: VmExpedienteRef;
+}
+
+export interface VmEventoInscritosResumen {
+  total: number;
+  activos: number;
+  finalizados: number;
+}
+
+export interface VmEventoInscritosData {
+  evento: VmEventoResumen;
+  resumen: VmEventoInscritosResumen;
+  inscritos: VmEventoInscritoItem[];
+}
+
+export type VmEventoInscritosEstadoFiltro =
+  | 'TODOS'
+  | 'ACTIVOS'
+  | 'FINALIZADOS';
+
+export interface VmEventoInscritosFilter {
+  estado?: VmEventoInscritosEstadoFiltro;
+  roles?: string[];
+}
+
+// ─────────────────────────────────────────────────────────────
+// Candidatos a evento
+// ─────────────────────────────────────────────────────────────
+
+export interface VmEventoCandidatoItem {
+  expediente_id: number;
+  codigo?: string | null;
+  grupo?: string | null;
+  ciclo?: string | null;
+  usuario: VmUsuarioRef | null;
+  motivo: string; // 'ELEGIBLE_EVENTO'
+}
+
+export interface VmEventoNoElegibleItem {
+  expediente_id: number;
+  codigo?: string | null;
+  razon: string; // 'ALREADY_ENROLLED', 'EVENT_NOT_ACTIVE', etc.
+  meta?: any;
+}
+
+export interface VmEventoCandidatosData {
+  evento: VmEventoResumen;
+  candidatos_total: number;
+  descartados_total: number;
+  candidatos: VmEventoCandidatoItem[];
+  no_elegibles: VmEventoNoElegibleItem[];
+}
+
+export interface VmEventoCandidatosFilter {
+  q?: string;
+  solo_elegibles?: boolean;
+  limit?: number;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// Mis eventos (vista alumno)
+// ─────────────────────────────────────────────────────────────
+
+export type VmMisEventosEstadoParticipacion =
+  | 'TODOS'
+  | 'ACTIVOS'
+  | 'FINALIZADOS';
+
+export interface VmMisEventosFilter {
+  periodo_id?: number;
+  estado_participacion?: VmMisEventosEstadoParticipacion;
+}
+
+export interface VmEventoParticipacionRef {
+  id: number;
+  estado: string;
+}
+
+export interface VmMisEventosPeriodo extends Periodo {
+  total_eventos: number;
+}
+
+export interface VmEventoAlumnoItem {
+  id: number;
+  codigo: string;
+  titulo: string;
+  subtitulo?: string | null;
+
+  modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'MIXTA';
+  estado: VmEstado;
+
+  periodo_id: number;
+  requiere_inscripcion: boolean;
+  cupo_maximo?: number | null;
+
+  periodo: Periodo;
+  participacion: VmEventoParticipacionRef;
+}
+
+export interface VmMisEventosData {
+  periodos: VmMisEventosPeriodo[];
+  eventos: VmEventoAlumnoItem[];
+}

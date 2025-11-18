@@ -119,6 +119,23 @@ export class SidebarComponent {
       roles: 'ESTUDIANTE',
       // accesible a estudiantes autenticados
     },
+
+    {
+      route: '/mis-eventos',
+      label: 'Mis Eventos',
+      icon: 'fas fa-calendar-alt text-base',
+      activeClass: 'bg-sky-50/80 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300',
+      indicatorClass: 'bg-gradient-to-b from-sky-500 to-cyan-500',
+      iconActiveClass: 'bg-sky-500/20 shadow-md',
+      iconActiveColor: 'text-sky-600 dark:text-sky-400',
+      textActiveColor: 'text-sky-700 dark:text-sky-300',
+      exact: true,
+      roles: 'ESTUDIANTE',
+    },
+
+
+
+
     {
       route: '/h/horas',
       label: 'Historia',
@@ -134,19 +151,28 @@ export class SidebarComponent {
     },
 
     {
-      route: '/settings',
-      label: 'Configuración',
+      route: '/perfil/datos', // o '/perfil' / '/perfil/cuenta' según tu routing real
+      label: 'settings',
       icon: 'fas fa-cog text-base',
-      activeClass: 'bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300',
-      indicatorClass: 'bg-gradient-to-b from-indigo-500 to-purple-500',
-      iconActiveClass: 'bg-indigo-500/20 shadow-md',
-      iconActiveColor: 'text-indigo-600 dark:text-indigo-400',
-      textActiveColor: 'text-indigo-700 dark:text-indigo-300',
+
+      activeClass:
+        'bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300',
+      indicatorClass:
+        'bg-gradient-to-b from-indigo-500 to-purple-500',
+      iconActiveClass:
+        'bg-indigo-500/20 shadow-md',
+      iconActiveColor:
+        'text-indigo-600 dark:text-indigo-400',
+      textActiveColor:
+        'text-indigo-700 dark:text-indigo-300',
+
       exact: true,
-      // EJEMPLO: proteger por rol (solo ADMIN)
-      // Para varios roles (cualquiera):
-      // roles: ['ADMINISTRADOR','COORDINADOR'], roleAny: true
+
+      // Opcional: si quisieras limitar por rol, por ejemplo solo ADMIN:
+      // roles: ['ADMIN'],
+      // roleAny: true,
     },
+
 
     {
       route: '/ad/roles',

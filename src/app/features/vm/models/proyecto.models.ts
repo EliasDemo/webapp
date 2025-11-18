@@ -214,8 +214,29 @@ export interface VmParticipacion {
   estado: 'INSCRITO'|'CONFIRMADO'|'RETIRADO'|'CANCELADO'|'FINALIZADO'|string; created_at: string | null;
 }
 
-export type EnrolOk = { ok: true; code: 'ENROLLED'; data: { participacion: VmParticipacion; proyecto: { id: Id; tipo: TipoProyecto; nivel: number | null } } };
-export type EnrolFailCode = 'PROJECT_NOT_ACTIVE' | 'DIFFERENT_EP_SEDE' | 'ALREADY_ENROLLED' | 'PENDING_LINKED_PREV' | 'LEVEL_NOT_ALLOWED' | 'LEVEL_ALREADY_COMPLETED';
+export type EnrolOk = {
+  ok: true;
+  code: 'ENROLLED';
+  data: {
+    participacion: VmParticipacion;
+    proyecto: { id: Id; tipo: TipoProyecto; nivel: number | null };
+  };
+};
+
+/** ✅ UPDATED: añadimos los códigos nuevos que puede devolver el backend */
+export type EnrolFailCode =
+  | 'PROJECT_NOT_ACTIVE'
+  | 'DIFFERENT_EP_SEDE'
+  | 'STUDENT_NOT_ACTIVE'
+  | 'NOT_ENROLLED_CURRENT_PERIOD'
+  | 'NO_CURRENT_PERIOD'
+  | 'LEVEL_MISMATCH'
+  | 'PENDING_LINKED_PREV'
+  | 'ALREADY_ENROLLED'
+  // compat con versiones anteriores:
+  | 'LEVEL_NOT_ALLOWED'
+  | 'LEVEL_ALREADY_COMPLETED';
+
 export type EnrolFail = ApiFail & { code: EnrolFailCode };
 export type EnrolResponse = EnrolOk | EnrolFail;
 
@@ -254,12 +275,23 @@ export type AlumnoAsistenciaEstado = 'PENDIENTE' | 'VALIDADO' | 'ANULADO' | 'SIN
 export interface AlumnoSesion {
   sesion: VmSesion;
   estado_relativo: AlumnoSesionEstado;
-  asistencia: { estado: AlumnoAsistenciaEstado; metodo?: MetodoAsistencia | null; check_in_at?: string | null } | null;
+  asistencia: {
+    estado: AlumnoAsistenciaEstado;
+    metodo?: MetodoAsistencia | null;
+    check_in_at?: string | null;
+  } | null;
 }
 
 export interface AlumnoProcesoResumen {
   proceso: VmProceso;
-  progreso: { min_total: number; min_validados: number; min_pendientes: number; sesiones_total: number; sesiones_asistidas: number; sesiones_faltadas: number; };
+  progreso: {
+    min_total: number;
+    min_validados: number;
+    min_pendientes: number;
+    sesiones_total: number;
+    sesiones_asistidas: number;
+    sesiones_faltadas: number;
+  };
   sesiones: AlumnoSesion[];
 }
 
@@ -269,7 +301,8 @@ export type AlumnoAgendaResponse = AlumnoProyectoAgenda[];
 // Staff Agenda
 export interface StaffSesionCard {
   sesion: VmSesion; proyecto: VmProyecto; proceso: VmProceso;
-  inscritos: number; asistencias: number; ventanas?: { qr?: VmQrVentanaQR | null; manual?: VmVentanaManual | null } | null;
+  inscritos: number; asistencias: number;
+  ventanas?: { qr?: VmQrVentanaQR | null; manual?: VmVentanaManual | null } | null;
 }
 export type StaffAgendaResponse = StaffSesionCard[];
 
@@ -298,6 +331,7 @@ export interface ExpedienteRef {
   id: number;
   codigo?: string | null;
   grupo?: string | null;
+  ciclo?: string | number | null;
   usuario?: UsuarioRef;
 }
 
@@ -326,16 +360,21 @@ export type RazonNoElegible =
   | 'ALREADY_ENROLLED'
   | 'PROJECT_NOT_ACTIVE'
   | 'PENDING_LINKED_PREV'
+  | 'LEVEL_MISMATCH'
+  | 'NO_CURRENT_PERIOD'
+  | 'NOT_ENROLLED_CURRENT_PERIOD'
+  // compat:
   | 'LEVEL_NOT_ALLOWED'
   | 'LEVEL_ALREADY_COMPLETED';
 
 export interface CandidatoItem {
   expediente_id: number;
   codigo?: string | null;
+  grupo?: string | null;
+  ciclo?: string | number | null;
   usuario?: UsuarioRef;
   motivo: MotivoElegible;
 }
-
 export interface NoElegibleItem {
   expediente_id: number;
   codigo?: string | null;
@@ -349,6 +388,22 @@ export interface CandidatosResponseData {
   descartados_total: number;
   candidatos: CandidatoItem[];
   no_elegibles: NoElegibleItem[];
+}
+
+export interface BulkEnrollStats {
+  proyecto: VmProyectoResumen;
+  creados: number;
+  ya_inscritos: number;
+  descartados_total: number;
+  descartados: NoElegibleItem[];
+}
+
+export interface BulkEnrolResponseData {
+  proyecto: VmProyectoResumen;
+  creados: number;
+  ya_inscritos: number;
+  descartados_total: number;
+  descartados: NoElegibleItem[];
 }
 
 // ───────────────────────────────────────────────────────────────

@@ -10,6 +10,14 @@ import {
   PeriodoRaw,
   EventoCreate,
   VmCategoriaEvento,
+  VmEventoInscritosData,
+  VmEventoInscritosFilter,
+  VmEventoCandidatosData,
+  VmEventoCandidatosFilter,
+  VmMisEventosData,
+  VmMisEventosFilter,
+  VmMisEventosPeriodo,
+  VmEventoAlumnoItem,
 } from '../models/ev.models';
 
 export type ApiResponse<T> = { ok: boolean; data: T; meta?: any };
@@ -31,9 +39,11 @@ export class EvApiService {
   private eventosUrl(): string {
     return `${this.baseUrl}/vm/eventos`;
   }
+
   private eventoCategoriasUrl(): string {
     return `${this.baseUrl}/vm/eventos/categorias`;
   }
+
   private lookupsUrl(): string {
     return `${this.baseUrl}/lookups`;
   }
@@ -133,49 +143,31 @@ export class EvApiService {
   // 🗂 Categorías de evento
   // ──────────────────────────────────────────────
 
-// ──────────────────────────────────────────────
-// 🗂 Categorías de evento
-// ──────────────────────────────────────────────
-
-listarCategoriasEvento(): Observable<VmCategoriaEvento[]> {
-  return this.http.get<any>(this.eventoCategoriasUrl()).pipe(
-    map((resp): VmCategoriaEvento[] => {
-      // 1) Si el backend devuelve directamente un array
-      if (Array.isArray(resp)) {
-        return resp as VmCategoriaEvento[];
-      }
-
-      // 2) Si devuelve { ok, data: [...] }
-      if (Array.isArray(resp?.data)) {
-        return resp.data as VmCategoriaEvento[];
-      }
-
-      // 3) Si devuelve { ok, items: [...] }
-      if (Array.isArray(resp?.items)) {
-        return resp.items as VmCategoriaEvento[];
-      }
-
-      // 4) Si devuelve { ok, data: { items: [...] } }
-      if (Array.isArray(resp?.data?.items)) {
-        return resp.data.items as VmCategoriaEvento[];
-      }
-
-      // 5) Si devuelve { ok, data: { data: [...] } } (Resource Collection de Laravel)
-      if (Array.isArray(resp?.data?.data)) {
-        return resp.data.data as VmCategoriaEvento[];
-      }
-
-      // 6) Si usaste una clave "categorias" en el backend
-      if (Array.isArray(resp?.categorias)) {
-        return resp.categorias as VmCategoriaEvento[];
-      }
-
-      return [];
-    })
-  );
-}
-
-
+  listarCategoriasEvento(): Observable<VmCategoriaEvento[]> {
+    return this.http.get<any>(this.eventoCategoriasUrl()).pipe(
+      map((resp): VmCategoriaEvento[] => {
+        if (Array.isArray(resp)) {
+          return resp as VmCategoriaEvento[];
+        }
+        if (Array.isArray(resp?.data)) {
+          return resp.data as VmCategoriaEvento[];
+        }
+        if (Array.isArray(resp?.items)) {
+          return resp.items as VmCategoriaEvento[];
+        }
+        if (Array.isArray(resp?.data?.items)) {
+          return resp.data.items as VmCategoriaEvento[];
+        }
+        if (Array.isArray(resp?.data?.data)) {
+          return resp.data.data as VmCategoriaEvento[];
+        }
+        if (Array.isArray(resp?.categorias)) {
+          return resp.categorias as VmCategoriaEvento[];
+        }
+        return [];
+      })
+    );
+  }
 
   // ──────────────────────────────────────────────
   // 🖼️ IMÁGENES DE EVENTO
@@ -221,8 +213,6 @@ listarCategoriasEvento(): Observable<VmCategoriaEvento[]> {
     imagenId: number,
     payload: Partial<Pick<VmImagen, 'titulo' | 'visibilidad'>>
   ): Observable<ApiResponse<VmImagen>> {
-    // Ojo: tu backend actual no tiene PATCH para imágenes de evento;
-    // deja este método solo si existe la ruta.
     return this.http.patch<ApiResponse<VmImagen>>(
       `${this.eventosUrl()}/${eventoId}/imagenes/${imagenId}`,
       payload
@@ -256,6 +246,136 @@ listarCategoriasEvento(): Observable<VmCategoriaEvento[]> {
             fecha_fin: p.fecha_fin,
           }))
         )
+      );
+  }
+
+  // ──────────────────────────────────────────────
+  // 👥 Inscritos / Candidatos de evento
+  // ──────────────────────────────────────────────
+
+  listarInscritosEvento(
+    eventoId: number,
+    filtro?: VmEventoInscritosFilter
+  ): Observable<ApiResponse<VmEventoInscritosData>> {
+    let params = new HttpParams();
+
+    if (filtro?.estado && filtro.estado !== 'TODOS') {
+      params = params.set('estado', filtro.estado);
+    }
+
+    if (filtro?.roles && filtro.roles.length > 0) {
+      filtro.roles.forEach((rol) => {
+        params = params.append('roles[]', rol);
+      });
+    }
+
+    return this.http.get<ApiResponse<VmEventoInscritosData>>(
+      `${this.eventosUrl()}/${eventoId}/inscritos`,
+      { params }
+    );
+  }
+
+  listarCandidatosEvento(
+    eventoId: number,
+    filtro?: VmEventoCandidatosFilter
+  ): Observable<ApiResponse<VmEventoCandidatosData>> {
+    let params = new HttpParams();
+
+    if (filtro?.q) {
+      params = params.set('q', filtro.q);
+    }
+
+    if (typeof filtro?.solo_elegibles === 'boolean') {
+      params = params.set(
+        'solo_elegibles',
+        filtro.solo_elegibles ? '1' : '0'
+      );
+    }
+
+    if (typeof filtro?.limit === 'number' && filtro.limit > 0) {
+      params = params.set('limit', String(filtro.limit));
+    }
+
+    return this.http.get<ApiResponse<VmEventoCandidatosData>>(
+      `${this.eventosUrl()}/${eventoId}/candidatos`,
+      { params }
+    );
+  }
+
+  // ──────────────────────────────────────────────
+  // 👤 Mis eventos (alumno)
+  // ──────────────────────────────────────────────
+
+  listarMisEventos(
+    filtro?: VmMisEventosFilter
+  ): Observable<ApiResponse<VmMisEventosData>> {
+    let params = new HttpParams();
+
+    if (filtro?.periodo_id !== undefined && filtro.periodo_id !== null) {
+      params = params.set('periodo_id', String(filtro.periodo_id));
+    }
+
+    if (filtro?.estado_participacion) {
+      params = params.set(
+        'estado_participacion',
+        filtro.estado_participacion
+      );
+    }
+
+    return this.http
+      .get<any>(`${this.baseUrl}/vm/mis-eventos`, { params })
+      .pipe(
+        map((resp): ApiResponse<VmMisEventosData> => {
+          const data = resp?.data ?? resp ?? {};
+
+          const periodos: VmMisEventosPeriodo[] = (data.periodos ?? []).map(
+            (p: any) => ({
+              id: Number(p.id),
+              anio: Number(p.anio),
+              ciclo: String(p.ciclo),
+              estado: p.estado,
+              fecha_inicio: p.fecha_inicio ?? undefined,
+              fecha_fin: p.fecha_fin ?? undefined,
+              total_eventos: Number(p.total_eventos ?? 0),
+            })
+          );
+
+          const eventos: VmEventoAlumnoItem[] = (data.eventos ?? []).map(
+            (e: any) => ({
+              id: Number(e.id),
+              codigo: e.codigo,
+              titulo: e.titulo,
+              subtitulo: e.subtitulo ?? null,
+              modalidad: e.modalidad,
+              estado: e.estado,
+              periodo_id: Number(e.periodo_id),
+              requiere_inscripcion: !!e.requiere_inscripcion,
+              cupo_maximo:
+                e.cupo_maximo !== null && e.cupo_maximo !== undefined
+                  ? Number(e.cupo_maximo)
+                  : null,
+              periodo: {
+                id: Number(e.periodo?.id ?? e.periodo_id),
+                anio: Number(e.periodo?.anio),
+                ciclo: String(e.periodo?.ciclo),
+                estado: e.periodo?.estado,
+              },
+              participacion: {
+                id: Number(e.participacion?.id),
+                estado: e.participacion?.estado,
+              },
+            })
+          );
+
+          return {
+            ok: resp?.ok ?? true,
+            data: {
+              periodos,
+              eventos,
+            },
+            meta: resp?.meta,
+          };
+        })
       );
   }
 }

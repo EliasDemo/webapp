@@ -1,0 +1,386 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50/30 py-8">
+  <div class="mx-auto max-w-5xl px-4">
+    <!-- Header -->
+    <div
+      class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+    >
+      <div class="space-y-2">
+        <div class="flex items-center gap-3">
+          <div
+            class="p-2 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-white/60 shadow-emerald-100/50"
+          >
+            <svg
+              class="w-6 h-6 text-emerald-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1
+              class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-emerald-700 bg-clip-text text-transparent"
+            >
+              Sesiones de inicio de sesión
+            </h1>
+            <p class="text-gray-600 text-sm flex items-center gap-2">
+              <span
+                class="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full animate-pulse"
+              ></span>
+              Revisa en qué dispositivos tienes la cuenta abierta y cierra los
+              que no reconozcas.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:items-end gap-2">
+        <div
+          class="px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-white/60 text-xs text-gray-600 flex items-center gap-2"
+        >
+          <span
+            class="w-2 h-2 rounded-full"
+            [ngClass]="{
+              'bg-emerald-500': totalSessions() > 0,
+              'bg-gray-300': totalSessions() === 0
+            }"
+          ></span>
+          {{ totalSessions() }} sesiones detectadas
+        </div>
+
+        <button
+          type="button"
+          (click)="cerrarOtrasSesiones()"
+          [disabled]="!hasOtherSessions() || loading()"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm font-medium hover:bg-red-100 hover:border-red-300 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 13h6m-7 8h8a2 2 0 002-2v-3H5v3a2 2 0 002 2zM9 6h6m-7 8h8a2 2 0 002-2V5a2 2 0 00-2-2H9a2 2 0 00-2 2v7a2 2 0 002 2z"
+            />
+          </svg>
+          Cerrar otras sesiones
+        </button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div
+      *ngIf="errorMsg()"
+      class="mb-6 p-4 rounded-xl bg-gradient-to-r from-red-50 to-red-100/50 text-red-700 border border-red-200 backdrop-blur-sm flex items-center gap-3"
+    >
+      <svg
+        class="w-5 h-5 flex-shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span>{{ errorMsg() }}</span>
+    </div>
+
+    <!-- Loading -->
+    <div
+      *ngIf="loading(); else sessionsTpl"
+      class="flex flex-col justify-center items-center py-16 bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm"
+    >
+      <div class="relative">
+        <div
+          class="animate-spin rounded-full h-14 w-14 border-b-2 border-emerald-600"
+        ></div>
+        <div
+          class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+        >
+          <svg
+            class="w-6 h-6 text-emerald-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+      </div>
+      <p class="mt-4 text-gray-600 font-medium">
+        Cargando sesiones activas...
+      </p>
+    </div>
+
+    <!-- Lista de sesiones -->
+    <ng-template #sessionsTpl>
+      <ng-container *ngIf="sessions().length > 0; else emptyTpl">
+        <div
+          class="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm divide-y divide-gray-100"
+        >
+          <div class="px-4 py-3 flex items-center justify-between">
+            <div class="text-sm text-gray-600">
+              Estas son las sesiones donde tu cuenta está activa.
+            </div>
+            <button
+              type="button"
+              (click)="reload()"
+              [disabled]="loading()"
+              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-700 hover:bg-white hover:border-gray-300 disabled:opacity-60 transition-all duration-200"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Actualizar
+            </button>
+          </div>
+
+          <div *ngFor="let s of sessions()" class="px-4 py-4">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+              <!-- Col izquierda: info principal -->
+              <div class="flex-1 flex items-start gap-3">
+                <div
+                  class="mt-1 w-9 h-9 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-5 h-5 text-emerald-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M9 13h6a3 3 0 10-6 0z"
+                    />
+                  </svg>
+                </div>
+
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-semibold text-gray-800">
+                      {{ deviceLabel(s) }} · {{ browserLabel(s) }}
+                    </span>
+
+                    <span
+                      *ngIf="s.is_current"
+                      class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold"
+                    >
+                      Esta sesión
+                    </span>
+
+                    <span
+                      *ngIf="!s.is_current"
+                      class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200"
+                    >
+                      ID: {{ shortId(s) }}
+                    </span>
+                  </div>
+
+                  <div
+                    class="text-xs text-gray-500 flex flex-wrap items-center gap-x-3 gap-y-1"
+                  >
+                    <span
+                      *ngIf="s.ip_address"
+                      class="inline-flex items-center gap-1"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 11c0-1.657-1.343-3-3-3S6 9.343 6 11s1.343 3 3 3 3-1.343 3-3z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 11c0-1.657 1.343-3 3-3s3 1.343 3 3-1.343 3-3 3-3-1.343-3-3z"
+                        />
+                      </svg>
+                      IP {{ s.ip_address }}
+                    </span>
+
+                    <span class="inline-flex items-center gap-1">
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Última actividad:
+                      <span class="font-medium">{{
+                        lastActivityLabel(s)
+                      }}</span>
+                    </span>
+
+                    <span class="inline-flex items-center gap-1">
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 7V3m8 4V3m-4 4v14m-7-5h14"
+                        />
+                      </svg>
+                      Inicio:
+                      <span class="font-medium">{{
+                        createdAtLabel(s)
+                      }}</span>
+                    </span>
+                  </div>
+
+                  <div
+                    *ngIf="s.user_agent"
+                    class="text-[11px] text-gray-400 mt-1 line-clamp-2"
+                  >
+                    {{ s.user_agent }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Col derecha: acciones -->
+              <div class="shrink-0 flex items-center gap-2">
+                <button
+                  *ngIf="!s.is_current"
+                  type="button"
+                  (click)="cerrarSesion(s)"
+                  [disabled]="loading() || actionSessionId() === s.id"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 12H9m0 0l3-3m-3 3l3 3m-6 4h12a2 2 0 002-2V9a2 2 0 00-2-2h-5.5a1 1 0 01-.707-.293l-1.5-1.5A1 1 0 0011.086 5H6A2 2 0 004 7v9a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span *ngIf="actionSessionId() !== s.id">
+                    Cerrar sesión
+                  </span>
+                  <span *ngIf="actionSessionId() === s.id">
+                    Cerrando...
+                  </span>
+                </button>
+
+                <span
+                  *ngIf="s.is_current"
+                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-700"
+                >
+                  <span
+                    class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
+                  ></span>
+                  Sesión actual
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-template>
+
+    <!-- Empty -->
+    <ng-template #emptyTpl>
+      <div
+        class="text-center py-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/60"
+      >
+        <div
+          class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 flex items-center justify-center"
+        >
+          <svg
+            class="w-9 h-9 text-emerald-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 13h6m-3-3v6m9-4a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <h2 class="text-lg font-semibold text-gray-800 mb-1">
+          No hay sesiones registradas
+        </h2>
+        <p class="text-gray-600 text-sm max-w-md mx-auto mb-4">
+          Por ahora no se encontraron sesiones activas asociadas a tu cuenta.
+        </p>
+        <button
+          type="button"
+          (click)="reload()"
+          class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-medium hover:from-emerald-700 hover:to-teal-700 transition-all duration-300 shadow-sm hover:shadow-md inline-flex items-center gap-2"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          Volver a intentar
+        </button>
+      </div>
+    </ng-template>
+  </div>
+</div>

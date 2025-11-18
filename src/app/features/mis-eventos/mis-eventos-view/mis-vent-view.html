@@ -1,0 +1,290 @@
+<!-- ENCABEZADO / HERO -->
+<section class="bg-white border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Migas -->
+    <nav class="text-xs text-slate-500 mb-2" aria-label="Breadcrumb">
+      <a [routerLink]="['/mis-eventos']" class="hover:text-slate-700 font-medium">
+        Mis eventos
+      </a>
+      <span class="mx-2 text-slate-400">/</span>
+      <span class="text-slate-600 font-semibold">Detalle</span>
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <!-- Columna izquierda -->
+      <div class="lg:col-span-7">
+        <div class="flex flex-wrap items-center gap-3 mb-2">
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+            {{ evento()?.titulo || 'Evento' }}
+          </h1>
+          <span
+            class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border"
+            [class]="headerEstadoBadge()"
+            aria-label="Estado del evento"
+          >
+            <i class="fa-solid fa-circle text-[7px] opacity-80"></i>
+            {{ evento()?.estado || '—' }}
+          </span>
+        </div>
+
+        <!-- Chips clave -->
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <span class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <i class="fa-solid fa-hashtag text-sky-600"></i>
+            {{ evento()?.codigo || '—' }}
+          </span>
+          <span class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <i class="fa-solid fa-location-dot text-emerald-600"></i>
+            {{ evento()?.modalidad || '—' }}
+          </span>
+          <span class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <i class="fa-solid fa-calendar text-amber-600"></i>
+            {{ periodoEtiqueta() }}
+          </span>
+          <span class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+            <i class="fa-solid fa-ticket text-violet-600"></i>
+            {{ evento()?.requiere_inscripcion ? 'Requiere inscripción' : 'Acceso libre' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Columna derecha: portada + CTA volver -->
+      <div class="lg:col-span-5">
+        <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          <ng-container *ngIf="portadaUrl(); else noCoverHero">
+            <img
+              [src]="portadaUrl()!"
+              alt="Portada del evento"
+              class="w-full h-56 object-cover"
+            />
+          </ng-container>
+          <ng-template #noCoverHero>
+            <div class="h-56 grid place-items-center bg-slate-50 text-slate-400">
+              <div class="text-center">
+                <i class="fa-solid fa-image text-3xl mb-1"></i>
+                <div class="text-sm font-medium">Sin portada</div>
+              </div>
+            </div>
+          </ng-template>
+          <div class="p-4 flex items-center justify-between gap-3">
+            <div class="text-xs text-slate-500">
+              ID:
+              <span class="font-semibold text-slate-700">
+                {{ evento()?.id }}
+              </span>
+            </div>
+            <button
+              type="button"
+              (click)="volverAlListado()"
+              class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <i class="fa-solid fa-arrow-left"></i>
+              Volver a mis eventos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sub-nav sticky -->
+  <div class="sticky top-0 z-20 bg-white/85 backdrop-blur border-t border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex items-center gap-2 py-2">
+        <button
+          (click)="scrollTo('resumen')"
+          class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 border border-transparent"
+        >
+          Resumen
+        </button>
+        <button
+          (click)="scrollTo('inscripcion')"
+          class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 border border-transparent"
+        >
+          Información de inscripción
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CUERPO -->
+<main class="bg-slate-50/50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Loading / Error wrapper -->
+    <ng-container *ngIf="!loading(); else loadingTpl">
+      <ng-container *ngIf="!error() && evento(); else errorTpl">
+        <!-- Resumen -->
+        <section id="resumen" class="scroll-mt-20 mb-8">
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-4 flex items-center gap-3">
+              <div class="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-white">
+                <i class="fa-solid fa-circle-info"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-slate-900">Resumen</h2>
+                <p class="text-sm text-slate-500">Información general del evento</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Código</span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ evento()?.codigo || '—' }}
+                </b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Modalidad</span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ evento()?.modalidad || '—' }}
+                </b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Período</span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ periodoEtiqueta() }}
+                </b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">EP-Sede</span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ evento()?.ep_sede_id ?? '—' }}
+                </b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Cupo máximo</span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ evento()?.cupo_maximo ?? 'Sin límite' }}
+                </b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">Requiere inscripción</span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ evento()?.requiere_inscripcion ? 'Sí' : 'No' }}
+                </b>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <h3 class="text-sm font-semibold text-slate-800 mb-2">
+                Descripción
+              </h3>
+              <p class="text-sm text-slate-700 whitespace-pre-line" *ngIf="evento()?.descripcion_larga; else descCorta">
+                {{ evento()?.descripcion_larga }}
+              </p>
+              <ng-template #descCorta>
+                <p class="text-sm text-slate-700 whitespace-pre-line">
+                  {{ evento()?.descripcion_corta || 'Este evento no tiene una descripción detallada registrada.' }}
+                </p>
+              </ng-template>
+            </div>
+          </div>
+        </section>
+
+        <!-- Información de inscripción -->
+        <section id="inscripcion" class="scroll-mt-20">
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-4 flex items-center gap-3">
+              <div class="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-white">
+                <i class="fa-solid fa-ticket"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-slate-900">Información de inscripción</h2>
+                <p class="text-sm text-slate-500">
+                  Reglas y ventana de inscripción del evento.
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">
+                  Requiere inscripción previa
+                </span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ evento()?.requiere_inscripcion ? 'Sí, debes inscribirte' : 'No, asistencia libre' }}
+                </b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">
+                  Cupo máximo
+                </span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ evento()?.cupo_maximo ?? 'Sin límite registrado' }}
+                </b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">
+                  Inscripción desde
+                </span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ evento()?.inscripcion_desde || 'No definido' }}
+                </b>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 flex flex-col">
+                <span class="text-[11px] uppercase tracking-wider text-slate-500">
+                  Inscripción hasta
+                </span>
+                <b class="text-sm font-semibold text-slate-900">
+                  {{ evento()?.inscripcion_hasta || 'No definido' }}
+                </b>
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-600">
+              Recuerda que tu participación y registro de asistencia (por QR o manual) dependerán de las
+              indicaciones del docente o del área organizadora del evento.
+            </p>
+          </div>
+        </section>
+      </ng-container>
+    </ng-container>
+
+    <!-- Loading -->
+    <ng-template #loadingTpl>
+      <div class="grid place-items-center py-20 text-center">
+        <div class="relative">
+          <div class="h-14 w-14 rounded-full border-4 border-slate-200"></div>
+          <div class="absolute inset-0 h-14 w-14 animate-spin rounded-full border-4 border-slate-900 border-t-transparent"></div>
+        </div>
+        <p class="mt-4 text-sm font-semibold text-slate-700">
+          Cargando evento…
+        </p>
+      </div>
+    </ng-template>
+
+    <!-- Error -->
+    <ng-template #errorTpl>
+      <div class="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm">
+        <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-xl bg-rose-100 text-rose-600">
+          <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900">
+          No se pudo cargar el evento
+        </h3>
+        <p class="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700">
+          {{ error() }}
+        </p>
+        <div class="mt-4 flex justify-center gap-3">
+          <button
+            type="button"
+            (click)="volverAlListado()"
+            class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            <i class="fa-solid fa-arrow-left"></i>
+            Volver
+          </button>
+          <button
+            type="button"
+            (click)="reintentar()"
+            class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <i class="fa-solid fa-rotate"></i>
+            Reintentar
+          </button>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+</main>

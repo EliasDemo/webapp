@@ -12,21 +12,40 @@ import {
   ReporteHorasData,
   RegistroHoraItem,
   PaginacionMeta,
-  VinculableProyectoRef,
+  VinculableRef,
+  ResumenPorVinculoItem,
 } from '../../models/h.models';
 
-import { LoaderService } from '../../../../shared/ui/loader/loader.service'; // 👈 NUEVO
+import { LoaderService } from '../../../../shared/ui/loader/loader.service';
 
 type PeriodProjectAgg = {
   id: number;
+  /** vm_proyecto | vm_evento | otro alias */
+  tipo: string;
+  /** PROYECTO | EVENTO | alias en mayúsculas */
+  tipo_label: string;
+
+  codigo: string | null;
   titulo: string | null;
   tipo_proyecto: string | null;
   modalidad: string | null;
   estado: string | null;
+
+  /** minutos/horas en ESTE período */
   minutos: number;
   horas: number;
-  /** 👇 horas planificadas del proyecto */
-  plan_horas: number | null;
+
+  /** totales globales (todos los períodos) sacados de resumen.por_vinculo */
+  total_minutos: number | null;
+  total_horas: number | null;
+
+  /** meta de horas por participante */
+  meta_horas: number | null;
+  meta_minutos: number | null;
+  cumplido: boolean | null;
+
+  /** registros individuales de este vínculo dentro del período */
+  registros: RegistroHoraItem[];
 };
 
 type PeriodAgg = {
@@ -34,6 +53,7 @@ type PeriodAgg = {
   codigo: string | null;
   minutos: number;
   horas: number;
+  /** vínculos del período (proyectos + eventos) */
   proyectos: PeriodProjectAgg[];
 };
 
@@ -46,7 +66,7 @@ type PeriodAgg = {
 })
 export class HistoryPage implements OnInit {
   private api = inject(HorasApiService);
-  private loader = inject(LoaderService); // 👈 NUEVO
+  private loader = inject(LoaderService);
 
   // Estado UI
   loading = signal(true);
@@ -79,7 +99,7 @@ export class HistoryPage implements OnInit {
   async reload(): Promise<void> {
     this.loading.set(true);
     this.errorMsg.set(null);
-    this.resumen.set(null);       // 👈 evita mostrar totales viejos en error
+    this.resumen.set(null);
     this.historial.set([]);
     this.periodGroups.set([]);
     this.meta.set(null);
@@ -166,50 +186,100 @@ export class HistoryPage implements OnInit {
     this.recomputeGroups();
   }
 
+  /**
+   * Re-agrupa el historial por período y por vínculo (proyecto/evento),
+   * enriqueciendo cada vínculo con:
+   *  - totales globales (resumen.por_vinculo)
+   *  - meta de horas
+   *  - flag cumplido
+   *  - lista de registros individuales en ese período
+   */
   private recomputeGroups(): void {
     const items = this.historial() || [];
+    const resumenPorVinculo: ResumenPorVinculoItem[] =
+      this.resumen()?.por_vinculo ?? [];
+
+    // Mapa rápido tipo+id → resumen
+    const resumenMap = new Map<string, ResumenPorVinculoItem>();
+    for (const r of resumenPorVinculo) {
+      const key = `${r.tipo}|${r.id}`;
+      resumenMap.set(key, r);
+    }
+
     const groups = new Map<string, PeriodAgg>();
 
     for (const item of items) {
       const periodo_id = item.periodo?.id ?? null;
-      const codigo = item.periodo?.codigo ?? null;
+      const codigoPeriodo = item.periodo?.codigo ?? null;
 
-      const key = String(periodo_id ?? 'null');
-      if (!groups.has(key)) {
-        groups.set(key, {
+      const keyPeriodo = String(periodo_id ?? 'null');
+      if (!groups.has(keyPeriodo)) {
+        groups.set(keyPeriodo, {
           periodo_id,
-          codigo,
+          codigo: codigoPeriodo,
           minutos: 0,
           horas: 0,
           proyectos: [],
         });
       }
-      const g = groups.get(key)!;
+      const g = groups.get(keyPeriodo)!;
 
       const minutos = item.minutos || 0;
       g.minutos += minutos;
 
-      const v = item.vinculable as VinculableProyectoRef | undefined;
-      if (v && v.tipo === 'vm_proyecto' && v.id != null) {
-        const idx = g.proyectos.findIndex((pp) => pp.id === v.id);
-        if (idx === -1) {
-          g.proyectos.push({
-            id: v.id,
-            titulo: v.titulo ?? null,
-            tipo_proyecto: v.tipo_proyecto ?? null,
-            modalidad: v.modalidad ?? null,
-            estado: v.estado ?? null,
-            minutos,
-            horas: +(minutos / 60).toFixed(2),
-            plan_horas: v.horas_planificadas ?? null,
-          });
-        } else {
-          g.proyectos[idx].minutos += minutos;
-          g.proyectos[idx].horas = +(
-            g.proyectos[idx].minutos / 60
-          ).toFixed(2);
-          // plan_horas se mantiene
-        }
+      const v = item.vinculable as VinculableRef | undefined | null;
+      if (!v || v.id == null) continue;
+
+      const tipo = v.tipo || 'desconocido';
+      const vincKey = `${tipo}|${v.id}`;
+      const rResumen = resumenMap.get(vincKey) || null;
+
+      const tipo_label =
+        rResumen?.tipo_label ??
+        (tipo === 'vm_proyecto'
+          ? 'PROYECTO'
+          : tipo === 'vm_evento'
+          ? 'EVENTO'
+          : (tipo || '').toUpperCase());
+
+      const meta_horas = rResumen?.horas_requeridas ?? null;
+      const meta_minutos =
+        rResumen?.minutos_requeridos ??
+        (meta_horas != null ? meta_horas * 60 : null);
+      const total_minutos = rResumen?.minutos ?? null;
+      const total_horas =
+        rResumen?.horas ??
+        (total_minutos != null ? +(total_minutos / 60).toFixed(2) : null);
+
+      const existingIndex = g.proyectos.findIndex(
+        (pp) => pp.id === v.id && pp.tipo === tipo
+      );
+
+      if (existingIndex === -1) {
+        const horas = +(minutos / 60).toFixed(2);
+        g.proyectos.push({
+          id: v.id as number,
+          tipo,
+          tipo_label,
+          codigo: v.codigo ?? null,
+          titulo: v.titulo ?? v.codigo ?? null,
+          tipo_proyecto: (v as any).tipo_proyecto ?? null,
+          modalidad: (v as any).modalidad ?? null,
+          estado: v.estado ?? null,
+          minutos,
+          horas,
+          total_minutos,
+          total_horas,
+          meta_horas,
+          meta_minutos,
+          cumplido: rResumen?.cumplido ?? null,
+          registros: [item],
+        });
+      } else {
+        const agg = g.proyectos[existingIndex];
+        agg.minutos += minutos;
+        agg.horas = +(agg.minutos / 60).toFixed(2);
+        agg.registros.push(item);
       }
     }
 
@@ -219,7 +289,7 @@ export class HistoryPage implements OnInit {
       proyectos: g.proyectos.sort((a, b) => b.minutos - a.minutos),
     }));
 
-    // Orden: con código primero; luego por código desc
+    // Orden: primero con código, luego por código desc
     arr.sort((a, b) => {
       if ((a.codigo ? 1 : 0) !== (b.codigo ? 1 : 0)) {
         return (b.codigo ? 1 : 0) - (a.codigo ? 1 : 0);
@@ -236,38 +306,47 @@ export class HistoryPage implements OnInit {
     return (r as ReporteHorasOk).ok === true;
   }
 
-  // ✅ trackBy para *ngFor en el template
+  // trackBy
   trackPeriod = (_: number, p: PeriodAgg) => `${p.periodo_id ?? 'null'}`;
-  trackProyecto = (_: number, pr: PeriodProjectAgg) => pr.id;
+  trackProyecto = (_: number, pr: PeriodProjectAgg) => `${pr.tipo}|${pr.id}`;
 
   // ------------------------------
-  // Helpers para la barra progreso
+  // Helpers barra de progreso / metas
   // ------------------------------
   hasPlan(pr: PeriodProjectAgg): boolean {
-    return pr.plan_horas != null && pr.plan_horas > 0;
+    return pr.meta_horas != null && pr.meta_horas > 0;
   }
 
+  /** % de avance respecto a la meta (usa total_horas si está, si no, las horas del período) */
   percentDone(pr: PeriodProjectAgg): number {
     if (!this.hasPlan(pr)) return 100;
-    const pct = (pr.horas / (pr.plan_horas as number)) * 100;
+    const meta = pr.meta_horas as number;
+    const done = pr.total_horas ?? pr.horas;
+    const pct = (done / meta) * 100;
     return Math.max(0, Math.min(100, pct));
   }
 
+  /** Horas faltantes para la meta (global) */
   missingHours(pr: PeriodProjectAgg): number {
     if (!this.hasPlan(pr)) return 0;
-    return Math.max(0, (pr.plan_horas as number) - pr.horas);
+    const meta = pr.meta_horas as number;
+    const done = pr.total_horas ?? pr.horas;
+    return Math.max(0, meta - done);
   }
 
+  /** true si ya pasó la meta global */
   hasExtra(pr: PeriodProjectAgg): boolean {
-    return this.hasPlan(pr) && pr.horas > (pr.plan_horas as number);
+    return this.hasPlan(pr) && (pr.total_horas ?? pr.horas) > (pr.meta_horas as number);
   }
 
   extraHours(pr: PeriodProjectAgg): number {
     if (!this.hasPlan(pr)) return 0;
-    return Math.max(0, pr.horas - (pr.plan_horas as number));
+    const meta = pr.meta_horas as number;
+    const done = pr.total_horas ?? pr.horas;
+    return Math.max(0, done - meta);
   }
 
-  /** Fondo de la barra: amarillo si faltante y EN_CURSO/PLANIFICADO; rojo si faltante y CERRADO/CANCELADO; gris si sin plan */
+  /** Fondo de la barra según estado de meta y estado del vínculo */
   barBgClass(pr: PeriodProjectAgg): string {
     if (!this.hasPlan(pr)) return 'bg-slate-100';
     const faltan = this.missingHours(pr) > 0;
@@ -277,5 +356,5 @@ export class HistoryPage implements OnInit {
   }
 }
 
-// Tipado local para el signal de params
+// alias local para el signal de params
 type HoraQuery = HorasQuery;

@@ -11,14 +11,23 @@ import { firstValueFrom } from 'rxjs';
 import { VmApiService } from '../../data-access/vm.api';
 import { LookupsApiService } from '../../lookups/lookups.api';
 
+// ⚠️ AJUSTA la ruta según dónde tengas EvApiService
+import { EvApiService } from '../../../events/data-access/ev-api.service';
+
 import {
   Page,
   VmProyecto,
   VmProceso,
   VmProcesoConSesiones,
-  VmSesion,
+  VmSesion as VmSesionProyecto,
   isApiOk,
 } from '../../models/proyecto.models';
+
+// ⚠️ AJUSTA la ruta según tu estructura
+import {
+  VmEvento,
+  VmSesion as VmSesionEvento,
+} from '../../../events/models/ev.models';
 
 /* ========= utilidades de fecha ========= */
 function normalizeFecha(fecha: string): string {
@@ -43,11 +52,27 @@ function combine(fecha: string, hhmm: string): Date {
 type RelState = 'SOON' | 'NOW' | 'RECENT' | 'LATER' | 'PAST';
 const RECENT_WINDOW_MIN = 180; // 3 horas
 
-type FlatCard = {
-  sesion: VmSesion;
-  proyecto: VmProyecto;
-  proceso: VmProceso;
-};
+/** Cualquier sesión que tenga fecha + hora */
+interface SesionLike {
+  id: number;
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string;
+}
+
+/* ========= tarjetas mezcladas ========= */
+interface FlatCard {
+  kind: 'PROYECTO' | 'EVENTO';
+  sesion: VmSesionProyecto | VmSesionEvento;
+  // Para proyectos
+  proyecto?: VmProyecto;
+  proceso?: VmProceso;
+  // Para eventos
+  evento?: VmEvento;
+  // Info de orden
+  sesionIndex: number;
+  sesionTotal: number;
+}
 
 /* ========= períodos ========= */
 type PeriodoOpt = { id:number; anio:number; ciclo:string; estado?:string };
@@ -62,26 +87,28 @@ type PeriodoSel = number | 'ALL' | 'CURRENT' | null;
 export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
   private api = inject(VmApiService);
   private lookups = inject(LookupsApiService);
+  private evApi = inject(EvApiService);
 
   loading = signal(true);
   error   = signal<string | null>(null);
   now     = signal(new Date());
 
-  // Datos planos (sesiones)
+  // Datos planos (sesiones mezcladas)
   cards   = signal<FlatCard[]>([]);
-  private seenSesionIds = new Set<number>(); // evita duplicados al paginar
+  // Evita duplicar sesiones (clave = tipo + id)
+  private seenSesionKeys = new Set<string>();
 
   // Períodos
   periodos = signal<PeriodoOpt[]>([]);
   defaultPeriodoId = signal<number | null>(null);
   selectedPeriodoId = signal<PeriodoSel>('CURRENT');
 
-  // Paginación
+  // Paginación compartida
   page     = signal(1);
-  pageSize = 24; // ajusta según performance
+  pageSize = 24;
   hasMore  = signal(false);
   busyMore = signal(false);
-  totalProj = signal<number | null>(null); // total de proyectos (si el backend lo envía)
+  totalProj = signal<number | null>(null); // solo proyectos (para el texto de resumen)
 
   // Agrupación/orden de períodos
   orderedPeriodos = computed(() => {
@@ -131,7 +158,7 @@ export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
     this.io = new IntersectionObserver((entries) => {
       const e = entries[0];
       if (e.isIntersecting && this.hasMore() && !this.busyMore()) {
-        this.loadMore(); // auto-cargar siguiente página
+        this.loadMore();
       }
     }, { root: null, rootMargin: '160px', threshold: 0.01 });
     if (this.sentinel?.nativeElement) {
@@ -153,7 +180,6 @@ export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
   private async bootstrap() {
     this.loading.set(true);
     try {
-      // 🔹 Todos los períodos
       const per = await firstValueFrom(this.lookups.fetchPeriodos('', false, 500));
       per.sort((a, b) => (b.anio - a.anio) || (Number(b.ciclo) - Number(a.ciclo)));
       this.periodos.set(per);
@@ -178,72 +204,151 @@ export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
   // Reset total + primera página
   private async resetAndFetch() {
     this.cards.set([]);
-    this.seenSesionIds.clear();
+    this.seenSesionKeys.clear();
     this.page.set(1);
     this.totalProj.set(null);
     this.hasMore.set(false);
     await this.loadMore();
   }
 
-  // Carga incremental (paginada)
+  // Carga incremental (paginada) → proyectos + eventos
   async loadMore() {
     this.busyMore.set(true);
     try {
       const pid = this.normalizedPeriodoId();
-      const params: any = {};
-      if (typeof pid === 'number') params.periodo_id = pid;
+      const pageNum = this.page();
 
-      // 👇 ajusta a tu backend si usa otros nombres (page/per_page)
-      params.page = this.page();
-      params.per_page = this.pageSize;
+      // ----------- Proyectos -----------
+      const projParams: any = { page: pageNum, per_page: this.pageSize };
+      if (typeof pid === 'number') projParams.periodo_id = pid;
 
-      const res = await firstValueFrom(this.api.listarProyectosArbol(params));
-      if (!isApiOk(res)) {
-        this.error.set((res as any)?.message || 'No se pudo cargar.');
-        this.hasMore.set(false);
-        return;
-      }
+      const projPromise = firstValueFrom(this.api.listarProyectosArbol(projParams));
+      const evPromise   = firstValueFrom(this.evApi.listarEventos({ page: pageNum }));
 
-      const pageRes = res.data as Page<VmProyecto | { proyecto: VmProyecto; procesos: VmProcesoConSesiones[] }>;
-      const arr = Array.isArray(pageRes?.data) ? pageRes.data : [];
+      const [resProj, resEv] = await Promise.all([projPromise, evPromise]);
 
-      // Aplana a tarjetas de sesión
       const chunk: FlatCard[] = [];
-      for (const it of arr as any[]) {
-        const proyecto: VmProyecto = (it.proyecto ?? it) as VmProyecto;
-        const procesos: VmProcesoConSesiones[] = (it.procesos ?? []) as VmProcesoConSesiones[];
-        for (const pr of procesos) {
-          const sesiones = pr.sesiones ?? [];
-          for (const s of sesiones) {
-            if (!this.seenSesionIds.has(s.id)) {
-              this.seenSesionIds.add(s.id);
-              chunk.push({ sesion: s, proyecto, proceso: pr as VmProceso });
-            }
+
+      // 🔹 Sesiones de PROYECTOS
+      let moreProjects = false;
+      if (isApiOk(resProj)) {
+        const pageRes = resProj.data as Page<
+          VmProyecto | { proyecto: VmProyecto; procesos: VmProcesoConSesiones[] }
+        >;
+        const arr = Array.isArray(pageRes?.data) ? pageRes.data : [];
+
+        const projChunk: FlatCard[] = [];
+        for (const it of arr as any[]) {
+          const proyecto: VmProyecto = (it.proyecto ?? it) as VmProyecto;
+          const procesos: VmProcesoConSesiones[] =
+            (it.procesos ?? []) as VmProcesoConSesiones[];
+
+          for (const pr of procesos) {
+            const sesiones = pr.sesiones ?? [];
+            if (!sesiones.length) continue;
+
+            const sortedSesiones = [...sesiones].sort((a, b) => {
+              const aIni = combine(a.fecha, a.hora_inicio).getTime();
+              const bIni = combine(b.fecha, b.hora_inicio).getTime();
+              return aIni - bIni;
+            });
+
+            const total = sortedSesiones.length;
+
+            sortedSesiones.forEach((s, idx) => {
+              const key = `P-${s.id}`;
+              if (this.seenSesionKeys.has(key)) return;
+              this.seenSesionKeys.add(key);
+
+              projChunk.push({
+                kind: 'PROYECTO',
+                sesion: s,
+                proyecto,
+                proceso: pr as VmProceso,
+                evento: undefined,
+                sesionIndex: idx + 1,
+                sesionTotal: total,
+              });
+            });
           }
         }
+
+        // Guarda totales de proyectos si vienen del backend
+        const total = (pageRes as any)?.total ?? (pageRes as any)?.meta?.total ?? null;
+        if (typeof total === 'number') this.totalProj.set(total);
+
+        chunk.push(...projChunk);
+
+        // ¿hay más páginas de proyectos?
+        const hasNextByLinks = !!(pageRes as any)?.links?.next;
+        const hasNextByMeta  = !!(pageRes as any)?.meta?.next_page;
+        const chunkSize = (pageRes as any)?.data?.length ?? 0;
+        moreProjects = hasNextByLinks || hasNextByMeta || chunkSize === this.pageSize;
+      } else {
+        this.error.set((resProj as any)?.message || 'No se pudieron cargar proyectos.');
+        moreProjects = false;
       }
 
-      // Ordena por inicio asc y concatena
+      // 🔹 Sesiones de EVENTOS
+      let moreEvents = false;
+      if (resEv.ok) {
+        const items = resEv.data.items ?? [];
+        const evChunk: FlatCard[] = [];
+
+        for (const ev of items as VmEvento[]) {
+          // Si hay periodo seleccionado, filtramos aquí
+          if (typeof pid === 'number' && ev.periodo_id !== pid) continue;
+
+          const sesiones = ev.sesiones ?? [];
+          if (!sesiones.length) continue;
+
+          const sortedSesiones = [...sesiones].sort((a, b) => {
+            const aIni = combine(a.fecha, a.hora_inicio).getTime();
+            const bIni = combine(b.fecha, b.hora_inicio).getTime();
+            return aIni - bIni;
+          });
+
+          const total = sortedSesiones.length;
+
+          sortedSesiones.forEach((s, idx) => {
+            const key = `E-${s.id}`;
+            if (this.seenSesionKeys.has(key)) return;
+            this.seenSesionKeys.add(key);
+
+            evChunk.push({
+              kind: 'EVENTO',
+              sesion: s,
+              proyecto: undefined,
+              proceso: undefined,
+              evento: ev,
+              sesionIndex: idx + 1,
+              sesionTotal: total,
+            });
+          });
+        }
+
+        chunk.push(...evChunk);
+
+        // Cálculo simple de si hay más eventos
+        moreEvents = (items.length === this.pageSize);
+      }
+
+      // Ordena TODO por fecha/hora y concatena
       chunk.sort((a, b) => {
-        const aIni = combine(a.sesion.fecha, a.sesion.hora_inicio).getTime();
-        const bIni = combine(b.sesion.fecha, b.sesion.hora_inicio).getTime();
+        const aIni = combine(
+          (a.sesion as SesionLike).fecha,
+          (a.sesion as SesionLike).hora_inicio
+        ).getTime();
+        const bIni = combine(
+          (b.sesion as SesionLike).fecha,
+          (b.sesion as SesionLike).hora_inicio
+        ).getTime();
         return aIni - bIni;
       });
       this.cards.set([...this.cards(), ...chunk]);
 
-      // Guarda totales si vienen del backend
-      const total = (pageRes as any)?.total ?? (pageRes as any)?.meta?.total ?? null;
-      if (typeof total === 'number') this.totalProj.set(total);
-
-      // ¿hay más páginas?
-      const hasNextByLinks = !!(pageRes as any)?.links?.next;
-      const hasNextByMeta  = !!(pageRes as any)?.meta?.next_page;
-      const chunkSize = arr.length;
-      const hasNextBySize = chunkSize === this.pageSize;
-
-      const more = hasNextByLinks || hasNextByMeta || hasNextBySize;
+      const more = !!moreProjects || !!moreEvents;
       this.hasMore.set(more);
-
       if (more) this.page.update(p => p + 1);
     } catch (e:any) {
       this.error.set(e?.error?.message || 'Error de red.');
@@ -274,12 +379,15 @@ export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /* ===== lógica de tarjetas ===== */
-  private stateFor(s: VmSesion): RelState {
+  private stateFor(s: SesionLike): RelState {
     const now = this.now();
     const ini = combine(s.fecha, s.hora_inicio);
     let fin   = combine(s.fecha, s.hora_fin);
     if (isNaN(ini.getTime()) || isNaN(fin.getTime())) return 'LATER';
-    if (fin.getTime() < ini.getTime()) fin = new Date(fin.getTime() + 24 * 60 * 60 * 1000);
+    if (fin.getTime() < ini.getTime()) {
+      // cruza medianoche
+      fin = new Date(fin.getTime() + 24 * 60 * 60 * 1000);
+    }
 
     const untilStart = Math.round((ini.getTime() - now.getTime()) / 60000);
     const sinceEnd   = Math.round((now.getTime() - fin.getTime()) / 60000);
@@ -290,30 +398,38 @@ export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
     if (untilStart > RECENT_WINDOW_MIN) return 'LATER';
     return 'PAST';
   }
+
   private endsAt(c: FlatCard) {
-    const ini = combine(c.sesion.fecha, c.sesion.hora_inicio);
-    let fin   = combine(c.sesion.fecha, c.sesion.hora_fin);
-    if (fin.getTime() < ini.getTime()) fin = new Date(fin.getTime() + 24 * 60 * 60 * 1000);
+    const s = c.sesion as SesionLike;
+    const ini = combine(s.fecha, s.hora_inicio);
+    let fin   = combine(s.fecha, s.hora_fin);
+    if (fin.getTime() < ini.getTime()) {
+      fin = new Date(fin.getTime() + 24 * 60 * 60 * 1000);
+    }
     return fin;
   }
+
   private startsAt(c: FlatCard) {
-    return combine(c.sesion.fecha, c.sesion.hora_inicio);
+    const s = c.sesion as SesionLike;
+    return combine(s.fecha, s.hora_inicio);
   }
 
   currentNow = computed(() =>
     this.cards()
-      .filter(c => this.stateFor(c.sesion) === 'NOW')
+      .filter(c => this.stateFor(c.sesion as SesionLike) === 'NOW')
       .sort((a,b) => this.endsAt(a).getTime() - this.endsAt(b).getTime())
   );
+
   nextUpcoming = computed(() => {
     const future = this.cards()
       .filter(c => {
-        const st = this.stateFor(c.sesion);
+        const st = this.stateFor(c.sesion as SesionLike);
         return st === 'SOON' || st === 'LATER';
       })
       .sort((a,b) => this.startsAt(a).getTime() - this.startsAt(b).getTime());
     return future[0] ?? null;
   });
+
   heroCard = computed<FlatCard | null>(() => {
     const now = this.currentNow();
     if (now.length) return now[0];
@@ -322,9 +438,9 @@ export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
 
   upcomingList = computed(() => {
     const hero = this.heroCard();
-    const heroIsFuture = hero && this.stateFor(hero.sesion) !== 'NOW';
+    const heroIsFuture = !!(hero && this.stateFor(hero.sesion as SesionLike) !== 'NOW');
     const items = this.cards().filter(c => {
-      const st = this.stateFor(c.sesion);
+      const st = this.stateFor(c.sesion as SesionLike);
       if (st !== 'SOON' && st !== 'LATER') return false;
       if (heroIsFuture && hero!.sesion.id === c.sesion.id) return false;
       return true;
@@ -335,37 +451,61 @@ export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
   historyList = computed(() =>
     this.cards()
       .filter(c => {
-        const st = this.stateFor(c.sesion);
+        const st = this.stateFor(c.sesion as SesionLike);
         return st === 'RECENT' || st === 'PAST';
       })
       .sort((a,b) => this.endsAt(b).getTime() - this.endsAt(a).getTime())
   );
 
   relLabel(c: FlatCard): string {
-    const s = c.sesion;
+    const s = c.sesion as SesionLike;
     const now = this.now();
     const ini = combine(s.fecha, s.hora_inicio);
     let fin   = combine(s.fecha, s.hora_fin);
-    if (fin.getTime() < ini.getTime()) fin = new Date(fin.getTime() + 24 * 60 * 60 * 1000);
+    if (fin.getTime() < ini.getTime()) {
+      fin = new Date(fin.getTime() + 24 * 60 * 60 * 1000);
+    }
 
     const until  = Math.round((ini.getTime() - now.getTime()) / 60000);
     const since  = Math.round((now.getTime() - fin.getTime()) / 60000);
     const st = this.stateFor(s);
+
     if (st === 'NOW')    return 'EN CURSO';
     if (st === 'SOON')   return `En ${until} min`;
     if (st === 'RECENT') return `Terminó hace ${since} min`;
-    if (st === 'LATER')  return 'Más tarde';
+
+    // Para LATER / PAST → usamos días
+    const sessionDate = new Date(normalizeFecha(s.fecha));
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffDays = Math.round(
+      (sessionDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
+    );
+
+    if (st === 'LATER') {
+      if (diffDays === 0) return 'Más tarde hoy';
+      if (diffDays === 1) return 'Mañana';
+      if (diffDays > 1)   return `Faltan ${diffDays} días`;
+      return 'Más tarde';
+    }
+
+    // st === 'PAST'
+    const pastDays = -diffDays;
+    if (pastDays === 0) return 'Más temprano hoy';
+    if (pastDays === 1) return 'Ayer';
+    if (pastDays > 1)   return `Hace ${pastDays} días`;
     return 'Pasada';
   }
+
   estadoChipClass(c: FlatCard): string {
-    const st = this.stateFor(c.sesion);
+    const st = this.stateFor(c.sesion as SesionLike);
     const base = 'px-2 py-0.5 rounded-full text-xs font-semibold border';
     if (st === 'NOW')    return `${base} bg-blue-50 text-blue-700 border-blue-200`;
     if (st === 'SOON')   return `${base} bg-amber-50 text-amber-700 border-amber-200`;
     if (st === 'RECENT') return `${base} bg-slate-50 text-slate-600 border-slate-200`;
     return `${base} bg-gray-50 text-gray-500 border-gray-200`;
   }
-  horaRange(s: VmSesion): string {
+
+  horaRange(s: SesionLike): string {
     const i = normalizeHora(s.hora_inicio).slice(0,5);
     const f = normalizeHora(s.hora_fin).slice(0,5);
     return `${i}–${f}`;
@@ -383,5 +523,44 @@ export class UpcomingSessionsPage implements OnInit, AfterViewInit, OnDestroy {
     this.fetch();
   }
 
-  trackBySesion = (_: number, c: FlatCard) => c.sesion.id;
+  // Helpers para el template
+  isProyecto(card: FlatCard): boolean {
+    return card.kind === 'PROYECTO';
+  }
+
+  cardTitle(card: FlatCard): string {
+    if (card.kind === 'PROYECTO') {
+      return card.proyecto?.titulo ?? 'Proyecto sin título';
+    }
+    return card.evento?.titulo ?? 'Evento sin título';
+  }
+
+  cardContextName(card: FlatCard): string {
+    if (card.kind === 'PROYECTO') {
+      return card.proceso?.nombre ?? 'Proyecto';
+    }
+    return card.evento?.categoria?.nombre ?? 'Evento';
+  }
+
+  cardRouterLink(card: FlatCard): any[] {
+    if (card.kind === 'PROYECTO') {
+      return ['/vm', 'proyectos', card.proyecto?.id ?? 0];
+    }
+    // Evento
+    return ['/vm', 'eventos', card.evento?.id ?? 0];
+  }
+
+  cardTypeLetter(card: FlatCard): string {
+    return card.kind === 'PROYECTO' ? 'P' : 'V';
+  }
+
+  cardTypeClass(card: FlatCard): string {
+    // Proyecto → azul, Evento → verde
+    return card.kind === 'PROYECTO'
+      ? 'bg-blue-600 text-white'
+      : 'bg-emerald-500 text-white';
+  }
+
+  // Usamos clave tipo "PROYECTO-123" / "EVENTO-10"
+  trackBySesion = (_: number, c: FlatCard) => `${c.kind}-${c.sesion.id}`;
 }

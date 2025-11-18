@@ -1,0 +1,321 @@
+<!-- HERO SUPERIOR -->
+<section class="border-b border-slate-800 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+  <div class="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <p class="text-[11px] uppercase tracking-[0.25em] text-slate-400 mb-2">
+          Panel principal
+        </p>
+        <h1 class="text-3xl sm:text-4xl font-black leading-tight">
+          Tu dashboard académico
+        </h1>
+        <p class="mt-2 text-sm text-slate-300 max-w-xl">
+          Resumen rápido de tus proyectos, eventos, sesiones próximas y horas validadas.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button
+          (click)="toggleLang()"
+          class="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-50 hover:bg-white/20"
+        >
+          <i class="fa-solid fa-language text-sm"></i>
+          Idioma: <span class="font-mono text-[11px] uppercase">{{ lang }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Métricas rápidas -->
+    <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+      <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-semibold text-slate-50">Horas totales</span>
+          <i class="fa-solid fa-clock text-xs text-slate-200"></i>
+        </div>
+        <div class="mt-1 text-2xl font-black text-white">
+          {{ totalHoras() | number : '1.0-1' }} h
+        </div>
+        <p class="mt-1 text-[11px] text-slate-300">
+          Horas validadas en tus proyectos y actividades.
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-semibold text-slate-50">Proyectos activos</span>
+          <i class="fa-solid fa-diagram-project text-xs text-slate-200"></i>
+        </div>
+        <div class="mt-1 text-2xl font-black text-white">
+          {{ pendientesAlumno().length + inscribiblesAlumno().length }}
+        </div>
+        <p class="mt-1 text-[11px] text-slate-300">
+          Pendientes por completar o disponibles para inscripción.
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-semibold text-slate-50">Eventos visibles</span>
+          <i class="fa-solid fa-calendar-days text-xs text-slate-200"></i>
+        </div>
+        <div class="mt-1 text-2xl font-black text-white">
+          {{ eventosAlumnoActivos().length }}
+        </div>
+        <p class="mt-1 text-[11px] text-slate-300">
+          Eventos que aparecen en tu noticiero (abiertos o donde estás inscrito(a)).
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-semibold text-slate-50">Sesiones próximas</span>
+          <i class="fa-solid fa-bell text-xs text-slate-200"></i>
+        </div>
+        <div class="mt-1 text-2xl font-black text-white">
+          {{ proximasSesionesAlumnoVm().length }}
+        </div>
+        <p class="mt-1 text-[11px] text-slate-300">
+          Próximas clases / sesiones donde debes asistir.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CUERPO -->
+<main class="bg-slate-50 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+    <ng-container *ngIf="!initialLoading(); else dashboardLoading">
+      <ng-container *ngIf="!globalError(); else dashboardError">
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <!-- Columna principal -->
+          <section class="lg:col-span-2 space-y-6">
+
+            <!-- CARD PROYECTOS (igual que antes) -->
+            <!-- ... (tu card de proyectos tal como la tienes ahora, sin cambios) ... -->
+
+            <!-- CARD EVENTOS / NOTICIERO -->
+            <article class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <header class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="grid h-10 w-10 place-items-center rounded-xl bg-amber-500 text-white">
+                    <i class="fa-solid fa-calendar-days"></i>
+                  </div>
+                  <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">
+                      Eventos y actividades
+                    </h2>
+                    <p class="text-xs text-slate-500">
+                      Noticiero: eventos abiertos para inscripción y donde estás inscrito(a).
+                    </p>
+                  </div>
+                </div>
+                <a
+                  [routerLink]="['/mis-eventos']"
+                  class="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Ver todos
+                  <i class="fa-solid fa-arrow-right text-[11px]"></i>
+                </a>
+              </header>
+
+              <div class="px-4 py-4">
+                <ng-container *ngIf="!loadingEventos(); else eventosLoading">
+                  <ng-container *ngIf="eventosAlumnoActivos().length; else eventosVacios">
+
+                    <!-- Inscripción abierta / sin inscripción previa -->
+                    <section *ngIf="eventosDisponiblesAlumno().length" class="mb-4">
+                      <h3 class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Inscripción abierta
+                      </h3>
+                      <div class="space-y-3">
+                        <article
+                          *ngFor="let ev of eventosDisponiblesAlumno() | slice:0:3"
+                          class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3"
+                        >
+                          <div class="flex flex-wrap items-start justify-between gap-2">
+                            <div class="min-w-0">
+                              <div class="flex flex-wrap items-center gap-2 text-[10px]">
+                                <span
+                                  class="inline-flex items-center rounded-full border px-2 py-0.5 font-semibold"
+                                  [class]="modalidadBadgeClass(ev.modalidad)"
+                                >
+                                  <i class="fa-solid fa-location-dot mr-1 text-[9px]"></i>
+                                  {{ ev.modalidad }}
+                                </span>
+                                <span
+                                  class="inline-flex items-center rounded-full border px-2 py-0.5 font-semibold"
+                                  [class]="estadoBadgeClass(ev.estado)"
+                                >
+                                  {{ ev.estado }}
+                                </span>
+                                <span [class]="eventoInscripcionChipClass(ev)">
+                                  <i class="fa-solid fa-ticket mr-1 text-[9px]"></i>
+                                  {{ eventoInscripcionLabel(ev) }}
+                                </span>
+                              </div>
+                              <h3 class="mt-1 text-sm font-semibold text-slate-900 line-clamp-2">
+                                {{ ev.titulo }}
+                              </h3>
+                              <p *ngIf="ev.descripcion_corta" class="mt-0.5 text-xs text-slate-500 line-clamp-2">
+                                {{ ev.descripcion_corta }}
+                              </p>
+                              <p *ngIf="ev.inscripcion_desde || ev.inscripcion_hasta" class="mt-1 text-[11px] text-slate-500">
+                                Inscripción:
+                                <span class="font-medium">{{ ev.inscripcion_desde || '—' }}</span>
+                                <span> · </span>
+                                <span class="font-medium">{{ ev.inscripcion_hasta || '—' }}</span>
+                              </p>
+                            </div>
+                            <div class="text-right text-[11px] text-slate-600">
+                              <div class="font-semibold" *ngIf="ev.periodo">
+                                {{ ev.periodo.anio }} - {{ ev.periodo.ciclo }}
+                              </div>
+                              <div *ngIf="ev.cupo_maximo" class="text-[10px]">
+                                Cupo:
+                                <span class="font-semibold">{{ ev.cupo_maximo }}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+                      </div>
+                    </section>
+
+                    <!-- Eventos donde estás inscrito -->
+                    <section *ngIf="eventosInscritosAlumno().length">
+                      <h3 class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Donde estás inscrito(a)
+                      </h3>
+                      <div class="space-y-3">
+                        <article
+                          *ngFor="let ev of eventosInscritosAlumno() | slice:0:3"
+                          class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3"
+                        >
+                          <div class="flex flex-wrap items-start justify-between gap-2">
+                            <div class="min-w-0">
+                              <div class="flex flex-wrap items-center gap-2 text-[10px]">
+                                <span
+                                  class="inline-flex items-center rounded-full border px-2 py-0.5 font-semibold"
+                                  [class]="modalidadBadgeClass(ev.modalidad)"
+                                >
+                                  <i class="fa-solid fa-location-dot mr-1 text-[9px]"></i>
+                                  {{ ev.modalidad }}
+                                </span>
+                                <span
+                                  class="inline-flex items-center rounded-full border px-2 py-0.5 font-semibold"
+                                  [class]="estadoBadgeClass(ev.estado)"
+                                >
+                                  {{ ev.estado }}
+                                </span>
+                                <span [class]="eventoInscripcionChipClass(ev)">
+                                  <i class="fa-solid fa-user-check mr-1 text-[9px]"></i>
+                                  {{ eventoInscripcionLabel(ev) }}
+                                </span>
+                              </div>
+                              <h3 class="mt-1 text-sm font-semibold text-slate-900 line-clamp-2">
+                                {{ ev.titulo }}
+                              </h3>
+                              <p *ngIf="ev.descripcion_corta" class="mt-0.5 text-xs text-slate-500 line-clamp-2">
+                                {{ ev.descripcion_corta }}
+                              </p>
+                            </div>
+                            <div class="text-right text-[11px] text-slate-600">
+                              <div class="font-semibold" *ngIf="ev.periodo">
+                                {{ ev.periodo.anio }} - {{ ev.periodo.ciclo }}
+                              </div>
+                              <div *ngIf="ev.cupo_maximo" class="text-[10px]">
+                                Cupo:
+                                <span class="font-semibold">{{ ev.cupo_maximo }}</span>
+                              </div>
+                              <div
+                                class="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
+                              >
+                                <i class="fa-solid fa-user-check text-[9px]"></i>
+                                Inscrito
+                              </div>
+                            </div>
+                          </div>
+                        </article>
+                      </div>
+                    </section>
+
+                    <div class="mt-4 flex justify-end">
+                      <a
+                        [routerLink]="['/mis-eventos']"
+                        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                      >
+                        Ver todos los eventos
+                        <i class="fa-solid fa-arrow-right text-[11px]"></i>
+                      </a>
+                    </div>
+                  </ng-container>
+                </ng-container>
+
+                <ng-template #eventosLoading>
+                  <div class="py-8 text-center text-slate-500 text-sm">
+                    <div
+                      class="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-amber-500"
+                    ></div>
+                    Cargando tus eventos…
+                  </div>
+                </ng-template>
+
+                <ng-template #eventosVacios>
+                  <div
+                    class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-slate-500 text-sm"
+                  >
+                    <i class="fa-solid fa-calendar-minus text-xl mb-2"></i>
+                    <div class="font-semibold">No hay eventos visibles en este momento</div>
+                    <p class="text-xs mt-1">
+                      Cuando se abra la inscripción o haya eventos vigentes, aparecerán aquí.
+                    </p>
+                  </div>
+                </ng-template>
+              </div>
+            </article>
+
+            <!-- CARD NOTICIAS (igual que tenías) -->
+            <!-- ... -->
+          </section>
+
+          <!-- Columna lateral: sesiones próximas + horas -->
+          <!-- ... (sin cambios respecto a tu versión) ... -->
+        </div>
+
+      </ng-container>
+    </ng-container>
+
+    <!-- Templates globales -->
+    <ng-template #dashboardLoading>
+      <div class="py-16 text-center text-slate-600">
+        <div
+          class="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700"
+        ></div>
+        <p class="text-sm font-semibold">Preparando tu dashboard…</p>
+        <p class="mt-1 text-xs text-slate-500">
+          Cargando proyectos, eventos, sesiones y horas.
+        </p>
+      </div>
+    </ng-template>
+
+    <ng-template #dashboardError>
+      <div
+        class="mx-auto max-w-xl rounded-2xl border border-rose-200 bg-white px-6 py-8 text-center shadow-sm"
+      >
+        <div class="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-rose-100 text-rose-600">
+          <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-900">
+          No se pudo cargar el dashboard completo
+        </h3>
+        <p class="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700">
+          {{ globalError() }}
+        </p>
+        <p class="mt-2 text-[11px] text-slate-500">
+          Puedes recargar la página o seguir navegando desde el menú lateral.
+        </p>
+      </div>
+    </ng-template>
+  </div>
+</main>

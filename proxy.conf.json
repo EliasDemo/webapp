@@ -1,6 +1,6 @@
 {
   "/api": {
-    "target": "http://172.31.208.1:8000",
+    "target": "https://apiproyecto-production-022e.up.railway.app",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"

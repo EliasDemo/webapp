@@ -9,18 +9,6 @@ export const MP_ROUTES: Routes = [
     data: { feature: 'mis-proyectos', level: 'list' },
   },
 
-  // 🔹 Rutas específicas SIEMPRE antes de ":id"
-  {
-    path: 'sesiones/:sesionId/register-qr',
-    title: 'Registrar asistencia (QR)',
-    loadComponent: () =>
-      import('./pages/register-qr/register-qr.page').then(
-        m => m.RegisterQrPage
-      ),
-    data: { feature: 'vm', level: 'qr-student' },
-  },
-
-
   {
     path: ':id',
     title: 'Detalle del proyecto',

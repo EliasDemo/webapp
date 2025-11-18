@@ -22,7 +22,11 @@ export class HorasApiService {
     Object.entries(params ?? {}).forEach(([k, v]) => {
       if (v === undefined || v === null || v === '') return;
       if (Array.isArray(v)) {
-        v.forEach(it => { if (it !== undefined && it !== null && it !== '') p = p.append(k, String(it)); });
+        v.forEach((it) => {
+          if (it !== undefined && it !== null && it !== '') {
+            p = p.append(k, String(it));
+          }
+        });
       } else {
         p = p.set(k, String(v));
       }
@@ -31,7 +35,10 @@ export class HorasApiService {
   }
 
   /** Helper: convierte error de red a forma tipada { ok:false } */
-  private toFail(e: any, fallbackMsg = 'No se pudo obtener el reporte de horas'): ReporteHorasResponse {
+  private toFail(
+    e: any,
+    fallbackMsg = 'No se pudo obtener el reporte de horas'
+  ): ReporteHorasResponse {
     const message =
       e?.error?.message ||
       e?.message ||
@@ -49,7 +56,7 @@ export class HorasApiService {
     return this.http
       .get<ReporteHorasResponse>(`${this.base}/reportes/horas/mias`, { params: p })
       .pipe(
-        catchError(err => of(this.toFail(err)))
+        catchError((err) => of(this.toFail(err)))
       );
   }
 
@@ -57,29 +64,47 @@ export class HorasApiService {
    * GET /api/reportes/horas/expedientes/{expediente}
    * Resumen + historial de un expediente (requiere permisos).
    */
-  obtenerReporteHorasDeExpediente(expedienteId: number, params?: HorasQuery): Observable<ReporteHorasResponse> {
+  obtenerReporteHorasDeExpediente(
+    expedienteId: number,
+    params?: HorasQuery
+  ): Observable<ReporteHorasResponse> {
     const p = this.toParams(params);
     return this.http
-      .get<ReporteHorasResponse>(`${this.base}/reportes/horas/expedientes/${expedienteId}`, { params: p })
+      .get<ReporteHorasResponse>(
+        `${this.base}/reportes/horas/expedientes/${expedienteId}`,
+        { params: p }
+      )
       .pipe(
-        catchError(err => of(this.toFail(err, 'No se pudo obtener el reporte del expediente')))
+        catchError((err) =>
+          of(this.toFail(err, 'No se pudo obtener el reporte del expediente'))
+        )
       );
   }
 
-    /**
+  /**
    * GET /api/reportes/horas/mias/por-proyecto
    * Suma minutos por proyecto (vm_proyecto directo + vm_proceso→proyecto).
    */
-  obtenerMiAvancePorProyecto(params?: AvanceProyectoQuery): Observable<AvancePorProyectoResponse> {
+  obtenerMiAvancePorProyecto(
+    params?: AvanceProyectoQuery
+  ): Observable<AvancePorProyectoResponse> {
     const p = this.toParams(params);
     return this.http
-      .get<AvancePorProyectoResponse>(`${this.base}/reportes/horas/mias/por-proyecto`, { params: p })
+      .get<AvancePorProyectoResponse>(
+        `${this.base}/reportes/horas/mias/por-proyecto`,
+        { params: p }
+      )
       .pipe(
-        catchError(err => of({
-          ok: false,
-          message: err?.error?.message || err?.message || 'No se pudo obtener el avance por proyecto',
-          meta: { status: err?.status ?? -1 }
-        } as AvancePorProyectoResponse))
+        catchError((err) =>
+          of({
+            ok: false,
+            message:
+              err?.error?.message ||
+              err?.message ||
+              'No se pudo obtener el avance por proyecto',
+            meta: { status: err?.status ?? -1 },
+          } as AvancePorProyectoResponse)
+        )
       );
-    }
+  }
 }

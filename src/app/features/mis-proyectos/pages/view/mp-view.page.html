@@ -3,7 +3,8 @@
   <div class="max-w-7xl mx-auto px-4 py-6">
     <!-- Migas -->
     <nav class="text-xs text-slate-500 mb-2" aria-label="Breadcrumb">
-      <a [routerLink]="['/mp']" class="hover:text-slate-700 font-medium">Mis proyectos</a>
+      <!-- CAMBIADO: /mp -> /mis-proyectos -->
+      <a [routerLink]="['/mis-proyectos']" class="hover:text-slate-700 font-medium">Mis proyectos</a>
       <span class="mx-2 text-slate-400">/</span>
       <span class="text-slate-600 font-semibold">Detalle</span>
     </nav>
@@ -76,8 +77,11 @@
             </div>
           </ng-template>
           <div class="p-4 flex items-center justify-between gap-3">
-            <div class="text-xs text-slate-500">ID: <span class="font-semibold text-slate-700">{{ proyecto()?.id }}</span></div>
-            <a [routerLink]="['/mp']"
+            <div class="text-xs text-slate-500">
+              ID: <span class="font-semibold text-slate-700">{{ proyecto()?.id }}</span>
+            </div>
+            <!-- CAMBIADO: /mp -> /mis-proyectos -->
+            <a [routerLink]="['/mis-proyectos']"
                class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               <i class="fa-solid fa-arrow-left"></i> Volver al listado
             </a>
@@ -224,15 +228,20 @@
                               <div class="mt-1 flex flex-wrap items-center gap-2">
                                 <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border" [class]="estadoChipClass(s.estado)">{{ s.estado }}</span>
                                 <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-white"
-                                      [class]="{'bg-blue-600': sesionRelativa(s)==='ACTUAL', 'bg-indigo-600': sesionRelativa(s)==='PROXIMA', 'bg-slate-600': sesionRelativa(s)==='PASADA'}">
+                                      [class]="{
+                                        'bg-blue-600': sesionRelativa(s)==='ACTUAL',
+                                        'bg-indigo-600': sesionRelativa(s)==='PROXIMA',
+                                        'bg-slate-600': sesionRelativa(s)==='PASADA'
+                                      }">
                                   {{ sesionRelativa(s) }}
                                 </span>
                               </div>
                             </div>
 
+                            <!-- CAMBIADO: routerLink al QR GLOBAL -->
                             <button
                               [disabled]="!puedeRegistrar(s)"
-                              [routerLink]="['/mis-proyectos/sesiones', s.id, 'register-qr']"
+                              [routerLink]="['/registro-qr', s.id]"
                               [title]="puedeRegistrar(s) ? 'Registrar asistencia ahora' : 'Sesión fuera de horario'"
                               class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold shadow-sm"
                               [class]="puedeRegistrar(s)
@@ -341,10 +350,13 @@
           {{ error() }}
         </p>
         <div class="mt-4 flex justify-center gap-3">
-          <a [routerLink]="['/mp']" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+          <!-- CAMBIADO: /mp -> /mis-proyectos -->
+          <a [routerLink]="['/mis-proyectos']"
+             class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
             <i class="fa-solid fa-arrow-left"></i> Volver
           </a>
-          <button (click)="recargarPagina()" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <button (click)="recargarPagina()"
+                  class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
             <i class="fa-solid fa-rotate"></i> Reintentar
           </button>
         </div>

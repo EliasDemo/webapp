@@ -13,6 +13,8 @@ import {
   InscritoItem,
   CandidatoItem,
   NoElegibleItem,
+  BulkEnrollStats,
+  BulkEnrolResponseData,
 } from '../../models/proyecto.models';
 
 type ViewMode = 'INSCRITOS' | 'CANDIDATOS';
@@ -47,6 +49,13 @@ export class ProyectoListRegistrantsPage {
   inscritos = signal<InscritosResponseData | null>(null);
   candidatos = signal<CandidatosResponseData | null>(null);
 
+  // inscripción masiva
+  massEnrolling = signal<boolean>(false);
+  massEnrollMsg = signal<string | null>(null);
+
+  // selección de candidatos (por expediente_id)
+  selectedExpedientes = signal<Id[]>([]);
+
   // derivados
   proyectoResumen = computed(() =>
     this.view() === 'INSCRITOS'
@@ -54,12 +63,18 @@ export class ProyectoListRegistrantsPage {
       : this.candidatos()?.proyecto ?? null
   );
 
+  selectedCount = computed(() => this.selectedExpedientes().length);
+
   // --- helpers de búsqueda ---
   private normalize(s?: string | null) {
     return (s ?? '').toLowerCase().trim();
   }
-  private fullName(u?: { first_name?: string | null; last_name?: string | null; full_name?: string | null }) {
-    // backend ya manda full_name; si no, lo armamos
+
+  private fullName(u?: {
+    first_name?: string | null;
+    last_name?: string | null;
+    full_name?: string | null;
+  }) {
     const explicit = this.normalize(u?.full_name);
     if (explicit) return explicit;
     const fn = this.normalize(u?.first_name);
@@ -93,7 +108,10 @@ export class ProyectoListRegistrantsPage {
   candidatosFiltrados = computed(() => {
     const data = this.candidatos();
     const t = this.normalize(this.q());
-    const filterList = <T extends { codigo?: string | null; usuario?: any }>(arr: T[]) =>
+
+    const filterList = <T extends { codigo?: string | null; usuario?: any }>(
+      arr: T[]
+    ) =>
       !t
         ? arr
         : arr.filter((c) => {
@@ -101,7 +119,12 @@ export class ProyectoListRegistrantsPage {
             const nombre = this.fullName(c.usuario);
             const email = this.normalize(c.usuario?.email);
             const cel = this.normalize(c.usuario?.celular);
-            return codigo.includes(t) || nombre.includes(t) || email.includes(t) || cel.includes(t);
+            return (
+              codigo.includes(t) ||
+              nombre.includes(t) ||
+              email.includes(t) ||
+              cel.includes(t)
+            );
           });
 
     return {
@@ -165,11 +188,32 @@ export class ProyectoListRegistrantsPage {
   // --- UI actions ---
   async changeView(v: ViewMode) {
     this.view.set(v);
+    this.massEnrollMsg.set(null); // limpiar mensaje al cambiar de pestaña
+    this.clearSelection();        // por si cambias a INSCRITOS, limpiamos selección
+
     if (v === 'INSCRITOS' && !this.inscritos()) await this.fetchInscritos();
     if (v === 'CANDIDATOS' && !this.candidatos()) await this.fetchCandidatos(true);
   }
 
   async onApplyFilters() {
+    this.massEnrollMsg.set(null);
+    if (this.view() === 'INSCRITOS') {
+      await this.fetchInscritos();
+    } else {
+      this.clearSelection();
+      await this.fetchCandidatos(true);
+    }
+  }
+
+  // 🔹 NUEVO: reset de filtros (lo llama el botón "Restablecer filtros")
+  async onResetFilters() {
+    this.q.set('');
+    this.estado.set('TODOS');
+    this.roles.set(['ALUMNO']);
+    this.soloElegibles.set(true);
+    this.massEnrollMsg.set(null);
+    this.clearSelection();
+
     if (this.view() === 'INSCRITOS') {
       await this.fetchInscritos();
     } else {
@@ -181,6 +225,143 @@ export class ProyectoListRegistrantsPage {
     const set = new Set(this.roles());
     set.has(r) ? set.delete(r) : set.add(r);
     this.roles.set([...set]);
+  }
+
+  // --- selección de candidatos ---
+  isSelected(c: CandidatoItem): boolean {
+    return this.selectedExpedientes().includes(c.expediente_id as Id);
+  }
+
+  toggleCandidate(c: CandidatoItem, checked: boolean) {
+    const current = new Set(this.selectedExpedientes());
+    if (checked) current.add(c.expediente_id as Id);
+    else current.delete(c.expediente_id as Id);
+    this.selectedExpedientes.set([...current]);
+  }
+
+  selectAllFiltered() {
+    const ids = this.candidatosFiltrados().candidatos.map(
+      (c) => c.expediente_id as Id
+    );
+    this.selectedExpedientes.set([...new Set(ids)]);
+  }
+
+  clearSelection() {
+    this.selectedExpedientes.set([]);
+  }
+
+  // 🔹 NUEVO: checkbox "seleccionar todos" de la cabecera de la tabla
+  isAllFilteredSelected(): boolean {
+    const filtered = this.candidatosFiltrados().candidatos;
+    if (!filtered.length) return false;
+
+    const selected = new Set(this.selectedExpedientes());
+    return filtered.every((c) => selected.has(c.expediente_id as Id));
+  }
+
+  toggleAllFiltered(checked: boolean) {
+    if (checked) {
+      // marcar todos los candidatos filtrados
+      this.selectAllFiltered();
+    } else {
+      // desmarcar solo los que están visibles en este momento
+      const filteredIds = new Set(
+        this.candidatosFiltrados().candidatos.map(
+          (c) => c.expediente_id as Id
+        )
+      );
+      const current = new Set(this.selectedExpedientes());
+      filteredIds.forEach((id) => current.delete(id));
+      this.selectedExpedientes.set([...current]);
+    }
+  }
+
+  /** Inscribir masivamente a TODOS los candidatos elegibles (según filtros actuales) */
+  async onMassEnrollElegibles() {
+    const pid = this.proyectoId();
+    if (!pid) return;
+
+    const elegibles = this.candidatosFiltrados().candidatos;
+    if (!elegibles.length) {
+      this.massEnrollMsg.set('No hay candidatos elegibles con los filtros actuales.');
+      return;
+    }
+
+    this.massEnrollMsg.set(null);
+    this.massEnrolling.set(true);
+
+    try {
+      const res = await firstValueFrom(
+        this.api.inscribirTodosCandidatosProyecto(pid, {
+          solo_elegibles: this.soloElegibles(),
+          q: this.q() || undefined,
+        })
+      );
+
+      if (res && isApiOk<BulkEnrollStats>(res)) {
+        const d = res.data;
+        this.massEnrollMsg.set(
+          `Inscritos (todos elegibles): ${d.creados} · Ya inscritos: ${d.ya_inscritos}` +
+            (d.descartados_total ? ` · No elegibles: ${d.descartados_total}` : '')
+        );
+
+        // refrescamos listas (inscritos + candidatos)
+        await Promise.all([this.fetchInscritos(), this.fetchCandidatos(true)]);
+        this.clearSelection();
+      } else if (res && !isApiOk(res)) {
+        this.massEnrollMsg.set(
+          res.message || 'No se pudo completar la inscripción masiva.'
+        );
+      }
+    } catch (e: any) {
+      this.massEnrollMsg.set(
+        'Error de red o servidor al inscribir candidatos (todos elegibles).'
+      );
+    } finally {
+      this.massEnrolling.set(false);
+    }
+  }
+
+  /** Inscribir SOLO expedientes seleccionados */
+  async onMassEnrollSeleccionados() {
+    const pid = this.proyectoId();
+    if (!pid) return;
+
+    const ids = this.selectedExpedientes();
+    if (!ids.length) {
+      this.massEnrollMsg.set('Selecciona al menos un candidato.');
+      return;
+    }
+
+    this.massEnrollMsg.set(null);
+    this.massEnrolling.set(true);
+
+    try {
+      const res = await firstValueFrom(
+        this.api.inscribirCandidatosSeleccionadosProyecto(pid, ids)
+      );
+
+      if (res && isApiOk<BulkEnrolResponseData>(res)) {
+        const d = res.data;
+        this.massEnrollMsg.set(
+          `Inscritos (seleccionados): ${d.creados} · Ya inscritos: ${d.ya_inscritos}` +
+            (d.descartados_total ? ` · No elegibles: ${d.descartados_total}` : '')
+        );
+
+        await Promise.all([this.fetchInscritos(), this.fetchCandidatos(true)]);
+        this.clearSelection();
+      } else if (res && !isApiOk(res)) {
+        this.massEnrollMsg.set(
+          res.message || 'No se pudo completar la inscripción de seleccionados.'
+        );
+      }
+    } catch (e: any) {
+      this.massEnrollMsg.set(
+        'Error de red o servidor al inscribir candidatos seleccionados.'
+      );
+    } finally {
+      this.massEnrolling.set(false);
+    }
   }
 
   // --- helpers presentacionales ---
@@ -206,14 +387,18 @@ export class ProyectoListRegistrantsPage {
   badgeEstado(e: string) {
     const s = (e ?? '').toUpperCase();
     const base = 'px-2 py-0.5 rounded-full text-xs font-semibold';
-    if (s === 'FINALIZADO') return `${base} bg-emerald-100 text-emerald-700 border border-emerald-200`;
-    if (s === 'CONFIRMADO') return `${base} bg-blue-100 text-blue-700 border border-blue-200`;
-    if (s === 'INSCRITO') return `${base} bg-indigo-100 text-indigo-700 border border-indigo-200`;
-    if (s === 'RETIRADO') return `${base} bg-amber-100 text-amber-700 border border-amber-200`;
+    if (s === 'FINALIZADO')
+      return `${base} bg-emerald-100 text-emerald-700 border border-emerald-200`;
+    if (s === 'CONFIRMADO')
+      return `${base} bg-blue-100 text-blue-700 border border-blue-200`;
+    if (s === 'INSCRITO')
+      return `${base} bg-indigo-100 text-indigo-700 border border-indigo-200`;
+    if (s === 'RETIRADO')
+      return `${base} bg-amber-100 text-amber-700 border border-amber-200`;
     return `${base} bg-gray-100 text-gray-700 border border-gray-200`;
   }
 
-  // trackBy (Angular no acepta arrow inline en el template)
+  // trackBy
   trackByInscrito = (_: number, i: InscritoItem) => i.participacion_id;
   trackByCandidato = (_: number, c: CandidatoItem) => c.expediente_id;
   trackByNoElegible = (_: number, n: NoElegibleItem) => n.expediente_id;
